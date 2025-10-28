@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -31,22 +32,17 @@ const folderStructure = [
   {
     name: 'Documentación',
     children: [
-      {
-        name: 'Documentos asociados',
-        children: [
-          { name: 'Circular', children: [] },
-          { name: 'Formato', children: [] },
-          { name: 'Guía', children: [] },
-          { name: 'Instructivo', children: [] },
-          { name: 'Manual', children: [] },
-          { name: 'Política', children: [] },
-          { name: 'Programa', children: [] },
-          { name: 'Planes', children: [] },
-          { name: 'Plantilla', children: [] },
-          { name: 'Procedimiento', children: [] },
-          { name: 'Protocolo', children: [] },
-        ],
-      },
+      { name: 'Circular', children: [] },
+      { name: 'Formato', children: [] },
+      { name: 'Guía', children: [] },
+      { name: 'Instructivo', children: [] },
+      { name: 'Manual', children: [] },
+      { name: 'Política', children: [] },
+      { name: 'Programa', children: [] },
+      { name: 'Planes', children: [] },
+      { name: 'Plantilla', children: [] },
+      { name: 'Procedimiento', children: [] },
+      { name: 'Protocolo', children: [] },
     ],
   },
 ];
@@ -58,7 +54,7 @@ const sampleFiles = [
 ];
 
 const FolderTree = ({ folders, level = 0 }: { folders: any[], level?: number }) => {
-    const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({'Documentación': true, 'Documentos asociados': true});
+    const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({'Documentación': true});
 
     const toggleFolder = (name: string) => {
         setOpenFolders(prev => ({...prev, [name]: !prev[name]}));
@@ -109,8 +105,8 @@ export default function RepositoryPage() {
         <Card className="lg:col-span-3">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-                <CardTitle className="font-headline text-lg">Documentos asociados</CardTitle>
-                <CardDescription>Archivos en esta carpeta.</CardDescription>
+                <CardTitle className="font-headline text-lg">Archivos</CardTitle>
+                <CardDescription>Archivos en la carpeta seleccionada.</CardDescription>
             </div>
             <div className="flex gap-2">
                 <Input type="file" className="hidden" id="upload-file-input" />
