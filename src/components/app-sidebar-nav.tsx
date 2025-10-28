@@ -20,6 +20,7 @@ import {
   MessageSquareHeart,
   Settings,
   CircleUser,
+  Folder,
 } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
@@ -36,6 +37,7 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
     { href: '/dashboard/reports', label: 'Reporting', icon: BarChart3 },
     { href: '/dashboard/alerts', label: 'Alerts', icon: Bell },
     { href: '/dashboard/feedback', label: 'Feedback', icon: MessageSquareHeart },
+    { href: '/dashboard/repository', label: 'Repositorio', icon: Folder },
   ];
 
   return (
