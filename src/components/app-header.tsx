@@ -27,43 +27,42 @@ import { Fragment } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { getAreaById, getProceso } from '@/data/areasProcesos';
 
+const hardcodedTranslations: Record<string, string> = {
+    inicio: "Inicio",
+    reports: "Informes",
+    alerts: "Alertas",
+    feedback: "Feedback",
+    documentos: "Mapa de procesos",
+    account: "Cuenta",
+};
+
+
 export default function AppHeader() {
   const pathname = usePathname();
   const pathSegments = pathname.split('/').filter(Boolean);
 
-  const translateSegment = (segment: string, allSegments: string[], index: number) => {
-    // Hardcoded translations
-    const translations: Record<string, string> = {
-        inicio: "Inicio",
-        reports: "Informes",
-        alerts: "Alertas",
-        feedback: "Feedback",
-        documentos: "Mapa de procesos",
-        account: "Cuenta",
-    };
+  const breadcrumbItems = pathSegments.map((segment, index) => {
+    const href = `/${pathSegments.slice(0, index + 1).join('/')}`;
+    const isLast = index === pathSegments.length - 1;
+    let label = hardcodedTranslations[segment] || segment;
 
-    if (translations[segment.toLowerCase()]) {
-        return translations[segment.toLowerCase()];
-    }
-
-    // Dynamic translations for areas and procesos
-    if (allSegments[1] === 'documentos' && allSegments.length > 2) {
-      const areaId = allSegments[2];
+    // Handle dynamic segments for areas and procesos
+    if (pathSegments[1] === 'documentos' && index > 1) { // after /inicio/documentos
+      const areaId = pathSegments[2];
       const area = getAreaById(areaId);
-      if (area && segment === area.id) {
-        return area.titulo;
-      }
-      if (allSegments.length > 3) {
-        const procesoId = allSegments[3];
+      if (index === 2 && area) {
+        label = area.titulo;
+      } else if (index === 3 && area) {
+        const procesoId = pathSegments[3];
         const proceso = getProceso(areaId, procesoId);
-        if (proceso && segment === proceso.id) {
-          return proceso.nombre;
+        if (proceso) {
+            label = proceso.nombre;
         }
       }
     }
     
-    return segment;
-  }
+    return { href, label, isLast };
+  });
 
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
@@ -82,39 +81,22 @@ export default function AppHeader() {
       <div className="w-full flex-1">
         <Breadcrumb className="hidden md:flex">
           <BreadcrumbList>
-             {pathSegments.length > 0 && pathSegments[0] === 'inicio' && (
-                <BreadcrumbItem>
-                    {pathSegments.length === 1 ? (
-                        <BreadcrumbPage className="font-normal">Inicio</BreadcrumbPage>
+             {breadcrumbItems.map((item, index) => (
+                <Fragment key={item.href}>
+                  {index > 0 && <BreadcrumbSeparator />}
+                  <BreadcrumbItem>
+                    {item.isLast ? (
+                       <BreadcrumbPage className="font-normal capitalize">{item.label}</BreadcrumbPage>
                     ) : (
-                        <BreadcrumbLink asChild>
-                            <Link href="/inicio">Inicio</Link>
-                        </BreadcrumbLink>
+                      <BreadcrumbLink asChild>
+                        <Link href={item.href} className="capitalize">
+                          {item.label}
+                        </Link>
+                      </BreadcrumbLink>
                     )}
-                </BreadcrumbItem>
-             )}
-
-            {pathSegments.slice(1).map((segment, index) => {
-               const href = `/${pathSegments.slice(0, index + 2).join('/')}`;
-               const isLast = index === pathSegments.length - 2;
-               const translatedSegment = translateSegment(segment, pathSegments, index + 1);
-
-              return (
-              <Fragment key={segment}>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  {isLast ? (
-                     <BreadcrumbPage className="font-normal capitalize">{translatedSegment}</BreadcrumbPage>
-                  ) : (
-                    <BreadcrumbLink asChild>
-                      <Link href={href} className="capitalize">
-                        {translatedSegment}
-                      </Link>
-                    </BreadcrumbLink>
-                  )}
-                </BreadcrumbItem>
-              </Fragment>
-            )})}
+                  </BreadcrumbItem>
+                </Fragment>
+             ))}
           </BreadcrumbList>
         </Breadcrumb>
       </div>
@@ -140,3 +122,4 @@ export default function AppHeader() {
     </header>
   );
 }
+

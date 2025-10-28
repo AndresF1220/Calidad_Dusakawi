@@ -3,7 +3,7 @@
 
 import { useState, useMemo } from 'react';
 import { useParams, notFound } from 'next/navigation';
-import { getAreaById, getProceso } from '@/data/areasProcesos';
+import { getProceso } from '@/data/areasProcesos';
 import {
   Card,
   CardContent,
@@ -302,4 +302,3 @@ export default function RepositoryDocumentsPage() {
     </div>
   );
 }
-
