@@ -292,9 +292,6 @@ export default function RepositoryDocumentsPage() {
     <div className="flex flex-col gap-8">
       <div>
         <h1 className="text-3xl font-bold font-headline">{proceso.nombre}</h1>
-        <p className="text-muted-foreground">
-          {area.titulo}
-        </p>
       </div>
 
        <Card>
@@ -453,4 +450,3 @@ export default function RepositoryDocumentsPage() {
     </div>
   );
 }
-

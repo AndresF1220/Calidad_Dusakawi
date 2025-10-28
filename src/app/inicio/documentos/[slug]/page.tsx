@@ -96,7 +96,6 @@ export default function ProcesosDeAreaPage() {
     <div className="flex flex-col gap-8">
       <div>
         <h1 className="text-3xl font-bold font-headline">{area.titulo}</h1>
-        <p className="text-muted-foreground">Información de caracterización y procesos asociados.</p>
       </div>
 
        <Card>
@@ -201,4 +200,3 @@ export default function ProcesosDeAreaPage() {
     </div>
   );
 }
-
