@@ -14,7 +14,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
       <div className="w-full max-w-sm mx-auto">
         <div className="flex justify-center mb-8">
-           <Image src="/Imagenes/DSK.png" alt="Logo DSK" width={200} height={100} />
+           <Image src="/Imagenes/DSK.png" alt="Logo DSK" width={300} height={150} />
         </div>
         <Card className="w-full border-0 shadow-lg">
           <CardContent className="p-8">
@@ -38,10 +38,6 @@ export default function LoginPage() {
               <Button type="submit" className="w-full" asChild>
                 <Link href="/dashboard">Entrar</Link>
               </Button>
-            </div>
-            <div className="mt-8 text-center text-xs text-muted-foreground">
-              <p className="font-bold">Almera Information Management</p>
-              <p>almeraim.com</p>
             </div>
           </CardContent>
         </Card>
