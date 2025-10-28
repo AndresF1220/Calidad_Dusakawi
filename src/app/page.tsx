@@ -23,49 +23,49 @@ const sustainabilityTips = [
     number: '01',
     text: 'Desconectar cargadores de radio teléfonos, celulares y otros equipos eléctricos que no se estén utilizando.',
     icon: <PlugZap className="h-8 w-8" />,
-    position: '-top-4 left-1/2 -translate-x-1/2',
+    position: 'top-0 left-1/2 -translate-x-1/2',
     color: 'text-orange-500',
   },
   {
     number: '02',
     text: 'Mantener cerradas puertas y ventanas durante el tiempo en el que el aire acondicionado esté en funcionamiento.',
     icon: <DoorClosed className="h-8 w-8" />,
-    position: 'top-1/4 -left-8',
+    position: 'top-1/4 -left-12',
     color: 'text-pink-500',
   },
   {
     number: '03',
     text: 'Desconecte los electrodomésticos tales como cafeteras y hornos microondas mientras no estén en uso.',
     icon: <Microwave className="h-8 w-8" />,
-    position: 'bottom-1/4 -left-8',
+    position: 'bottom-1/4 -left-12',
     color: 'text-purple-500',
   },
   {
     number: '04',
     text: 'Apagar las luces y aires acondicionados en las horas de descanso, o cuando las áreas estén solas.',
     icon: <Lightbulb className="h-8 w-8" />,
-    position: '-bottom-4 left-1/2 -translate-x-1/2',
+    position: 'bottom-0 left-1/2 -translate-x-1/2',
     color: 'text-blue-500',
   },
   {
     number: '05',
     text: 'Mantener apagadas las luces, los aires acondicionados y televisores, mientras no hallan pacientes en las habitaciones.',
     icon: <Tv className="h-8 w-8" />,
-    position: 'bottom-1/4 -right-8',
+    position: 'bottom-1/4 -right-12',
     color: 'text-indigo-500',
   },
   {
     number: '06',
     text: 'Mantener las llaves de los grifos cerradas mientras no utilices el agua.',
     icon: <Droplets className="h-8 w-8" />,
-    position: 'top-1/4 -right-8',
+    position: 'top-1/4 -right-12',
     color: 'text-cyan-500',
   },
   {
     number: '07',
     text: 'Informar a mantenimiento sobre daños en los grifos, tuberías. Etc',
     icon: <Wrench className="h-8 w-8" />,
-    position: 'top-16 right-12',
+    position: 'top-16 right-0 transform translate-x-1/4',
     color: 'text-emerald-500',
   },
 ];
@@ -104,7 +104,7 @@ export default function LoginPage() {
       <div className="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Infographic Section */}
         <div className="flex flex-col items-center justify-center gap-8 py-10">
-          <div className="relative h-[450px] w-[450px]">
+          <div className="relative h-[500px] w-[500px]">
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="h-64 w-64 rounded-full bg-white shadow-xl flex flex-col items-center justify-center text-center p-4">
                 <span className="text-sm font-light text-muted-foreground">TIPS DE</span>
