@@ -21,7 +21,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { CircleUser, Menu } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import AppSidebarNav from './app-sidebar-nav';
 import { Fragment } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -60,18 +60,17 @@ export default function AppHeader() {
       <div className="w-full flex-1">
         <Breadcrumb className="hidden md:flex">
           <BreadcrumbList>
-             {pathSegments.length === 0 && (
-                 <BreadcrumbItem>
-                    <BreadcrumbPage className="font-normal">Inicio</BreadcrumbPage>
+             {pathSegments.length > 0 && pathSegments[0] === 'inicio' && (
+                <BreadcrumbItem>
+                    {pathSegments.length === 1 ? (
+                        <BreadcrumbPage className="font-normal">Inicio</BreadcrumbPage>
+                    ) : (
+                        <BreadcrumbLink asChild>
+                            <Link href="/inicio">Inicio</Link>
+                        </BreadcrumbLink>
+                    )}
                 </BreadcrumbItem>
              )}
-            {pathSegments.length > 0 && (
-                <BreadcrumbItem>
-                    <BreadcrumbLink asChild>
-                        <Link href="/inicio">Inicio</Link>
-                    </BreadcrumbLink>
-                </BreadcrumbItem>
-            )}
 
             {pathSegments.slice(1).map((segment, index) => {
                const href = `/${pathSegments.slice(0, index + 2).join('/')}`;

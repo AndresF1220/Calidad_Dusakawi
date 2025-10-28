@@ -3,7 +3,7 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/app-sidebar';
 import AppHeader from '@/components/app-header';
 
-export default function DashboardLayout({
+export default function InicioLayout({
   children,
 }: {
   children: React.ReactNode;
