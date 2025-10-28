@@ -36,7 +36,7 @@ export default function LoginPage() {
                 <Input id="password" type="password" required className="bg-white" placeholder="Ingrese su contraseña" />
               </div>
               <Button type="submit" className="w-full" asChild>
-                <Link href="/dashboard">Entrar</Link>
+                <Link href="/inicio">Entrar</Link>
               </Button>
             </div>
           </CardContent>

@@ -32,7 +32,7 @@ export default function AppHeader() {
 
   const translateSegment = (segment: string) => {
     const translations: Record<string, string> = {
-        dashboard: "Panel de Control",
+        inicio: "Inicio",
         reports: "Informes",
         alerts: "Alertas",
         feedback: "Feedback",
@@ -60,14 +60,15 @@ export default function AppHeader() {
       <div className="w-full flex-1">
         <Breadcrumb className="hidden md:flex">
           <BreadcrumbList>
-            {pathSegments.length === 0 ? (
-                <BreadcrumbItem>
-                    <BreadcrumbPage className="font-normal">Panel de Control</BreadcrumbPage>
-                </BreadcrumbItem>
-            ) : (
+             {pathSegments.length === 0 && (
                  <BreadcrumbItem>
+                    <BreadcrumbPage className="font-normal">Inicio</BreadcrumbPage>
+                </BreadcrumbItem>
+             )}
+            {pathSegments.length > 0 && (
+                <BreadcrumbItem>
                     <BreadcrumbLink asChild>
-                        <Link href="/dashboard">Panel de Control</Link>
+                        <Link href="/inicio">Inicio</Link>
                     </BreadcrumbLink>
                 </BreadcrumbItem>
             )}

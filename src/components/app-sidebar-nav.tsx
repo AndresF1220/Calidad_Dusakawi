@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -29,12 +30,12 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
   const pathname = usePathname();
   
   const menuItems = [
-    { href: '/dashboard', label: 'Panel de Control', icon: LayoutDashboard },
-    { href: '/dashboard/reports', label: 'Informes', icon: BarChart3 },
-    { href: '/dashboard/alerts', label: 'Alertas', icon: Bell },
-    { href: '/dashboard/feedback', label: 'Feedback', icon: MessageSquareHeart },
-    { href: '/dashboard/repository', label: 'Repositorio', icon: Folder },
-    { href: '/dashboard/account', label: 'Cuenta', icon: User },
+    { href: '/inicio', label: 'Inicio', icon: LayoutDashboard },
+    { href: '/inicio/reports', label: 'Informes', icon: BarChart3 },
+    { href: '/inicio/alerts', label: 'Alertas', icon: Bell },
+    { href: '/inicio/feedback', label: 'Feedback', icon: MessageSquareHeart },
+    { href: '/inicio/repository', label: 'Repositorio', icon: Folder },
+    { href: '/inicio/account', label: 'Cuenta', icon: User },
   ];
 
   return (
@@ -65,7 +66,7 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
                 asChild
-                isActive={pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))}
+                isActive={pathname === item.href || (item.href !== '/inicio' && pathname.startsWith(item.href))}
                 tooltip={item.label}
               >
                 <Link href={item.href}>
