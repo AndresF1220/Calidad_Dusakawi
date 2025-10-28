@@ -340,27 +340,27 @@ export default function RepositoryDocumentsPage() {
                 </div>
             </div>
           ) : (
-            <div className="grid md:grid-cols-3 gap-6 text-sm">
-               <div className="flex items-start gap-3">
-                <Target className="h-5 w-5 mt-1 text-primary" />
-                <div>
-                  <h3 className="font-semibold">Objetivo</h3>
-                  <p className="text-muted-foreground">{caracterizacion?.objetivo}</p>
-                </div>
+            <div className="space-y-6 text-sm">
+               <div className="space-y-2">
+                <h3 className="font-semibold flex items-center gap-2">
+                    <Target className="h-5 w-5 text-primary" />
+                    Objetivo
+                </h3>
+                <p className="text-muted-foreground ml-7">{caracterizacion?.objetivo}</p>
               </div>
-              <div className="flex items-start gap-3">
-                <GitBranch className="h-5 w-5 mt-1 text-primary" />
-                <div>
-                  <h3 className="font-semibold">Alcance</h3>
-                  <p className="text-muted-foreground">{caracterizacion?.alcance}</p>
-                </div>
+              <div className="space-y-2">
+                <h3 className="font-semibold flex items-center gap-2">
+                    <GitBranch className="h-5 w-5 text-primary" />
+                    Alcance
+                </h3>
+                <p className="text-muted-foreground ml-7">{caracterizacion?.alcance}</p>
               </div>
-              <div className="flex items-start gap-3">
-                <User className="h-5 w-5 mt-1 text-primary" />
-                <div>
-                  <h3 className="font-semibold">Responsable</h3>
-                  <p className="text-muted-foreground">{caracterizacion?.responsable}</p>
-                </div>
+              <div className="space-y-2">
+                <h3 className="font-semibold flex items-center gap-2">
+                    <User className="h-5 w-5 text-primary" />
+                    Responsable
+                </h3>
+                <p className="text-muted-foreground ml-7">{caracterizacion?.responsable}</p>
               </div>
             </div>
           )}
