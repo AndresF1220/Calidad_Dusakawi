@@ -2,15 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import Image from 'next/image';
 import {
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { DusakawiLogo } from './icons';
 import {
@@ -18,11 +15,10 @@ import {
   BarChart3,
   Bell,
   MessageSquareHeart,
-  Settings,
-  CircleUser,
   Folder,
 } from 'lucide-react';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+import UserPanelHeader from './user-panel-header';
+
 
 interface AppSidebarNavProps {
   isMobile: boolean;
@@ -30,8 +26,7 @@ interface AppSidebarNavProps {
 
 export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
   const pathname = usePathname();
-  const userAvatar = PlaceHolderImages.find(p => p.id === 'user-avatar-1');
-
+  
   const menuItems = [
     { href: '/dashboard', label: 'Panel de Control', icon: LayoutDashboard },
     { href: '/dashboard/reports', label: 'Informes', icon: BarChart3 },
@@ -50,6 +45,9 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
           </span>
         </div>
       </SidebarHeader>
+      
+      <UserPanelHeader />
+
       <SidebarContent>
         <SidebarMenu>
           {menuItems.map((item) => (
@@ -68,27 +66,6 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
           ))}
         </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter className="flex-col !items-stretch">
-        <SidebarSeparator />
-        <div className="flex items-center gap-2 p-2">
-          {userAvatar && (
-             <Image
-                src={userAvatar.imageUrl}
-                alt="User avatar"
-                width={36}
-                height={36}
-                className="rounded-full"
-                data-ai-hint={userAvatar.imageHint}
-              />
-          )}
-          <div className="flex flex-col text-sm">
-            <span className="font-semibold text-sidebar-foreground">
-              Dra. Ana Rodriguez
-            </span>
-            <span className="text-sidebar-foreground/70">Gerente de Calidad</span>
-          </div>
-        </div>
-      </SidebarFooter>
     </>
   );
 }
