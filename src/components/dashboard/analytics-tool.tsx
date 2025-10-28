@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import { analyzeQualityDataAction, suggestAdditionalDataAction } from '@/app/actions';
 import { Button } from '@/components/ui/button';
@@ -12,14 +12,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Lightbulb, Bot, AlertTriangle, CheckCircle } from 'lucide-react';
-import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 function SubmitButton({ children }: { children: React.ReactNode }) {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" disabled={pending}>
-      {pending ? 'Thinking...' : children}
+      {pending ? 'Pensando...' : children}
     </Button>
   );
 }
@@ -32,7 +31,7 @@ function AnalysisForm() {
     if (state.error) {
         toast({
             variant: "destructive",
-            title: "Analysis Error",
+            title: "Error de Análisis",
             description: state.error,
         });
     }
@@ -42,31 +41,31 @@ function AnalysisForm() {
     <form action={formAction}>
       <CardContent className="space-y-4">
         <div className="grid gap-2">
-          <Label htmlFor="qualityData">Quality Data</Label>
-          <Textarea id="qualityData" name="qualityData" placeholder='Paste your quality data here (e.g., JSON, CSV text)...' rows={6} />
+          <Label htmlFor="qualityData">Datos de Calidad</Label>
+          <Textarea id="qualityData" name="qualityData" placeholder='Pegue sus datos de calidad aquí (ej: JSON, texto CSV)...' rows={6} />
         </div>
       </CardContent>
       <CardFooter className="flex justify-between">
-        <p className="text-sm text-muted-foreground">The AI will analyze trends and anomalies.</p>
-        <SubmitButton>Analyze Data</SubmitButton>
+        <p className="text-sm text-muted-foreground">La IA analizará tendencias y anomalías.</p>
+        <SubmitButton>Analizar Datos</SubmitButton>
       </CardFooter>
       {state.data && (
         <CardContent>
           <Alert>
             <CheckCircle className="h-4 w-4" />
-            <AlertTitle>Analysis Complete</AlertTitle>
+            <AlertTitle>Análisis Completo</AlertTitle>
             <AlertDescription className="mt-2 space-y-4">
                 <div>
-                    <h4 className="font-semibold">Summary</h4>
+                    <h4 className="font-semibold">Resumen</h4>
                     <p className="text-sm text-muted-foreground">{state.data.analysisSummary}</p>
                 </div>
                 <div>
-                    <h4 className="font-semibold">Improvement Suggestions</h4>
+                    <h4 className="font-semibold">Sugerencias de Mejora</h4>
                     <p className="text-sm text-muted-foreground">{state.data.improvementSuggestions}</p>
                 </div>
                 {state.data.additionalDataRequest && (
                     <div>
-                        <h4 className="font-semibold">Additional Data Required</h4>
+                        <h4 className="font-semibold">Datos Adicionales Requeridos</h4>
                         <p className="text-sm text-muted-foreground">{state.data.additionalDataRequest}</p>
                     </div>
                 )}
@@ -86,7 +85,7 @@ function SuggestionForm() {
     if (state.error) {
         toast({
             variant: "destructive",
-            title: "Suggestion Error",
+            title: "Error de Sugerencia",
             description: state.error,
         });
     }
@@ -96,30 +95,30 @@ function SuggestionForm() {
     <form action={formAction}>
       <CardContent className="space-y-4">
         <div className="grid gap-2">
-          <Label htmlFor="currentAnalysis">Current Analysis</Label>
-          <Textarea id="currentAnalysis" name="currentAnalysis" placeholder='Describe the current analysis or paste the summary...' rows={4} />
+          <Label htmlFor="currentAnalysis">Análisis Actual</Label>
+          <Textarea id="currentAnalysis" name="currentAnalysis" placeholder='Describa el análisis actual o pegue el resumen...' rows={4} />
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="metricsUsed">Metrics Used</Label>
-          <Input id="metricsUsed" name="metricsUsed" placeholder='e.g., Patient Satisfaction, Compliance Rate' />
+          <Label htmlFor="metricsUsed">Métricas Utilizadas</Label>
+          <Input id="metricsUsed" name="metricsUsed" placeholder='ej: Satisfacción del Paciente, Tasa de Cumplimiento' />
         </div>
       </CardContent>
       <CardFooter className="flex justify-between">
-        <p className="text-sm text-muted-foreground">The AI will suggest new data points.</p>
-        <SubmitButton>Get Suggestions</SubmitButton>
+        <p className="text-sm text-muted-foreground">La IA sugerirá nuevos puntos de datos.</p>
+        <SubmitButton>Obtener Sugerencias</SubmitButton>
       </CardFooter>
       {state.data && (
          <CardContent>
           <Alert>
             <Lightbulb className="h-4 w-4" />
-            <AlertTitle>New Data Point Suggestions</AlertTitle>
+            <AlertTitle>Sugerencias de Nuevos Puntos de Datos</AlertTitle>
             <AlertDescription className="mt-2 space-y-4">
                 <div>
-                    <h4 className="font-semibold">Suggested Data Points</h4>
+                    <h4 className="font-semibold">Puntos de Datos Sugeridos</h4>
                     <p className="text-sm text-muted-foreground">{state.data.suggestedDataPoints}</p>
                 </div>
                 <div>
-                    <h4 className="font-semibold">Reasoning</h4>
+                    <h4 className="font-semibold">Razonamiento</h4>
                     <p className="text-sm text-muted-foreground">{state.data.reasoning}</p>
                 </div>
             </AlertDescription>
@@ -136,14 +135,14 @@ export default function AnalyticsTool() {
       <CardHeader>
         <div className="flex items-center gap-2">
             <Bot className="h-6 w-6 text-primary"/>
-            <CardTitle className="font-headline">AI Analytics Tool</CardTitle>
+            <CardTitle className="font-headline">Herramienta de Análisis con IA</CardTitle>
         </div>
-        <CardDescription>Leverage AI to gain deeper insights from your quality data.</CardDescription>
+        <CardDescription>Utilice la IA para obtener información más profunda de sus datos de calidad.</CardDescription>
       </CardHeader>
       <Tabs defaultValue="analyze">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="analyze">Analyze Quality Data</TabsTrigger>
-          <TabsTrigger value="suggest">Suggest Data Points</TabsTrigger>
+          <TabsTrigger value="analyze">Analizar Datos de Calidad</TabsTrigger>
+          <TabsTrigger value="suggest">Sugerir Puntos de Datos</TabsTrigger>
         </TabsList>
         <TabsContent value="analyze">
             <AnalysisForm />

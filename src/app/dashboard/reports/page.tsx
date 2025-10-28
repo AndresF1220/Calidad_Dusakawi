@@ -20,25 +20,25 @@ export default function ReportsPage() {
     return (
         <div className="flex flex-col gap-8">
             <div>
-                <h1 className="text-3xl font-bold font-headline">Reporting Module</h1>
-                <p className="text-muted-foreground">Generate and view detailed quality reports.</p>
+                <h1 className="text-3xl font-bold font-headline">Módulo de Informes</h1>
+                <p className="text-muted-foreground">Genere y vea informes de calidad detallados.</p>
             </div>
 
             <Card>
                 <CardHeader>
-                    <CardTitle className="font-headline">Generate Report</CardTitle>
-                    <CardDescription>Select criteria to generate a custom report.</CardDescription>
+                    <CardTitle className="font-headline">Generar Informe</CardTitle>
+                    <CardDescription>Seleccione criterios para generar un informe personalizado.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col sm:flex-row gap-4">
                     <Select>
                         <SelectTrigger className="w-full sm:w-[240px]">
-                            <SelectValue placeholder="Select report type" />
+                            <SelectValue placeholder="Seleccione tipo de informe" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="patient-satisfaction">Patient Satisfaction</SelectItem>
-                            <SelectItem value="compliance">Compliance Overview</SelectItem>
-                            <SelectItem value="wait-times">Wait Times Analysis</SelectItem>
-                            <SelectItem value="incidents">Incident Summary</SelectItem>
+                            <SelectItem value="patient-satisfaction">Satisfacción del Paciente</SelectItem>
+                            <SelectItem value="compliance">Resumen de Cumplimiento</SelectItem>
+                            <SelectItem value="wait-times">Análisis de Tiempos de Espera</SelectItem>
+                            <SelectItem value="incidents">Resumen de Incidentes</SelectItem>
                         </SelectContent>
                     </Select>
                     <Popover>
@@ -59,7 +59,7 @@ export default function ReportsPage() {
                                         format(dateRange.from, "LLL dd, y")
                                     )
                                 ) : (
-                                    <span>Pick a date</span>
+                                    <span>Elija una fecha</span>
                                 )}
                             </Button>
                         </PopoverTrigger>
@@ -76,7 +76,7 @@ export default function ReportsPage() {
                     </Popover>
                     <Button className="ml-auto">
                         <Download className="mr-2 h-4 w-4" />
-                        Generate & Download
+                        Generar y Descargar
                     </Button>
                 </CardContent>
             </Card>
@@ -84,18 +84,18 @@ export default function ReportsPage() {
             <div className="grid gap-8 lg:grid-cols-2">
                 <Card>
                     <CardHeader>
-                        <CardTitle className="font-headline">Compliance by Department</CardTitle>
+                        <CardTitle className="font-headline">Cumplimiento por Departamento</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <ChartContainer config={{
-                            compliance: { label: "Compliance", color: "hsl(var(--chart-1))" },
+                            compliance: { label: "Cumplimiento", color: "hsl(var(--chart-1))" },
                             }} className="h-[300px] w-full">
                             <BarChart data={[
-                                { department: 'Cardiology', compliance: 99.2 },
-                                { department: 'ER', compliance: 97.5 },
-                                { department: 'Pediatrics', compliance: 98.8 },
-                                { department: 'Oncology', compliance: 99.5 },
-                                { department: 'Surgery', compliance: 98.1 },
+                                { department: 'Cardiología', compliance: 99.2 },
+                                { department: 'Urgencias', compliance: 97.5 },
+                                { department: 'Pediatría', compliance: 98.8 },
+                                { department: 'Oncología', compliance: 99.5 },
+                                { department: 'Cirugía', compliance: 98.1 },
                             ]} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                                 <CartesianGrid vertical={false} />
                                 <XAxis dataKey="department" tickLine={false} axisLine={false} tickMargin={8} />
@@ -108,16 +108,16 @@ export default function ReportsPage() {
                 </Card>
                 <Card>
                     <CardHeader>
-                        <CardTitle className="font-headline">All Reports</CardTitle>
+                        <CardTitle className="font-headline">Todos los Informes</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <Table>
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>ID</TableHead>
-                                    <TableHead>Title</TableHead>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Author</TableHead>
+                                    <TableHead>Título</TableHead>
+                                    <TableHead>Fecha</TableHead>
+                                    <TableHead>Autor</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>

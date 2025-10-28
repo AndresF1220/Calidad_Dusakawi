@@ -20,8 +20,8 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-3xl font-bold font-headline">Dashboard</h1>
-        <p className="text-muted-foreground">Welcome to your Quality Central dashboard.</p>
+        <h1 className="text-3xl font-bold font-headline">Panel de Control</h1>
+        <p className="text-muted-foreground">Bienvenido a su panel de Quality Central.</p>
       </div>
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -51,13 +51,13 @@ export default function DashboardPage() {
       <div className="grid gap-8 lg:grid-cols-5">
         <Card className="lg:col-span-3">
           <CardHeader>
-            <CardTitle className="font-headline">Quality KPIs Overview</CardTitle>
-            <CardDescription>Monthly trends for key performance indicators.</CardDescription>
+            <CardTitle className="font-headline">Resumen de KPIs de Calidad</CardTitle>
+            <CardDescription>Tendencias mensuales de los indicadores clave de desempeño.</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={{
-              compliance: { label: "Compliance", color: "hsl(var(--chart-1))" },
-              satisfaction: { label: "Satisfaction", color: "hsl(var(--chart-2))" },
+              compliance: { label: "Cumplimiento", color: "hsl(var(--chart-1))" },
+              satisfaction: { label: "Satisfacción", color: "hsl(var(--chart-2))" },
             }} className="h-[300px] w-full">
               <LineChart data={overviewChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -82,15 +82,15 @@ export default function DashboardPage() {
         
         <Card className="lg:col-span-2">
            <CardHeader>
-            <CardTitle className="font-headline">Recent Reports</CardTitle>
-            <CardDescription>Quick access to the latest quality reports.</CardDescription>
+            <CardTitle className="font-headline">Informes Recientes</CardTitle>
+            <CardDescription>Acceso rápido a los últimos informes de calidad.</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Report</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Informe</TableHead>
+                  <TableHead>Estado</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -103,12 +103,12 @@ export default function DashboardPage() {
                     <TableCell>
                       <Badge 
                         variant={
-                          report.status === 'Completed' ? 'default' : 
-                          report.status === 'In Progress' ? 'secondary' : 'outline'
+                          report.status === 'Completado' ? 'default' : 
+                          report.status === 'En Progreso' ? 'secondary' : 'outline'
                         }
                         className={
-                          report.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-700 border-transparent' :
-                          report.status === 'In Progress' ? 'bg-blue-500/20 text-blue-700 border-transparent' : ''
+                          report.status === 'Completado' ? 'bg-emerald-500/20 text-emerald-700 border-transparent' :
+                          report.status === 'En Progreso' ? 'bg-blue-500/20 text-blue-700 border-transparent' : ''
                         }
                       >
                         {report.status}

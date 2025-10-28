@@ -12,24 +12,24 @@ export default function AlertsPage() {
     return (
         <div className="flex flex-col gap-8">
             <div>
-                <h1 className="text-3xl font-bold font-headline">Customizable Alerts</h1>
-                <p className="text-muted-foreground">Configure notifications for critical quality deviations.</p>
+                <h1 className="text-3xl font-bold font-headline">Alertas Personalizables</h1>
+                <p className="text-muted-foreground">Configure notificaciones para desviaciones críticas de calidad.</p>
             </div>
 
             <div className="grid gap-8 lg:grid-cols-3">
                 <Card className="lg:col-span-1">
                     <CardHeader>
                         <CardTitle className="font-headline flex items-center gap-2">
-                           <BellPlus className="h-5 w-5" /> Create New Alert
+                           <BellPlus className="h-5 w-5" /> Crear Nueva Alerta
                         </CardTitle>
-                        <CardDescription>Set up a new notification rule.</CardDescription>
+                        <CardDescription>Establezca una nueva regla de notificación.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                          <div className="grid gap-2">
-                            <Label htmlFor="metric">Metric</Label>
+                            <Label htmlFor="metric">Métrica</Label>
                              <Select>
                                 <SelectTrigger id="metric">
-                                    <SelectValue placeholder="Select a KPI" />
+                                    <SelectValue placeholder="Seleccione un KPI" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {kpiList.map((kpi) => (
@@ -40,52 +40,52 @@ export default function AlertsPage() {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                              <div className="grid gap-2">
-                                <Label htmlFor="condition">Condition</Label>
+                                <Label htmlFor="condition">Condición</Label>
                                 <Select defaultValue="less-than">
                                     <SelectTrigger id="condition">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="less-than">Falls Below</SelectItem>
-                                        <SelectItem value="greater-than">Exceeds</SelectItem>
+                                        <SelectItem value="less-than">Cae por debajo de</SelectItem>
+                                        <SelectItem value="greater-than">Supera</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="threshold">Threshold</Label>
-                                <Input id="threshold" type="number" placeholder="e.g., 90" />
+                                <Label htmlFor="threshold">Umbral</Label>
+                                <Input id="threshold" type="number" placeholder="ej: 90" />
                             </div>
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="notification">Notification Channel</Label>
+                            <Label htmlFor="notification">Canal de Notificación</Label>
                              <Select defaultValue="email">
                                 <SelectTrigger id="notification">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="email">Email</SelectItem>
+                                    <SelectItem value="email">Correo electrónico</SelectItem>
                                     <SelectItem value="sms">SMS</SelectItem>
-                                    <SelectItem value="in-app">In-app Notification</SelectItem>
+                                    <SelectItem value="in-app">Notificación en la app</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
-                         <Button className="w-full">Save Alert</Button>
+                         <Button className="w-full">Guardar Alerta</Button>
                     </CardContent>
                 </Card>
 
                 <Card className="lg:col-span-2">
                     <CardHeader>
-                        <CardTitle className="font-headline">Existing Alerts</CardTitle>
-                        <CardDescription>Manage your current alert configurations.</CardDescription>
+                        <CardTitle className="font-headline">Alertas Existentes</CardTitle>
+                        <CardDescription>Gestione sus configuraciones de alerta actuales.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Metric</TableHead>
-                                    <TableHead>Condition</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
+                                    <TableHead>Métrica</TableHead>
+                                    <TableHead>Condición</TableHead>
+                                    <TableHead>Estado</TableHead>
+                                    <TableHead className="text-right">Acciones</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -94,12 +94,12 @@ export default function AlertsPage() {
                                         <TableCell className="font-medium">{alert.metric}</TableCell>
                                         <TableCell>{alert.condition}</TableCell>
                                         <TableCell>
-                                            <Switch defaultChecked={alert.status === 'Active'} id={`alert-status-${alert.id}`} />
+                                            <Switch defaultChecked={alert.status === 'Activa'} id={`alert-status-${alert.id}`} />
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <Button variant="ghost" size="icon">
                                                 <Trash2 className="h-4 w-4" />
-                                                <span className="sr-only">Delete</span>
+                                                <span className="sr-only">Eliminar</span>
                                             </Button>
                                         </TableCell>
                                     </TableRow>

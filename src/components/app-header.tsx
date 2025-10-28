@@ -29,13 +29,24 @@ export default function AppHeader() {
   const pathname = usePathname();
   const pathSegments = pathname.split('/').filter(Boolean);
 
+  const translateSegment = (segment: string) => {
+    const translations: Record<string, string> = {
+        dashboard: "Panel de Control",
+        reports: "Informes",
+        alerts: "Alertas",
+        feedback: "Feedback",
+        repository: "Repositorio"
+    };
+    return translations[segment.toLowerCase()] || segment;
+  }
+
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
       <Sheet>
         <SheetTrigger asChild>
           <Button variant="outline" size="icon" className="shrink-0 md:hidden">
             <Menu className="h-5 w-5" />
-            <span className="sr-only">Toggle navigation menu</span>
+            <span className="sr-only">Alternar menú de navegación</span>
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="flex flex-col p-0 bg-sidebar text-sidebar-foreground">
@@ -48,7 +59,7 @@ export default function AppHeader() {
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link href="/dashboard">Dashboard</Link>
+                <Link href="/dashboard">Panel de Control</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             {pathSegments.slice(1).map((segment, index) => (
@@ -56,11 +67,11 @@ export default function AppHeader() {
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
                   {index === pathSegments.length - 2 ? (
-                     <BreadcrumbPage className="font-normal capitalize">{segment}</BreadcrumbPage>
+                     <BreadcrumbPage className="font-normal capitalize">{translateSegment(segment)}</BreadcrumbPage>
                   ) : (
                     <BreadcrumbLink asChild>
                       <Link href={`/${pathSegments.slice(0, index + 2).join('/')}`} className="capitalize">
-                        {segment}
+                        {translateSegment(segment)}
                       </Link>
                     </BreadcrumbLink>
                   )}
@@ -74,16 +85,16 @@ export default function AppHeader() {
         <DropdownMenuTrigger asChild>
           <Button variant="secondary" size="icon" className="rounded-full">
             <CircleUser className="h-5 w-5" />
-            <span className="sr-only">Toggle user menu</span>
+            <span className="sr-only">Alternar menú de usuario</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuLabel>My Account</DropdownMenuLabel>
+          <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>Settings</DropdownMenuItem>
-          <DropdownMenuItem>Support</DropdownMenuItem>
+          <DropdownMenuItem>Configuración</DropdownMenuItem>
+          <DropdownMenuItem>Soporte</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem asChild><Link href="/">Logout</Link></DropdownMenuItem>
+          <DropdownMenuItem asChild><Link href="/">Cerrar Sesión</Link></DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </header>

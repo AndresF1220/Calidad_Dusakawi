@@ -33,9 +33,9 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
   const userAvatar = PlaceHolderImages.find(p => p.id === 'user-avatar-1');
 
   const menuItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/dashboard/reports', label: 'Reporting', icon: BarChart3 },
-    { href: '/dashboard/alerts', label: 'Alerts', icon: Bell },
+    { href: '/dashboard', label: 'Panel de Control', icon: LayoutDashboard },
+    { href: '/dashboard/reports', label: 'Informes', icon: BarChart3 },
+    { href: '/dashboard/alerts', label: 'Alertas', icon: Bell },
     { href: '/dashboard/feedback', label: 'Feedback', icon: MessageSquareHeart },
     { href: '/dashboard/repository', label: 'Repositorio', icon: Folder },
   ];
@@ -83,9 +83,9 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
           )}
           <div className="flex flex-col text-sm">
             <span className="font-semibold text-sidebar-foreground">
-              Dr. Ana Rodriguez
+              Dra. Ana Rodriguez
             </span>
-            <span className="text-sidebar-foreground/70">Quality Manager</span>
+            <span className="text-sidebar-foreground/70">Gerente de Calidad</span>
           </div>
         </div>
       </SidebarFooter>
