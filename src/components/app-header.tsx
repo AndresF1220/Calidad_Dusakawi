@@ -20,11 +20,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { CircleUser, Menu, Package2, Search } from 'lucide-react';
+import { CircleUser, Menu } from 'lucide-react';
 import AppSidebarNav from './app-sidebar-nav';
 import { Fragment } from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 export default function AppHeader() {
   const pathname = usePathname();
@@ -38,6 +38,7 @@ export default function AppHeader() {
         feedback: "Feedback",
         repository: "Repositorio",
         documents: "Documentos",
+        account: "Cuenta",
     };
     return translations[segment.toLowerCase()] || segment;
   }
@@ -59,11 +60,18 @@ export default function AppHeader() {
       <div className="w-full flex-1">
         <Breadcrumb className="hidden md:flex">
           <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href="/dashboard">Panel de Control</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
+            {pathSegments.length === 0 ? (
+                <BreadcrumbItem>
+                    <BreadcrumbPage className="font-normal">Panel de Control</BreadcrumbPage>
+                </BreadcrumbItem>
+            ) : (
+                 <BreadcrumbItem>
+                    <BreadcrumbLink asChild>
+                        <Link href="/dashboard">Panel de Control</Link>
+                    </BreadcrumbLink>
+                </BreadcrumbItem>
+            )}
+
             {pathSegments.slice(1).map((segment, index) => {
                const href = `/${pathSegments.slice(0, index + 2).join('/')}`;
                const isLast = index === pathSegments.length - 2;
@@ -89,7 +97,10 @@ export default function AppHeader() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="secondary" size="icon" className="rounded-full">
-            <CircleUser className="h-5 w-5" />
+            <Avatar className="h-8 w-8">
+               <AvatarImage src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxwcm9maWxlfGVufDB8fHx8MTc2MTY0MDYwMXww&ixlib=rb-4.1.0&q=80&w=1080" alt="Dra. Ana Rodriguez" />
+               <AvatarFallback>AR</AvatarFallback>
+            </Avatar>
             <span className="sr-only">Alternar menú de usuario</span>
           </Button>
         </DropdownMenuTrigger>

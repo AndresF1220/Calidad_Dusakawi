@@ -34,14 +34,16 @@ body {
     --chart-4: 25 80% 55%;
     --chart-5: 340 75% 55%;
     --radius: 0.5rem;
-    --sidebar-background: 221 65% 32%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 210 40% 98%;
-    --sidebar-primary-foreground: 221 65% 32%;
-    --sidebar-accent: 221 65% 42%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 221 65% 25%;
-    --sidebar-ring: 210 40% 98%;
+    
+    /* Pastel Green Theme for Sidebar */
+    --sidebar-background: 145 63% 90%; /* Light pastel green */
+    --sidebar-foreground: 145 40% 20%; /* Dark green for text */
+    --sidebar-primary: 145 50% 30%; /* Darker green for primary elements */
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 145 63% 82%; /* Lighter green for hover/active */
+    --sidebar-accent-foreground: 145 40% 15%;
+    --sidebar-border: 145 50% 80%;
+    --sidebar-ring: 145 50% 30%;
   }
   .dark {
     --background: 222.2 84% 4.9%;
@@ -68,14 +70,16 @@ body {
     --chart-3: 210 40% 70%;
     --chart-4: 25 80% 65%;
     --chart-5: 340 75% 65%;
-    --sidebar-background: 222.2 84% 4.9%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 210 40% 98%;
-    --sidebar-primary-foreground: 221 65% 32%;
-    --sidebar-accent: 217.2 32.6% 17.5%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217.2 32.6% 17.5%;
-    --sidebar-ring: 210 40% 98%;
+    
+    /* Dark Pastel Green Theme for Sidebar */
+    --sidebar-background: 145 50% 10%;
+    --sidebar-foreground: 145 40% 90%;
+    --sidebar-primary: 145 60% 80%;
+    --sidebar-primary-foreground: 145 50% 10%;
+    --sidebar-accent: 145 50% 15%;
+    --sidebar-accent-foreground: 145 40% 95%;
+    --sidebar-border: 145 50% 20%;
+    --sidebar-ring: 145 60% 80%;
   }
 }
 

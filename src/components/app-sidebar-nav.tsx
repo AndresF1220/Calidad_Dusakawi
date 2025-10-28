@@ -16,8 +16,9 @@ import {
   Bell,
   MessageSquareHeart,
   Folder,
+  User,
 } from 'lucide-react';
-import UserPanelHeader from './user-panel-header';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 
 interface AppSidebarNavProps {
@@ -33,12 +34,13 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
     { href: '/dashboard/alerts', label: 'Alertas', icon: Bell },
     { href: '/dashboard/feedback', label: 'Feedback', icon: MessageSquareHeart },
     { href: '/dashboard/repository', label: 'Repositorio', icon: Folder },
+    { href: '/dashboard/account', label: 'Cuenta', icon: User },
   ];
 
   return (
     <>
       <SidebarHeader>
-        <div className="flex items-center gap-2.5 p-2">
+        <div className="flex items-center gap-2.5 p-4">
           <DusakawiLogo className="h-8 w-8 text-sidebar-primary" />
           <span className="text-lg font-headline font-semibold text-sidebar-foreground">
             Dusakawi
@@ -46,15 +48,24 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
         </div>
       </SidebarHeader>
       
-      <UserPanelHeader />
+      <div className="flex flex-col items-center gap-2 p-4 border-y border-sidebar-border">
+        <Avatar className="h-16 w-16">
+            <AvatarImage src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxwcm9maWxlfGVufDB8fHx8MTc2MTY0MDYwMXww&ixlib=rb-4.1.0&q=80&w=1080" alt="Dra. Ana Rodriguez" />
+            <AvatarFallback>AR</AvatarFallback>
+        </Avatar>
+        <div className="text-center">
+            <h3 className="font-semibold text-base text-sidebar-foreground">Dra. Ana Rodriguez</h3>
+            <p className="text-sm text-sidebar-foreground/70">Dusakawi EPSI</p>
+        </div>
+      </div>
 
-      <SidebarContent>
+      <SidebarContent className="p-4">
         <SidebarMenu>
           {menuItems.map((item) => (
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
                 asChild
-                isActive={pathname === item.href}
+                isActive={pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))}
                 tooltip={item.label}
               >
                 <Link href={item.href}>

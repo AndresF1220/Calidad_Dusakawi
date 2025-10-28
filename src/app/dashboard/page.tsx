@@ -8,13 +8,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { qualityMetrics, overviewChartData, recentReportsData } from "@/lib/data";
+import { qualityMetrics, recentReportsData } from "@/lib/data";
 import { ArrowUp, ArrowDown } from "lucide-react";
-import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Line, BarChart, Bar } from 'recharts';
+import { LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Line } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import AnalyticsTool from "@/components/dashboard/analytics-tool";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
+import { overviewChartData } from "@/lib/data";
+
 
 export default function DashboardPage() {
   return (
