@@ -38,6 +38,9 @@ export default function AppHeader() {
         feedback: "Feedback",
         documentos: "Mapa de procesos",
         account: "Cuenta",
+        'financiera': 'Dirección Administrativa y Financiera',
+        'gestion-riesgo': 'Dirección de Gestión del Riesgo',
+        'intercultural': 'Dirección de Participación Intercultural',
     };
     return translations[segment.toLowerCase()] || segment;
   }
