@@ -16,7 +16,6 @@ import {
   BarChart3,
   Bell,
   MessageSquareHeart,
-  Folder,
   User,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -34,9 +33,10 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
     { href: '/inicio/reports', label: 'Informes', icon: BarChart3 },
     { href: '/inicio/alerts', label: 'Alertas', icon: Bell },
     { href: '/inicio/feedback', label: 'Feedback', icon: MessageSquareHeart },
-    { href: '/inicio/repository', label: 'Repositorio', icon: Folder },
     { href: '/inicio/account', label: 'Cuenta', icon: User },
   ];
+
+  const isInicioActive = pathname === '/inicio' || pathname.startsWith('/inicio/documentos');
 
   return (
     <>
@@ -66,7 +66,7 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
                 asChild
-                isActive={pathname === item.href || (item.href !== '/inicio' && pathname.startsWith(item.href))}
+                isActive={item.href === '/inicio' ? isInicioActive : pathname.startsWith(item.href)}
                 tooltip={item.label}
               >
                 <Link href={item.href}>

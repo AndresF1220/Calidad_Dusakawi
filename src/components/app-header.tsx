@@ -36,8 +36,7 @@ export default function AppHeader() {
         reports: "Informes",
         alerts: "Alertas",
         feedback: "Feedback",
-        repository: "Repositorio",
-        documents: "Documentos",
+        documentos: "Mapa de procesos",
         account: "Cuenta",
     };
     return translations[segment.toLowerCase()] || segment;

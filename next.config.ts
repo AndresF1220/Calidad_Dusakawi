@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -45,6 +46,16 @@ const nextConfig: NextConfig = {
       {
         source: '/panel-de-control',
         destination: '/inicio',
+        permanent: true,
+      },
+      {
+        source: '/repositorio',
+        destination: '/inicio',
+        permanent: true,
+      },
+      {
+        source: '/repositorio/documentos',
+        destination: '/inicio/documentos',
         permanent: true,
       },
     ]
