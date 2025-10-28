@@ -31,7 +31,7 @@ export default function RepositoryAreasPage() {
     <div className="flex flex-col gap-8">
       <div>
         <h1 className="text-3xl font-bold font-headline">Mapa de Procesos</h1>
-        <p className="text-muted-foreground">Seleccione un área para ver su documentación.</p>
+        <p className="text-muted-foreground">Seleccione un área para explorar su información y procesos asociados.</p>
       </div>
 
        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-4">
