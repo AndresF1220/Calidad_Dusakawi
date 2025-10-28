@@ -25,12 +25,14 @@ import { Menu } from 'lucide-react';
 import AppSidebarNav from './app-sidebar-nav';
 import { Fragment } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { getAreaById, getProceso } from '@/data/areasProcesos';
 
 export default function AppHeader() {
   const pathname = usePathname();
   const pathSegments = pathname.split('/').filter(Boolean);
 
-  const translateSegment = (segment: string) => {
+  const translateSegment = (segment: string, allSegments: string[], index: number) => {
+    // Hardcoded translations
     const translations: Record<string, string> = {
         inicio: "Inicio",
         reports: "Informes",
@@ -38,17 +40,29 @@ export default function AppHeader() {
         feedback: "Feedback",
         documentos: "Mapa de procesos",
         account: "Cuenta",
-        'financiera': 'Dirección Administrativa y Financiera',
-        'gestion-riesgo': 'Dirección de Gestión del Riesgo',
-        'intercultural': 'Dirección de Participación Intercultural',
-        'contratacion': 'Contratación',
-        'control-interno': 'Control Interno',
-        'gestion-calidad': 'Gestión de Calidad',
-        'asesoria-juridica': 'Asesoría Jurídica',
-        'sarlaft': 'SARLAFT',
-        'comunicaciones': 'Comunicaciones',
     };
-    return translations[segment.toLowerCase()] || segment;
+
+    if (translations[segment.toLowerCase()]) {
+        return translations[segment.toLowerCase()];
+    }
+
+    // Dynamic translations for areas and procesos
+    if (allSegments[1] === 'documentos' && allSegments.length > 2) {
+      const areaId = allSegments[2];
+      const area = getAreaById(areaId);
+      if (area && segment === area.id) {
+        return area.titulo;
+      }
+      if (allSegments.length > 3) {
+        const procesoId = allSegments[3];
+        const proceso = getProceso(areaId, procesoId);
+        if (proceso && segment === proceso.id) {
+          return proceso.nombre;
+        }
+      }
+    }
+    
+    return segment;
   }
 
   return (
@@ -83,16 +97,18 @@ export default function AppHeader() {
             {pathSegments.slice(1).map((segment, index) => {
                const href = `/${pathSegments.slice(0, index + 2).join('/')}`;
                const isLast = index === pathSegments.length - 2;
+               const translatedSegment = translateSegment(segment, pathSegments, index + 1);
+
               return (
               <Fragment key={segment}>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
                   {isLast ? (
-                     <BreadcrumbPage className="font-normal capitalize">{translateSegment(segment)}</BreadcrumbPage>
+                     <BreadcrumbPage className="font-normal capitalize">{translatedSegment}</BreadcrumbPage>
                   ) : (
                     <BreadcrumbLink asChild>
                       <Link href={href} className="capitalize">
-                        {translateSegment(segment)}
+                        {translatedSegment}
                       </Link>
                     </BreadcrumbLink>
                   )}
