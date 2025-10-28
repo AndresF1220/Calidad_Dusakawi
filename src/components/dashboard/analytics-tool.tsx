@@ -1,6 +1,8 @@
+
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { analyzeQualityDataAction, suggestAdditionalDataAction } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,7 +26,7 @@ function SubmitButton({ children }: { children: React.ReactNode }) {
 
 function AnalysisForm() {
     const { toast } = useToast();
-  const [state, formAction] = useFormState(analyzeQualityDataAction, { message: '', error: undefined });
+  const [state, formAction] = useActionState(analyzeQualityDataAction, { message: '', error: undefined });
 
   useEffect(() => {
     if (state.error) {
@@ -78,7 +80,7 @@ function AnalysisForm() {
 
 function SuggestionForm() {
     const { toast } = useToast();
-  const [state, formAction] = useFormState(suggestAdditionalDataAction, { message: '', error: undefined });
+  const [state, formAction] = useActionState(suggestAdditionalDataAction, { message: '', error: undefined });
   
   useEffect(() => {
     if (state.error) {
