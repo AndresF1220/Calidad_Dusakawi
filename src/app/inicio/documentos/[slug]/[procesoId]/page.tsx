@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, notFound } from 'next/navigation';
 import { getAreaById, getProceso } from '@/data/areasProcesos';
 import {
@@ -33,8 +33,13 @@ import {
   User,
   Target,
   GitBranch,
+  Edit,
+  Save,
+  X
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 type File = { 
     name: string; 
@@ -146,11 +151,33 @@ export default function RepositoryDocumentsPage() {
   const area = getAreaById(areaId);
   const proceso = getProceso(areaId, procesoId);
 
+  // SIMULATE SUPERUSER
+  const isSuperuser = true; 
+
+  const [caracterizacion, setCaracterizacion] = useState(getProcesoCaracterizacion(procesoId));
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+      objetivo: caracterizacion?.objetivo || '',
+      alcance: caracterizacion?.alcance || '',
+      responsable: caracterizacion?.responsable || ''
+  });
+
+  useEffect(() => {
+    // In a real app, you would fetch this from Firestore
+    const fetchedCaracterizacion = getProcesoCaracterizacion(procesoId);
+    setCaracterizacion(fetchedCaracterizacion);
+    setFormData({
+        objetivo: fetchedCaracterizacion?.objetivo || '',
+        alcance: fetchedCaracterizacion?.alcance || '',
+        responsable: fetchedCaracterizacion?.responsable || ''
+    });
+  }, [procesoId]);
+
+
   if (!area || !proceso) {
     notFound();
   }
   
-  const caracterizacion = getProcesoCaracterizacion(procesoId);
   const [folderStructure, setFolderStructure] = useState<Folder[]>(initialFolderStructure);
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(folderStructure[0]);
   const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({'Documentación': true});
@@ -159,11 +186,41 @@ export default function RepositoryDocumentsPage() {
     setOpenFolders(prev => ({...prev, [name]: !prev[name]}));
   }
 
-  // Recursive function to update a folder in the tree
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({...prev, [name]: value}));
+  };
+
+  const handleSave = async () => {
+    console.log('Saving data to Firestore:', {
+      idEntidad: procesoId,
+      tipo: 'proceso',
+      ...formData
+    });
+    // try {
+    //   const docRef = doc(firestore, 'caracterizaciones', procesoId);
+    //   await setDoc(docRef, {
+    //     idEntidad: procesoId,
+    //     tipo: 'proceso',
+    //     ...formData,
+    //     fechaCreacion: serverTimestamp(),
+    //     creadaPor: 'superuser_id', // Replace with actual user ID
+    //     repositorioId: `${areaId}/${procesoId}`,
+    //     editable: true,
+    //   }, { merge: true });
+    //   setCaracterizacion(formData); // Optimistically update UI
+    //   setIsEditing(false);
+    // } catch (error) {
+    //   console.error("Error saving characterization: ", error);
+    // }
+    setCaracterizacion(formData); // Simulate save
+    setIsEditing(false);
+  };
+
+
     const updateFolderInTree = (folders: Folder[], targetFolder: Folder, newFiles: File[]): Folder[] => {
         return folders.map(folder => {
             if (folder.name === targetFolder.name) {
-                // Also update the target folder itself if it's the one we're looking for
                 if (selectedFolder && selectedFolder.name === folder.name) {
                     setSelectedFolder({ ...folder, files: newFiles });
                 }
@@ -191,8 +248,6 @@ export default function RepositoryDocumentsPage() {
             const newFolderStructure = updateFolderInTree(folderStructure, selectedFolder, updatedFiles);
             
             setFolderStructure(newFolderStructure);
-
-            // Reset file input
             event.target.value = '';
         }
     };
@@ -219,8 +274,6 @@ export default function RepositoryDocumentsPage() {
     if (!selectedFolder) {
         return [];
     }
-    // This is a bit tricky since state updates aren't instant.
-    // We need to find the *current* version of the selected folder in the *current* folderStructure
      const findFolder = (folders: Folder[], folderName: string): Folder | undefined => {
         for (const folder of folders) {
             if (folder.name === folderName) return folder;
@@ -245,41 +298,74 @@ export default function RepositoryDocumentsPage() {
       </div>
 
        <Card>
-        <CardHeader>
-          <CardTitle className="font-headline flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Caracterización del Proceso
-          </CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between">
+            <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                <CardTitle className="font-headline">
+                Caracterización del Proceso
+                </CardTitle>
+            </div>
+            {isSuperuser && !isEditing && (
+                <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                <Edit className="h-4 w-4 mr-2"/>
+                Editar
+                </Button>
+            )}
         </CardHeader>
         <CardContent className="space-y-4">
-          {caracterizacion ? (
+          {!caracterizacion && !isEditing ? (
+            <p className="text-muted-foreground text-center py-4">
+              No se ha registrado la caracterización para este elemento.
+            </p>
+          ) : isEditing ? (
+             <div className="space-y-6">
+                <div className="grid gap-2">
+                    <Label htmlFor="objetivo">Objetivo</Label>
+                    <Textarea id="objetivo" name="objetivo" value={formData.objetivo} onChange={handleInputChange} rows={3} />
+                </div>
+                 <div className="grid gap-2">
+                    <Label htmlFor="alcance">Alcance</Label>
+                    <Textarea id="alcance" name="alcance" value={formData.alcance} onChange={handleInputChange} rows={3} />
+                </div>
+                 <div className="grid gap-2">
+                    <Label htmlFor="responsable">Responsable</Label>
+                    <Input id="responsable" name="responsable" value={formData.responsable} onChange={handleInputChange} />
+                </div>
+                <div className="flex justify-end gap-2">
+                    <Button variant="ghost" onClick={() => setIsEditing(false)}>
+                        <X className="h-4 w-4 mr-2"/>
+                        Cancelar
+                    </Button>
+                    <Button onClick={handleSave}>
+                        <Save className="h-4 w-4 mr-2"/>
+                        Guardar
+                    </Button>
+                </div>
+            </div>
+          ) : (
             <div className="grid md:grid-cols-3 gap-6 text-sm">
                <div className="flex items-start gap-3">
                 <Target className="h-5 w-5 mt-1 text-primary" />
                 <div>
                   <h3 className="font-semibold">Objetivo</h3>
-                  <p className="text-muted-foreground">{caracterizacion.objetivo}</p>
+                  <p className="text-muted-foreground">{caracterizacion?.objetivo}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <GitBranch className="h-5 w-5 mt-1 text-primary" />
                 <div>
                   <h3 className="font-semibold">Alcance</h3>
-                  <p className="text-muted-foreground">{caracterizacion.alcance}</p>
+                  <p className="text-muted-foreground">{caracterizacion?.alcance}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <User className="h-5 w-5 mt-1 text-primary" />
                 <div>
                   <h3 className="font-semibold">Responsable</h3>
-                  <p className="text-muted-foreground">{caracterizacion.responsable}</p>
+                  <p className="text-muted-foreground">{caracterizacion?.responsable}</p>
                 </div>
               </div>
             </div>
-          ) : (
-            <p className="text-muted-foreground text-center py-4">
-              No se ha registrado la caracterización para este elemento.
-            </p>
           )}
         </CardContent>
       </Card>
@@ -367,3 +453,4 @@ export default function RepositoryDocumentsPage() {
     </div>
   );
 }
+
