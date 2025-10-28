@@ -1,9 +1,10 @@
 
+
 'use client';
 
 import { useState, useMemo } from 'react';
 import { useParams, notFound } from 'next/navigation';
-import { getProceso } from '@/data/areasProcesos';
+import { getAreaById, getProceso } from '@/data/areasProcesos';
 import {
   Card,
   CardContent,
@@ -28,6 +29,10 @@ import {
   ChevronRight,
   ChevronDown,
   Trash2,
+  FileText,
+  User,
+  Target,
+  GitBranch,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
@@ -44,6 +49,23 @@ type Folder = {
     children: Folder[];
     files: File[];
 };
+
+// Mock data for characterization - replace with Firestore data
+const getProcesoCaracterizacion = (procesoId: string) => {
+    const mockData: any = {
+        'contabilidad': {
+            objetivo: 'Registrar, clasificar y resumir las operaciones financieras para proporcionar información precisa para la toma de decisiones.',
+            alcance: 'Desde el registro de transacciones hasta la preparación de estados financieros y el cumplimiento de obligaciones tributarias.',
+            responsable: 'Jefe de Contabilidad',
+        },
+        'siau': {
+             objetivo: 'Garantizar la atención oportuna y efectiva de las solicitudes, quejas, reclamos y sugerencias de los usuarios.',
+             alcance: 'Cubre todos los canales de atención al usuario y la gestión de respuestas hasta el cierre del caso.',
+             responsable: 'Coordinador(a) SIAU',
+        }
+    };
+    return mockData[procesoId] || null;
+}
 
 const initialFolderStructure: Folder[] = [
   {
@@ -121,12 +143,14 @@ export default function RepositoryDocumentsPage() {
   const areaId = params.slug as string;
   const procesoId = params.procesoId as string;
   
+  const area = getAreaById(areaId);
   const proceso = getProceso(areaId, procesoId);
 
-  if (!proceso) {
+  if (!area || !proceso) {
     notFound();
   }
-
+  
+  const caracterizacion = getProcesoCaracterizacion(procesoId);
   const [folderStructure, setFolderStructure] = useState<Folder[]>(initialFolderStructure);
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(folderStructure[0]);
   const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({'Documentación': true});
@@ -216,10 +240,51 @@ export default function RepositoryDocumentsPage() {
       <div>
         <h1 className="text-3xl font-bold font-headline">{proceso.nombre}</h1>
         <p className="text-muted-foreground">
-          Navegue, suba y descargue archivos de gestión documental.
+          {area.titulo}
         </p>
       </div>
 
+       <Card>
+        <CardHeader>
+          <CardTitle className="font-headline flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Caracterización del Proceso
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {caracterizacion ? (
+            <div className="grid md:grid-cols-3 gap-6 text-sm">
+               <div className="flex items-start gap-3">
+                <Target className="h-5 w-5 mt-1 text-primary" />
+                <div>
+                  <h3 className="font-semibold">Objetivo</h3>
+                  <p className="text-muted-foreground">{caracterizacion.objetivo}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <GitBranch className="h-5 w-5 mt-1 text-primary" />
+                <div>
+                  <h3 className="font-semibold">Alcance</h3>
+                  <p className="text-muted-foreground">{caracterizacion.alcance}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <User className="h-5 w-5 mt-1 text-primary" />
+                <div>
+                  <h3 className="font-semibold">Responsable</h3>
+                  <p className="text-muted-foreground">{caracterizacion.responsable}</p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-4">
+              No se ha registrado la caracterización para este elemento.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+      
+      <h2 className="text-2xl font-bold font-headline -mb-4">Documentación</h2>
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Folder Navigation */}
         <Card className="lg:col-span-1">
@@ -242,7 +307,7 @@ export default function RepositoryDocumentsPage() {
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
                 <CardTitle className="font-headline text-lg">{selectedFolder ? `Archivos en ${selectedFolder.name}` : 'Archivos'}</CardTitle>
-                <CardDescription>Archivos en la carpeta seleccionada.</CardDescription>
+                <CardDescription>Navegue, suba y descargue archivos de gestión documental.</CardDescription>
             </div>
             <div className="flex gap-2">
                 <Input type="file" className="hidden" id="upload-file-input" onChange={handleFileUpload} />
