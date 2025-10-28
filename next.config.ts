@@ -30,6 +30,25 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: '/dashboard',
+        destination: '/inicio',
+        permanent: true,
+      },
+      {
+        source: '/panel',
+        destination: '/inicio',
+        permanent: true,
+      },
+      {
+        source: '/panel-de-control',
+        destination: '/inicio',
+        permanent: true,
+      },
+    ]
+  },
 };
 
 export default nextConfig;
