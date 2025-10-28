@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -35,7 +36,8 @@ export default function AppHeader() {
         reports: "Informes",
         alerts: "Alertas",
         feedback: "Feedback",
-        repository: "Repositorio"
+        repository: "Repositorio",
+        documents: "Documentos",
     };
     return translations[segment.toLowerCase()] || segment;
   }
@@ -62,22 +64,25 @@ export default function AppHeader() {
                 <Link href="/dashboard">Panel de Control</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
-            {pathSegments.slice(1).map((segment, index) => (
+            {pathSegments.slice(1).map((segment, index) => {
+               const href = `/${pathSegments.slice(0, index + 2).join('/')}`;
+               const isLast = index === pathSegments.length - 2;
+              return (
               <Fragment key={segment}>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  {index === pathSegments.length - 2 ? (
+                  {isLast ? (
                      <BreadcrumbPage className="font-normal capitalize">{translateSegment(segment)}</BreadcrumbPage>
                   ) : (
                     <BreadcrumbLink asChild>
-                      <Link href={`/${pathSegments.slice(0, index + 2).join('/')}`} className="capitalize">
+                      <Link href={href} className="capitalize">
                         {translateSegment(segment)}
                       </Link>
                     </BreadcrumbLink>
                   )}
                 </BreadcrumbItem>
               </Fragment>
-            ))}
+            )})}
           </BreadcrumbList>
         </Breadcrumb>
       </div>
