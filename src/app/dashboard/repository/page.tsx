@@ -32,19 +32,19 @@ const folderStructure = [
     name: 'Documentación',
     children: [
       {
-        name: 'Documentos asociados (224)',
+        name: 'Documentos asociados',
         children: [
-          { name: 'Circular (1)', children: [] },
-          { name: 'Formato (54)', children: [] },
-          { name: 'Guía (67)', children: [] },
-          { name: 'Instructivo (5)', children: [] },
-          { name: 'Manual (2)', children: [] },
-          { name: 'Política (7)', children: [] },
-          { name: 'Programa (1)', children: [] },
-          { name: 'Planes (8)', children: [] },
-          { name: 'Plantilla (1)', children: [] },
-          { name: 'Procedimiento (20)', children: [] },
-          { name: 'Protocolo (58)', children: [] },
+          { name: 'Circular', children: [] },
+          { name: 'Formato', children: [] },
+          { name: 'Guía', children: [] },
+          { name: 'Instructivo', children: [] },
+          { name: 'Manual', children: [] },
+          { name: 'Política', children: [] },
+          { name: 'Programa', children: [] },
+          { name: 'Planes', children: [] },
+          { name: 'Plantilla', children: [] },
+          { name: 'Procedimiento', children: [] },
+          { name: 'Protocolo', children: [] },
         ],
       },
     ],
@@ -58,7 +58,7 @@ const sampleFiles = [
 ];
 
 const FolderTree = ({ folders, level = 0 }: { folders: any[], level?: number }) => {
-    const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({'Documentación': true, 'Documentos asociados (224)': true});
+    const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({'Documentación': true, 'Documentos asociados': true});
 
     const toggleFolder = (name: string) => {
         setOpenFolders(prev => ({...prev, [name]: !prev[name]}));
@@ -110,7 +110,7 @@ export default function RepositoryPage() {
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
                 <CardTitle className="font-headline text-lg">Documentos asociados</CardTitle>
-                <CardDescription>224 archivos en esta carpeta</CardDescription>
+                <CardDescription>Archivos en esta carpeta.</CardDescription>
             </div>
             <div className="flex gap-2">
                 <Input type="file" className="hidden" id="upload-file-input" />
