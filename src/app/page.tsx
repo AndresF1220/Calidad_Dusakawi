@@ -31,14 +31,14 @@ const sustainabilityTips = [
     number: '02',
     text: 'Mantener cerradas puertas y ventanas durante el tiempo en el que el aire acondicionado esté en funcionamiento.',
     icon: <DoorClosed className="h-8 w-8" />,
-    position: 'top-1/2 left-0 -translate-x-1/2 -translate-y-full',
+    position: 'top-1/2 left-0 -translate-x-24 -translate-y-1/2',
     color: 'text-pink-500',
   },
   {
     number: '03',
     text: 'Desconecte los electrodomésticos tales como cafeteras y hornos microondas mientras no estén en uso.',
     icon: <Microwave className="h-8 w-8" />,
-    position: 'bottom-0 left-0 -translate-x-1/2 translate-y-4',
+    position: 'bottom-0 left-0 -translate-x-8 translate-y-12',
     color: 'text-purple-500',
   },
   {
@@ -52,14 +52,14 @@ const sustainabilityTips = [
     number: '05',
     text: 'Mantener apagadas las luces, los aires acondicionados y televisores, mientras no hallan pacientes en las habitaciones.',
     icon: <Tv className="h-8 w-8" />,
-    position: 'bottom-0 right-0 translate-x-1/2 translate-y-4',
+    position: 'bottom-0 right-0 translate-x-8 translate-y-12',
     color: 'text-indigo-500',
   },
   {
     number: '06',
     text: 'Mantener las llaves de los grifos cerradas mientras no utilices el agua.',
     icon: <Droplets className="h-8 w-8" />,
-    position: 'top-1/2 right-0 translate-x-1/2 -translate-y-full',
+    position: 'top-1/2 right-0 translate-x-24 -translate-y-1/2',
     color: 'text-cyan-500',
   },
   {
@@ -72,19 +72,19 @@ const sustainabilityTips = [
 ];
 
 const Tip = ({ tip }: { tip: (typeof sustainabilityTips)[0] }) => (
-  <div className={cn('absolute w-40 text-center flex flex-col items-center gap-2', tip.position)}>
+    <div className={cn('absolute w-40 text-center flex flex-col items-center gap-2', tip.position)}>
     <div className="flex items-center justify-center gap-2">
       <div className={cn('text-5xl font-bold', tip.color)}>{tip.number}</div>
-      <div
+    </div>
+    <p className="text-xs text-muted-foreground">{tip.text}</p>
+    <div
         className={cn(
-          'h-16 w-16 rounded-full flex items-center justify-center bg-white shadow-md',
+          'h-16 w-16 rounded-full flex items-center justify-center bg-white shadow-md mt-2',
           tip.color
         )}
       >
         {tip.icon}
       </div>
-    </div>
-    <p className="text-xs text-muted-foreground">{tip.text}</p>
   </div>
 );
 
@@ -105,7 +105,7 @@ export default function LoginPage() {
       <div className="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Infographic Section */}
         <div className="flex flex-col items-center justify-center gap-8 py-10">
-          <div className="relative h-[400px] w-[400px]">
+          <div className="relative h-[500px] w-[500px]">
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="h-64 w-64 rounded-full bg-white shadow-xl flex flex-col items-center justify-center text-center p-4">
                 <span className="text-sm font-light text-muted-foreground">TIPS DE</span>
