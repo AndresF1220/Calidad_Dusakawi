@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Building, ShieldCheck, Users } from "lucide-react";
+import { Building, ShieldCheck, Users, Briefcase, Shield, CheckCircle, Gavel, AlertTriangle, Megaphone } from "lucide-react";
 
 const macroprocesos = [
     {
@@ -23,6 +23,42 @@ const macroprocesos = [
         slug: 'intercultural',
         icon: Users,
         description: 'Participación social e interculturalidad.'
+    },
+    {
+        title: 'Contratación',
+        slug: 'contratacion',
+        icon: Briefcase,
+        description: 'Procesos de contratación y proveedores.'
+    },
+    {
+        title: 'Control Interno',
+        slug: 'control-interno',
+        icon: Shield,
+        description: 'Auditoría y control de procesos.'
+    },
+    {
+        title: 'Gestión de Calidad',
+        slug: 'gestion-calidad',
+        icon: CheckCircle,
+        description: 'Aseguramiento de la calidad y mejora continua.'
+    },
+    {
+        title: 'Asesoría Jurídica',
+        slug: 'asesoria-juridica',
+        icon: Gavel,
+        description: 'Soporte y asesoramiento legal.'
+    },
+    {
+        title: 'SARLAFT',
+        slug: 'sarlaft',
+        icon: AlertTriangle,
+        description: 'Prevención de lavado de activos.'
+    },
+    {
+        title: 'Comunicaciones',
+        slug: 'comunicaciones',
+        icon: Megaphone,
+        description: 'Gestión de comunicaciones internas y externas.'
     }
 ]
 

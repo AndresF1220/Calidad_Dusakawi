@@ -41,6 +41,12 @@ export default function AppHeader() {
         'financiera': 'Dirección Administrativa y Financiera',
         'gestion-riesgo': 'Dirección de Gestión del Riesgo',
         'intercultural': 'Dirección de Participación Intercultural',
+        'contratacion': 'Contratación',
+        'control-interno': 'Control Interno',
+        'gestion-calidad': 'Gestión de Calidad',
+        'asesoria-juridica': 'Asesoría Jurídica',
+        'sarlaft': 'SARLAFT',
+        'comunicaciones': 'Comunicaciones',
     };
     return translations[segment.toLowerCase()] || segment;
   }
