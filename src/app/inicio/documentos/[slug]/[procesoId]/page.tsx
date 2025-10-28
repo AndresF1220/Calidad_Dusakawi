@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -346,21 +345,21 @@ export default function RepositoryDocumentsPage() {
                     <Target className="h-5 w-5 text-primary" />
                     Objetivo
                 </h3>
-                <p className="text-muted-foreground ml-7">{caracterizacion?.objetivo}</p>
+                <p className="text-muted-foreground">{caracterizacion?.objetivo}</p>
               </div>
               <div className="space-y-2">
                 <h3 className="font-semibold flex items-center gap-2">
                     <GitBranch className="h-5 w-5 text-primary" />
                     Alcance
                 </h3>
-                <p className="text-muted-foreground ml-7">{caracterizacion?.alcance}</p>
+                <p className="text-muted-foreground">{caracterizacion?.alcance}</p>
               </div>
               <div className="space-y-2">
                 <h3 className="font-semibold flex items-center gap-2">
                     <User className="h-5 w-5 text-primary" />
                     Responsable
                 </h3>
-                <p className="text-muted-foreground ml-7">{caracterizacion?.responsable}</p>
+                <p className="text-muted-foreground">{caracterizacion?.responsable}</p>
               </div>
             </div>
           )}
