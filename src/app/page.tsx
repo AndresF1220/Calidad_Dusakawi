@@ -127,7 +127,7 @@ export default function LoginPage() {
         {/* Login Form Section */}
         <div className="flex flex-col justify-center">
             <div className="flex justify-end p-4">
-               <Image src="/Imagenes/DSK.png" alt="Logo DSK" width={100} height={50} />
+               <Image src="/Imagenes/DSK .png" alt="Logo DSK" width={100} height={50} />
             </div>
           <Card className="mx-auto w-full max-w-sm border-0 shadow-none bg-transparent">
             <CardContent>
