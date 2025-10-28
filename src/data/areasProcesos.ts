@@ -1,50 +1,76 @@
+
 export const AREAS = [
   {
     id: "financiera",
     titulo: "Dirección Administrativa y Financiera",
     procesos: [
-      { id: "auditoria-cuentas-conciliaciones", nombre: "Auditoría de Cuentas y Conciliaciones (Cuentas Médicas)" },
-      { id: "contabilidad", nombre: "Contabilidad" },
-      { id: "cartera", nombre: "Cartera" },
-      { id: "sistemas-informacion", nombre: "Sistemas de Información" },
-      { id: "gestion-documental", nombre: "Gestión Documental (Archivo)" },
-      { id: "compras-servicios-suministros", nombre: "Compras de Servicios y Suministros (Almacén)" },
-      { id: "radicacion-cuentas", nombre: "Radicación de Cuentas" },
-      { id: "afiliacion-registro", nombre: "Afiliación y Registro (Aseguramiento)" },
-      { id: "talento-humano", nombre: "Talento Humano" },
+      { id: "auditoria-cuentas-conciliaciones", nombre: "Auditoría de Cuentas y Conciliaciones (Cuentas Médicas)", subprocesos: [] },
+      { id: "contabilidad", nombre: "Contabilidad", subprocesos: ["Presupuesto", "Tesorería", "Facturación y Recobro"] },
+      { id: "cartera", nombre: "Cartera", subprocesos: [] },
+      { id: "sistemas-informacion", nombre: "Sistemas de Información", subprocesos: [] },
+      { id: "gestion-documental", nombre: "Gestión Documental (Archivo)", subprocesos: [] },
+      { id: "compras-servicios-suministros", nombre: "Compras de Servicios y Suministros (Almacén)", subprocesos: [] },
+      { id: "radicacion-cuentas", nombre: "Radicación de Cuentas", subprocesos: [] },
+      { id: "afiliacion-registro", nombre: "Afiliación y Registro (Aseguramiento)", subprocesos: [] },
+      { id: "talento-humano", nombre: "Talento Humano", subprocesos: ["Selección y Desarrollo", "Seguridad y Salud en el Trabajo", "Bienestar Laboral", "Compensación y Beneficios"] },
     ],
   },
   {
     id: "gestion-riesgo",
     titulo: "Dirección de Gestión del Riesgo",
     procesos: [
-      { id: "alto-costo", nombre: "Atención Complementaria y Alto Costo" },
-      { id: "baja-complejidad", nombre: "Baja Complejidad" },
-      { id: "autorizaciones", nombre: "Autorizaciones" },
-      { id: "promocion-mantenimiento-salud", nombre: "Promoción y Mantenimiento de la Salud" },
-      { id: "guias-bilingue-pacientes", nombre: "Gestión de Guías Bilingüe de Pacientes" },
+      { id: "alto-costo", nombre: "Atención Complementaria y Alto Costo", subprocesos: ["Alto Costo", "Auditoría Ambulatoria y Pertinencia Médica", "Auditoría Concurrente", "MIPRES"] },
+      { id: "baja-complejidad", nombre: "Baja Complejidad", subprocesos: ["Auditoría a la Atención Primaria"] },
+      { id: "autorizaciones", nombre: "Autorizaciones", subprocesos: ["Referencia y Contrarreferencia"] },
+      { id: "promocion-mantenimiento-salud", nombre: "Promoción y Mantenimiento de la Salud", subprocesos: ["Salud Pública", "Epidemiología"] },
+      { id: "guias-bilingue-pacientes", nombre: "Gestión de Guías Bilingüe de Pacientes", subprocesos: [] },
     ],
   },
   {
     id: "intercultural",
     titulo: "Dirección de Participación Intercultural",
     procesos: [
-      { id: "medicina-tradicional", nombre: "Medicina tradicional" },
-      { id: "concertacion-participacion", nombre: "Concertación y Participación Comunitaria de la Prestación de Servicios" },
-      { id: "defensoria-usuarios", nombre: "Defensoría y Representación de Miembro de la Comunidad (Defensoría de Usuarios)" },
-      { id: "modelo-institucional", nombre: "Modelo Institucional" },
+      { id: "medicina-tradicional", nombre: "Medicina tradicional", subprocesos: [] },
+      { id: "concertacion-participacion", nombre: "Concertación y Participación Comunitaria de la Prestación de Servicios", subprocesos: [] },
+      { id: "defensoria-usuarios", nombre: "Defensoría y Representación de Miembro de la Comunidad (Defensoría de Usuarios)", subprocesos: [] },
+      { id: "modelo-institucional", nombre: "Modelo Institucional", subprocesos: [] },
     ],
+  },
+    {
+    id: "contratacion",
+    titulo: "Contratación",
+    procesos: [],
+  },
+  {
+    id: "control-interno",
+    titulo: "Control Interno",
+    procesos: [],
   },
   {
     id: "gestion-calidad",
     titulo: "Gestión de Calidad",
     procesos: [
-      { id: "siau", nombre: "SIAU" },
-      { id: "auditoria-calidad", nombre: "Auditoría de Calidad" },
-      { id: "interventoria", nombre: "Interventoría" },
-      { id: "reporte-informacion", nombre: "Reporte de Información" },
+      { id: "siau", nombre: "SIAU", subprocesos: [] },
+      { id: "auditoria-calidad", nombre: "Auditoría de Calidad", subprocesos: [] },
+      { id: "interventoria", nombre: "Interventoría", subprocesos: [] },
+      { id: "reporte-informacion", nombre: "Reporte de Información", subprocesos: [] },
     ],
   },
+    {
+    id: "asesoria-juridica",
+    titulo: "Asesoría Jurídica",
+    procesos: [],
+  },
+  {
+    id: "sarlaft",
+    titulo: "SARLAFT",
+    procesos: [],
+  },
+  {
+    id: "comunicaciones",
+    titulo: "Comunicaciones",
+    procesos: [],
+  }
 ];
 
 /**

@@ -4,65 +4,29 @@
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Building, ShieldCheck, Users, Briefcase, Shield, CheckCircle, Gavel, AlertTriangle, Megaphone } from "lucide-react";
+import { AREAS } from '@/data/areasProcesos';
 
-const macroprocesos = [
-    {
-        title: 'Dirección Administrativa y Financiera',
-        slug: 'financiera',
-        icon: Building,
-        description: 'Gestión de recursos y finanzas.'
-    },
-    {
-        title: 'Dirección de Gestión del Riesgo',
-        slug: 'gestion-riesgo',
-        icon: ShieldCheck,
-        description: 'Aseguramiento y gestión de riesgos.'
-    },
-    {
-        title: 'Dirección de Participación Intercultural',
-        slug: 'intercultural',
-        icon: Users,
-        description: 'Participación social e interculturalidad.'
-    },
-    {
-        title: 'Contratación',
-        slug: 'contratacion',
-        icon: Briefcase,
-        description: 'Procesos de contratación y proveedores.'
-    },
-    {
-        title: 'Control Interno',
-        slug: 'control-interno',
-        icon: Shield,
-        description: 'Auditoría y control de procesos.'
-    },
-    {
-        title: 'Gestión de Calidad',
-        slug: 'gestion-calidad',
-        icon: CheckCircle,
-        description: 'Aseguramiento de la calidad y mejora continua.'
-    },
-    {
-        title: 'Asesoría Jurídica',
-        slug: 'asesoria-juridica',
-        icon: Gavel,
-        description: 'Soporte y asesoramiento legal.'
-    },
-    {
-        title: 'SARLAFT',
-        slug: 'sarlaft',
-        icon: AlertTriangle,
-        description: 'Prevención de lavado de activos.'
-    },
-    {
-        title: 'Comunicaciones',
-        slug: 'comunicaciones',
-        icon: Megaphone,
-        description: 'Gestión de comunicaciones internas y externas.'
-    }
-]
+const iconMap: { [key: string]: React.ElementType } = {
+    financiera: Building,
+    'gestion-riesgo': ShieldCheck,
+    intercultural: Users,
+    contratacion: Briefcase,
+    'control-interno': Shield,
+    'gestion-calidad': CheckCircle,
+    'asesoria-juridica': Gavel,
+    sarlaft: AlertTriangle,
+    comunicaciones: Megaphone,
+};
+
 
 export default function RepositoryAreasPage() {
+    const macroprocesos = AREAS.map(area => ({
+        title: area.titulo,
+        slug: area.id,
+        icon: iconMap[area.id] || Building,
+        description: `Gestión de ${area.titulo.toLowerCase()}`
+    }));
+
   return (
     <div className="flex flex-col gap-8">
       <div>
