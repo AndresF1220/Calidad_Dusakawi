@@ -32,7 +32,7 @@ const hardcodedTranslations: Record<string, string> = {
     reports: "Informes",
     alerts: "Alertas",
     feedback: "Feedback",
-    documentos: "Mapa de procesos",
+    documentos: "Mapa de Procesos",
     account: "Cuenta",
 };
 
@@ -122,4 +122,3 @@ export default function AppHeader() {
     </header>
   );
 }
-
