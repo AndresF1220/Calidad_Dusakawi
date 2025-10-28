@@ -25,10 +25,17 @@ import {
   File as FileIcon,
   ChevronRight,
   ChevronDown,
+  Trash2,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
-type File = { name: string; modified: string; size: string };
+type File = { 
+    name: string; 
+    modified: string; 
+    size: string;
+    url: string; 
+    rawFile: globalThis.File;
+};
 
 type Folder = {
     name: string;
@@ -43,7 +50,7 @@ const initialFolderStructure: Folder[] = [
     children: [
         { name: 'Circular', children: [], files: [] },
         { name: 'Formato', children: [], files: [
-            { name: 'Formato_Inscripcion.pdf', modified: '2024-05-15', size: '300 KB' },
+            { name: 'Formato_Inscripcion.pdf', modified: '2024-05-15', size: '300 KB', url: '', rawFile: new File([], 'Formato_Inscripcion.pdf') },
         ]},
         { name: 'Guía', children: [], files: [] },
         { name: 'Instructivo', children: [], files: [] },
@@ -54,15 +61,10 @@ const initialFolderStructure: Folder[] = [
         { name: 'Plantilla', children: [], files: [] },
         { name: 'Procedimiento', children: [], files: [] },
         { name: 'Protocolo', children: [], files: [
-            { name: 'Protocolo_Seguridad.docx', modified: '2024-05-09', size: '1.1 MB' },
+            { name: 'Protocolo_Seguridad.docx', modified: '2024-05-09', size: '1.1 MB', url: '', rawFile: new File([], 'Protocolo_Seguridad.docx') },
         ]},
     ],
   },
-];
-
-const sampleFiles = [
-    { name: 'Reporte_Q1.pdf', modified: '2024-05-10', size: '2.3 MB' },
-    { name: 'Guia_de_Usuario.pdf', modified: '2024-05-08', size: '5.8 MB' },
 ];
 
 
@@ -96,7 +98,9 @@ const FolderTree = ({
                             </span>
                         )}
                         <FolderIcon className={`h-5 w-5 text-amber-500 ${folder.children.length === 0 ? 'ml-5' : ''}`} />
-                        <span className="text-sm font-medium">{folder.name}</span>
+                        <span className="text-sm font-medium">
+                            {folder.name} {folder.files.length > 0 && `(${folder.files.length})`}
+                        </span>
                     </div>
                     {openFolders[folder.name] && folder.children.length > 0 && (
                         <FolderTree 
@@ -123,62 +127,82 @@ export default function RepositoryPage() {
     setOpenFolders(prev => ({...prev, [name]: !prev[name]}));
   }
 
-  const findAndUploadToFile = (folders: Folder[], folderName: string, file: File): Folder[] => {
-    return folders.map(folder => {
-      if (folder.name === folderName) {
-        return { ...folder, files: [...folder.files, file] };
-      }
-      if (folder.children.length > 0) {
-        return { ...folder, children: findAndUploadToFile(folder.children, folderName, file) };
-      }
-      return folder;
-    });
-  };
+  // Recursive function to update a folder in the tree
+    const updateFolderInTree = (folders: Folder[], targetFolder: Folder, newFiles: File[]): Folder[] => {
+        return folders.map(folder => {
+            if (folder.name === targetFolder.name) {
+                return { ...folder, files: newFiles };
+            }
+            if (folder.children.length > 0) {
+                return { ...folder, children: updateFolderInTree(folder.children, targetFolder, newFiles) };
+            }
+            return folder;
+        });
+    };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files.length > 0 && selectedFolder) {
-      const file = event.target.files[0];
-      const newFile: File = {
-        name: file.name,
-        modified: new Date().toISOString().split('T')[0],
-        size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
-      };
-      
-      const newFolderStructure = findAndUploadToFile(folderStructure, selectedFolder.name, newFile);
-      setFolderStructure(newFolderStructure);
+    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (event.target.files && event.target.files.length > 0 && selectedFolder) {
+            const file = event.target.files[0];
+            const newFile: File = {
+                name: file.name,
+                modified: new Date().toISOString().split('T')[0],
+                size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
+                url: URL.createObjectURL(file),
+                rawFile: file,
+            };
 
-      // We need to update the selected folder state as well to reflect the change
-      const findUpdatedFolder = (folders: Folder[]): Folder | null => {
-          for (const folder of folders) {
-              if (folder.name === selectedFolder.name) return folder;
-              if (folder.children) {
-                  const found = findUpdatedFolder(folder.children);
-                  if (found) return found;
-              }
-          }
-          return null;
-      }
-      setSelectedFolder(findUpdatedFolder(newFolderStructure));
+            const updatedFiles = [...selectedFolder.files, newFile];
+            const newFolderStructure = updateFolderInTree(folderStructure, selectedFolder, updatedFiles);
+            
+            setFolderStructure(newFolderStructure);
 
-      // Reset file input
-      event.target.value = '';
-    }
-  };
+            // Update the selected folder state to reflect the new file
+            const updatedSelectedFolder = { ...selectedFolder, files: updatedFiles };
+            setSelectedFolder(updatedSelectedFolder);
+
+            // Reset file input
+            event.target.value = '';
+        }
+    };
+    
+    const handleFileDelete = (fileToDelete: File) => {
+        if (!selectedFolder) return;
+
+        const updatedFiles = selectedFolder.files.filter(file => file.name !== fileToDelete.name);
+        const newFolderStructure = updateFolderInTree(folderStructure, selectedFolder, updatedFiles);
+
+        setFolderStructure(newFolderStructure);
+        
+        const updatedSelectedFolder = { ...selectedFolder, files: updatedFiles };
+        setSelectedFolder(updatedSelectedFolder);
+    };
+
+    const handleFileDownload = (file: File) => {
+        const link = document.createElement('a');
+        link.href = file.url;
+        link.download = file.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
   const filesToShow = useMemo(() => {
     if (!selectedFolder) {
-        // Show root files if no folder is selected
-        return sampleFiles;
+        return [];
     }
-    const findFolder = (folders: Folder[]): Folder | undefined => {
+    // This is a bit tricky since state updates aren't instant.
+    // We need to find the *current* version of the selected folder in the *current* folderStructure
+     const findFolder = (folders: Folder[], folderName: string): Folder | undefined => {
         for (const folder of folders) {
-            if (folder.name === selectedFolder.name) return folder;
-            const found = findFolder(folder.children);
-            if (found) return found;
+            if (folder.name === folderName) return folder;
+            if (folder.children) {
+                const found = findFolder(folder.children, folderName);
+                if (found) return found;
+            }
         }
     };
-    const folder = findFolder(folderStructure);
-    return folder ? folder.files : [];
+    const currentFolderState = findFolder(folderStructure, selectedFolder.name);
+    return currentFolderState ? currentFolderState.files : [];
 
   }, [selectedFolder, folderStructure]);
 
@@ -240,14 +264,20 @@ export default function RepositoryPage() {
                   <TableRow key={file.name}>
                     <TableCell className="font-medium flex items-center gap-2">
                         <FileIcon className="h-5 w-5 text-gray-400" />
-                        {file.name}
+                        <a href={file.url} target="_blank" rel="noopener noreferrer" className="hover:underline cursor-pointer">
+                            {file.name}
+                        </a>
                     </TableCell>
                     <TableCell>{file.modified}</TableCell>
                     <TableCell>{file.size}</TableCell>
                     <TableCell className="text-right">
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" onClick={() => handleFileDownload(file)}>
                             <Download className="h-4 w-4" />
                             <span className="sr-only">Descargar</span>
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleFileDelete(file)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                            <span className="sr-only">Eliminar</span>
                         </Button>
                     </TableCell>
                   </TableRow>
