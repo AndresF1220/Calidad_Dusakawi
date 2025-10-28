@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -28,51 +28,85 @@ import {
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
-const folderStructure = [
+type File = { name: string; modified: string; size: string };
+
+type Folder = {
+    name: string;
+    children: Folder[];
+    files: File[];
+};
+
+const initialFolderStructure: Folder[] = [
   {
     name: 'Documentación',
+    files: [],
     children: [
-      { name: 'Circular', children: [] },
-      { name: 'Formato', children: [] },
-      { name: 'Guía', children: [] },
-      { name: 'Instructivo', children: [] },
-      { name: 'Manual', children: [] },
-      { name: 'Política', children: [] },
-      { name: 'Programa', children: [] },
-      { name: 'Planes', children: [] },
-      { name: 'Plantilla', children: [] },
-      { name: 'Procedimiento', children: [] },
-      { name: 'Protocolo', children: [] },
+        { name: 'Circular', children: [], files: [] },
+        { name: 'Formato', children: [], files: [
+            { name: 'Formato_Inscripcion.pdf', modified: '2024-05-15', size: '300 KB' },
+        ]},
+        { name: 'Guía', children: [], files: [] },
+        { name: 'Instructivo', children: [], files: [] },
+        { name: 'Manual', children: [], files: [] },
+        { name: 'Política', children: [], files: [] },
+        { name: 'Programa', children: [], files: [] },
+        { name: 'Planes', children: [], files: [] },
+        { name: 'Plantilla', children: [], files: [] },
+        { name: 'Procedimiento', children: [], files: [] },
+        { name: 'Protocolo', children: [], files: [
+            { name: 'Protocolo_Seguridad.docx', modified: '2024-05-09', size: '1.1 MB' },
+        ]},
     ],
   },
 ];
 
 const sampleFiles = [
     { name: 'Reporte_Q1.pdf', modified: '2024-05-10', size: '2.3 MB' },
-    { name: 'Protocolo_Seguridad.docx', modified: '2024-05-09', size: '1.1 MB' },
     { name: 'Guia_de_Usuario.pdf', modified: '2024-05-08', size: '5.8 MB' },
 ];
 
-const FolderTree = ({ folders, level = 0 }: { folders: any[], level?: number }) => {
-    const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({'Documentación': true});
 
-    const toggleFolder = (name: string) => {
-        setOpenFolders(prev => ({...prev, [name]: !prev[name]}));
-    }
-
+const FolderTree = ({ 
+    folders, 
+    level = 0,
+    onSelectFolder,
+    selectedFolder,
+    openFolders,
+    onToggleFolder,
+}: { 
+    folders: Folder[], 
+    level?: number, 
+    onSelectFolder: (folder: Folder) => void,
+    selectedFolder: Folder | null,
+    openFolders: Record<string, boolean>,
+    onToggleFolder: (name: string) => void,
+}) => {
+    
     return (
         <div>
             {folders.map(folder => (
                 <div key={folder.name} style={{ marginLeft: `${level * 16}px`}}>
-                    <div className="flex items-center gap-2 cursor-pointer py-1" onClick={() => toggleFolder(folder.name)}>
+                    <div 
+                        className={`flex items-center gap-2 cursor-pointer py-1 rounded-md px-2 ${selectedFolder?.name === folder.name ? 'bg-muted' : ''}`} 
+                        onClick={() => onSelectFolder(folder)}
+                    >
                         {folder.children.length > 0 && (
-                            openFolders[folder.name] ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />
+                             <span onClick={(e) => { e.stopPropagation(); onToggleFolder(folder.name); }}>
+                                {openFolders[folder.name] ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                            </span>
                         )}
-                        <FolderIcon className="h-5 w-5 text-amber-500" />
+                        <FolderIcon className={`h-5 w-5 text-amber-500 ${folder.children.length === 0 ? 'ml-5' : ''}`} />
                         <span className="text-sm font-medium">{folder.name}</span>
                     </div>
                     {openFolders[folder.name] && folder.children.length > 0 && (
-                        <FolderTree folders={folder.children} level={level + 1} />
+                        <FolderTree 
+                            folders={folder.children} 
+                            level={level + 1} 
+                            onSelectFolder={onSelectFolder} 
+                            selectedFolder={selectedFolder}
+                            openFolders={openFolders}
+                            onToggleFolder={onToggleFolder}
+                        />
                     )}
                 </div>
             ))}
@@ -81,6 +115,73 @@ const FolderTree = ({ folders, level = 0 }: { folders: any[], level?: number }) 
 }
 
 export default function RepositoryPage() {
+  const [folderStructure, setFolderStructure] = useState<Folder[]>(initialFolderStructure);
+  const [selectedFolder, setSelectedFolder] = useState<Folder | null>(folderStructure[0]);
+  const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({'Documentación': true});
+
+  const handleToggleFolder = (name: string) => {
+    setOpenFolders(prev => ({...prev, [name]: !prev[name]}));
+  }
+
+  const findAndUploadToFile = (folders: Folder[], folderName: string, file: File): Folder[] => {
+    return folders.map(folder => {
+      if (folder.name === folderName) {
+        return { ...folder, files: [...folder.files, file] };
+      }
+      if (folder.children.length > 0) {
+        return { ...folder, children: findAndUploadToFile(folder.children, folderName, file) };
+      }
+      return folder;
+    });
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0 && selectedFolder) {
+      const file = event.target.files[0];
+      const newFile: File = {
+        name: file.name,
+        modified: new Date().toISOString().split('T')[0],
+        size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
+      };
+      
+      const newFolderStructure = findAndUploadToFile(folderStructure, selectedFolder.name, newFile);
+      setFolderStructure(newFolderStructure);
+
+      // We need to update the selected folder state as well to reflect the change
+      const findUpdatedFolder = (folders: Folder[]): Folder | null => {
+          for (const folder of folders) {
+              if (folder.name === selectedFolder.name) return folder;
+              if (folder.children) {
+                  const found = findUpdatedFolder(folder.children);
+                  if (found) return found;
+              }
+          }
+          return null;
+      }
+      setSelectedFolder(findUpdatedFolder(newFolderStructure));
+
+      // Reset file input
+      event.target.value = '';
+    }
+  };
+
+  const filesToShow = useMemo(() => {
+    if (!selectedFolder) {
+        // Show root files if no folder is selected
+        return sampleFiles;
+    }
+    const findFolder = (folders: Folder[]): Folder | undefined => {
+        for (const folder of folders) {
+            if (folder.name === selectedFolder.name) return folder;
+            const found = findFolder(folder.children);
+            if (found) return found;
+        }
+    };
+    const folder = findFolder(folderStructure);
+    return folder ? folder.files : [];
+
+  }, [selectedFolder, folderStructure]);
+
   return (
     <div className="flex flex-col gap-8">
       <div>
@@ -97,7 +198,13 @@ export default function RepositoryPage() {
             <CardTitle className="font-headline text-lg">Carpetas</CardTitle>
           </CardHeader>
           <CardContent>
-            <FolderTree folders={folderStructure} />
+            <FolderTree 
+                folders={folderStructure} 
+                onSelectFolder={setSelectedFolder} 
+                selectedFolder={selectedFolder}
+                openFolders={openFolders}
+                onToggleFolder={handleToggleFolder}
+            />
           </CardContent>
         </Card>
 
@@ -105,13 +212,13 @@ export default function RepositoryPage() {
         <Card className="lg:col-span-3">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-                <CardTitle className="font-headline text-lg">Archivos</CardTitle>
+                <CardTitle className="font-headline text-lg">{selectedFolder ? `Archivos en ${selectedFolder.name}` : 'Archivos'}</CardTitle>
                 <CardDescription>Archivos en la carpeta seleccionada.</CardDescription>
             </div>
             <div className="flex gap-2">
-                <Input type="file" className="hidden" id="upload-file-input" />
-                <Button asChild variant="outline">
-                    <label htmlFor="upload-file-input" className="cursor-pointer">
+                <Input type="file" className="hidden" id="upload-file-input" onChange={handleFileUpload} />
+                <Button asChild variant="outline" disabled={!selectedFolder}>
+                    <label htmlFor="upload-file-input" className={`cursor-pointer ${!selectedFolder ? 'cursor-not-allowed opacity-50' : ''}`}>
                         <Upload className="mr-2 h-4 w-4" />
                         Subir Archivo
                     </label>
@@ -129,7 +236,7 @@ export default function RepositoryPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sampleFiles.map(file => (
+                {filesToShow.map(file => (
                   <TableRow key={file.name}>
                     <TableCell className="font-medium flex items-center gap-2">
                         <FileIcon className="h-5 w-5 text-gray-400" />
@@ -145,6 +252,13 @@ export default function RepositoryPage() {
                     </TableCell>
                   </TableRow>
                 ))}
+                 {filesToShow.length === 0 && (
+                    <TableRow>
+                        <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                            No hay archivos en esta carpeta.
+                        </TableCell>
+                    </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>
