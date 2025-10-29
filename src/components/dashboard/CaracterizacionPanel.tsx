@@ -55,7 +55,10 @@ export default function CaracterizacionPanel({
   });
 
   useEffect(() => {
-    if (!firestore) return;
+    if (!firestore) {
+      setLoading(true); // Keep loading if firestore is not available
+      return;
+    }
 
     const docId = `${tipo}-${idEntidad.replace(/:/g, '_')}`;
     const docRef = doc(firestore, 'caracterizaciones', docId);
@@ -67,6 +70,7 @@ export default function CaracterizacionPanel({
           const data = docSnap.data() as CaracterizacionData;
           setCaracterizacion(data);
           setFormData(data);
+          setLoading(false);
         } else {
           // Document doesn't exist, create it with default empty values
           const newCaracterizacion = {
@@ -80,11 +84,17 @@ export default function CaracterizacionPanel({
             repositorioId: idEntidad,
             editable: true,
           };
-          await setDoc(docRef, newCaracterizacion);
-          setCaracterizacion(newCaracterizacion);
-          setFormData(newCaracterizacion);
+          try {
+            await setDoc(docRef, newCaracterizacion);
+            // The listener will pick up the new document, but we can set state here to be faster
+            setCaracterizacion(newCaracterizacion);
+            setFormData(newCaracterizacion);
+          } catch (error) {
+             console.error("Error creating caracterizacion:", error);
+          } finally {
+            setLoading(false); // Ensure loading is false after creation attempt
+          }
         }
-        setLoading(false);
       },
       (error) => {
         console.error('Error fetching caracterizacion:', error);
@@ -133,7 +143,7 @@ export default function CaracterizacionPanel({
     }
   };
   
-  const canEdit = isSuperuser && caracterizacion?.editable;
+  const canEdit = isSuperuser && (caracterizacion ? caracterizacion.editable : true);
 
   return (
     <Card>
@@ -149,6 +159,7 @@ export default function CaracterizacionPanel({
             variant="outline"
             size="sm"
             onClick={() => setIsEditing(true)}
+            disabled={loading}
           >
             <Edit className="h-4 w-4 mr-2" />
             Editar
@@ -160,10 +171,6 @@ export default function CaracterizacionPanel({
            <div className="flex justify-center items-center h-40">
                 <Loader className="h-8 w-8 animate-spin text-primary" />
            </div>
-        ) : !caracterizacion && !isEditing ? (
-          <p className="text-muted-foreground text-center py-4">
-            No se ha registrado la caracterización para este elemento.
-          </p>
         ) : isEditing ? (
           <div className="space-y-6">
             <div className="grid gap-2">
