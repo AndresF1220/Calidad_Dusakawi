@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { Textarea } from '../ui/textarea';
 
 interface AddEntityFormProps {
   entityType: 'area' | 'process' | 'subprocess';
@@ -51,14 +52,14 @@ export function AddEntityForm({
   const formRef = useRef<HTMLFormElement>(null);
   
   const typeLabels = {
-    area: { title: 'Área', description: 'un nuevo macroproceso en el mapa.', field: 'Nombre del Área' },
-    process: { title: 'Proceso', description: 'un proceso al área actual.', field: 'Nombre del Proceso' },
-    subprocess: { title: 'Subproceso', description: 'un subproceso al proceso actual.', field: 'Nombre del Subproceso' },
+    area: { title: 'Área', description: 'un nuevo macroproceso en el mapa.' },
+    process: { title: 'Proceso', description: 'un proceso al área actual.' },
+    subprocess: { title: 'Subproceso', description: 'un subproceso al proceso actual.' },
   };
 
   const labels = typeLabels[entityType];
   const title = `Crear ${labels.title}`;
-  const description = `Crear ${labels.description}`;
+  const description = `Complete la información para crear ${labels.description}`;
 
   useEffect(() => {
     if (state.message && !state.error) {
@@ -88,29 +89,33 @@ export function AddEntityForm({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[625px]">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <form action={formAction} ref={formRef}>
             <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">
-                        Nombre
-                    </Label>
-                    <Input 
-                        id="name" 
-                        name="name" 
-                        className="col-span-3" 
-                        placeholder={labels.field} 
-                        required 
-                        minLength={3}
-                     />
-                    <input type="hidden" name="type" value={entityType} />
-                    {parentId && <input type="hidden" name="parentId" value={parentId} />}
-                    {grandParentId && <input type="hidden" name="grandParentId" value={grandParentId} />}
+                <div className="grid gap-2">
+                    <Label htmlFor="name">Nombre</Label>
+                    <Input id="name" name="name" placeholder={`Nombre del ${labels.title}`} required minLength={3} />
                 </div>
+                 <div className="grid gap-2">
+                    <Label htmlFor="objetivo">Objetivo</Label>
+                    <Textarea id="objetivo" name="objetivo" placeholder="Defina el propósito fundamental..." rows={3} required minLength={10}/>
+                </div>
+                 <div className="grid gap-2">
+                    <Label htmlFor="alcance">Alcance</Label>
+                    <Textarea id="alcance" name="alcance" placeholder="Describa los límites y el ámbito de aplicación..." rows={3} required minLength={10} />
+                </div>
+                <div className="grid gap-2">
+                    <Label htmlFor="responsable">Responsable</Label>
+                    <Input id="responsable" name="responsable" placeholder="Cargo o rol responsable" required />
+                </div>
+
+                <input type="hidden" name="type" value={entityType} />
+                {parentId && <input type="hidden" name="parentId" value={parentId} />}
+                {grandParentId && <input type="hidden" name="grandParentId" value={grandParentId} />}
             </div>
             <DialogFooter>
                 <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>

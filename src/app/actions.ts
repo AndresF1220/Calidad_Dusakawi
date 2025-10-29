@@ -10,6 +10,9 @@ import { slugify } from '@/lib/slug';
 
 const createSchema = z.object({
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
+  objetivo: z.string().min(10, 'El objetivo debe tener al menos 10 caracteres.'),
+  alcance: z.string().min(10, 'El alcance debe tener al menos 10 caracteres.'),
+  responsable: z.string().min(1, 'El responsable es requerido.'),
   type: z.enum(['area', 'process', 'subprocess']),
   parentId: z.string().optional(),
   grandParentId: z.string().optional(),
@@ -21,6 +24,9 @@ export async function createEntityAction(
 ): Promise<{ message: string; error?: string }> {
     const validatedFields = createSchema.safeParse({
         name: formData.get('name'),
+        objetivo: formData.get('objetivo'),
+        alcance: formData.get('alcance'),
+        responsable: formData.get('responsable'),
         type: formData.get('type'),
         parentId: formData.get('parentId'),
         grandParentId: formData.get('grandParentId'),
@@ -28,33 +34,52 @@ export async function createEntityAction(
 
     if (!validatedFields.success) {
         const errors = validatedFields.error.flatten().fieldErrors;
-        return { message: 'Validation failed', error: errors.name?.join(', ') || 'Error de validación.' };
+        const errorMessages = Object.values(errors).map(err => err?.join(', ')).filter(Boolean);
+        return { message: 'Validation failed', error: errorMessages.join(' ') || 'Error de validación.' };
     }
 
-    const { name, type, parentId, grandParentId } = validatedFields.data;
+    const { name, objetivo, alcance, responsable, type, parentId, grandParentId } = validatedFields.data;
 
     try {
-        const data: any = {
+        const batch = writeBatch(db);
+
+        const entityData: any = {
             nombre: name,
             slug: slugify(name),
             createdAt: serverTimestamp(),
         };
         
         let revalidationPath = '/inicio/documentos';
+        let newEntityRef;
+        let caracterizacionId = '';
 
         if (type === 'area') {
-            await addDoc(collection(db, 'areas'), data);
-
+            newEntityRef = doc(collection(db, 'areas'));
+            batch.set(newEntityRef, entityData);
+            caracterizacionId = `area-${newEntityRef.id}`;
         } else if (type === 'process' && parentId) {
-            await addDoc(collection(db, `areas/${parentId}/procesos`), data);
+            newEntityRef = doc(collection(db, `areas/${parentId}/procesos`));
+            batch.set(newEntityRef, entityData);
+            caracterizacionId = `process-${newEntityRef.id}`;
             revalidationPath = `/inicio/documentos/area/${parentId}`;
-
         } else if (type === 'subprocess' && parentId && grandParentId) {
-            await addDoc(collection(db, `areas/${grandParentId}/procesos/${parentId}/subprocesos`), data);
+            newEntityRef = doc(collection(db, `areas/${grandParentId}/procesos/${parentId}/subprocesos`));
+            batch.set(newEntityRef, entityData);
+            caracterizacionId = `subprocess-${grandParentId}:${parentId}:${newEntityRef.id}`;
             revalidationPath = `/inicio/documentos/area/${grandParentId}/proceso/${parentId}`;
         } else {
             return { message: 'Error', error: 'Parámetros inválidos para la creación.' };
         }
+
+        const caracterizacionRef = doc(db, 'caracterizaciones', caracterizacionId);
+        batch.set(caracterizacionRef, {
+            objetivo,
+            alcance,
+            responsable,
+            fechaActualizacion: serverTimestamp(),
+        });
+        
+        await batch.commit();
         
         revalidatePath(revalidationPath);
         return { message: `Creado correctamente.` };
@@ -182,8 +207,8 @@ export async function updateEntityAction(
 
         // 2. Update caracterizacion
         let caracterizacionId = `${entityType}-${entityId}`;
-        if(entityType === 'subproceso' && grandParentId && parentId) {
-           caracterizacionId = `${entityType}-${grandParentId}:${parentId}:${entityId}`;
+        if(entityType === 'subprocess' && grandParentId && parentId) {
+           caracterizacionId = `subprocess-${grandParentId}:${parentId}:${entityId}`;
         }
 
         const caracterizacionRef = doc(db, 'caracterizaciones', caracterizacionId);
