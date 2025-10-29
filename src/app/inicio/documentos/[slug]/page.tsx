@@ -5,12 +5,12 @@ import { useParams, notFound } from 'next/navigation';
 import { getAreaById } from '@/data/areasProcesos';
 import CaracterizacionPanel from '@/components/dashboard/CaracterizacionPanel';
 import ProcesoCards from '@/components/dashboard/ProcesoCards';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import RepoEmbed from '@/components/dashboard/RepoEmbed';
 
-export default function ProcesosDeAreaPage() {
+export default function AreaPage() {
   const params = useParams();
-  const slug = params.slug as string;
-  const area = getAreaById(slug);
+  const areaId = params.slug as string;
+  const area = getAreaById(areaId);
 
   if (!area) {
     notFound();
@@ -22,12 +22,14 @@ export default function ProcesosDeAreaPage() {
         <h1 className="text-3xl font-bold font-headline">{area.titulo}</h1>
       </div>
 
-      <CaracterizacionPanel idEntidad={slug} tipo="area" />
+      <CaracterizacionPanel idEntidad={areaId} tipo="area" />
 
        <div className="flex flex-col gap-4">
           <h2 className="text-2xl font-bold font-headline">Procesos</h2>
-          <ProcesoCards areaId={slug} />
+          <ProcesoCards areaId={areaId} />
        </div>
+       
+       <RepoEmbed areaId={areaId} />
     </div>
   );
 }

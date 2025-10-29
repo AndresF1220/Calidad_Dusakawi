@@ -46,7 +46,6 @@ export default function AppHeader() {
     const isLast = index === pathSegments.length - 1;
     let label = hardcodedTranslations[segment] || segment;
 
-    // Handle dynamic segments for areas and procesos
     if (pathSegments[1] === 'documentos' && index > 1) { // after /inicio/documentos
       const areaId = pathSegments[2];
       const area = getAreaById(areaId);
@@ -58,6 +57,17 @@ export default function AppHeader() {
         if (proceso) {
             label = proceso.nombre;
         }
+      } else if (index === 4 && area) {
+          const procesoId = pathSegments[3];
+          const proceso = getProceso(areaId, procesoId);
+          const subprocesoId = pathSegments[4];
+          // Assuming subprocesos are just strings, find the matching one
+          const subproceso = proceso?.subprocesos?.find(s => s.toLowerCase().replace(/ /g, '-') === subprocesoId);
+          if (subproceso) {
+            label = subproceso;
+          } else {
+              label = subprocesoId.replace(/-/g, ' ');
+          }
       }
     }
     
