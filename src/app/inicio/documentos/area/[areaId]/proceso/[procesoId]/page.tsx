@@ -12,6 +12,7 @@ import { useState } from 'react';
 import { AddEntityForm } from '@/components/dashboard/AddEntityForm';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
+import { EntityOptionsDropdown } from '@/components/dashboard/EntityOptionsDropdown';
 
 export default function ProcesoIdPage() {
   const params = useParams();
@@ -22,8 +23,22 @@ export default function ProcesoIdPage() {
   const { area, isLoading: isLoadingArea } = useArea(areaId);
   const { proceso, isLoading: isLoadingProceso } = useProceso(areaId, procesoId);
   
-  // Wait for params and data loading
-  const isLoading = !areaId || !procesoId || isLoadingArea || isLoadingProceso;
+  // If params are not yet available, show a loading state.
+  if (!areaId || !procesoId) {
+    return (
+        <div className="flex flex-col gap-8">
+            <Skeleton className="h-10 w-1/2" />
+            <Skeleton className="h-40 w-full" />
+            <Skeleton className="h-10 w-1/4" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <Skeleton className="h-48 w-full" />
+                <Skeleton className="h-48 w-full" />
+            </div>
+        </div>
+    );
+  }
+  
+  const isLoading = isLoadingArea || isLoadingProceso;
 
   if (isLoading) {
     return (
@@ -59,18 +74,27 @@ export default function ProcesoIdPage() {
     <div className="flex flex-col gap-8">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold font-headline">{proceso.nombre}</h1>
-        <AddEntityForm 
-            entityType="subprocess"
-            parentId={proceso.id}
-            grandParentId={area.id}
-            isOpen={isAdding}
-            onOpenChange={setIsAdding}
-        >
-            <Button onClick={() => setIsAdding(true)}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Agregar Subproceso
-            </Button>
-        </AddEntityForm>
+        <div className="flex items-center gap-2">
+            <AddEntityForm 
+                entityType="subprocess"
+                parentId={proceso.id}
+                grandParentId={area.id}
+                isOpen={isAdding}
+                onOpenChange={setIsAdding}
+            >
+                <Button>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Agregar Subproceso
+                </Button>
+            </AddEntityForm>
+             <EntityOptionsDropdown
+                entityId={proceso.id}
+                entityType="process"
+                entityName={proceso.nombre}
+                parentId={area.id}
+                redirectOnDelete={`/inicio/documentos/area/${area.id}`}
+            />
+        </div>
       </div>
 
       <CaracterizacionPanel idEntidad={`${proceso.id}`} tipo="proceso" />

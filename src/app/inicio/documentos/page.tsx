@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { AddEntityForm } from '@/components/dashboard/AddEntityForm';
 import { useToast } from '@/hooks/use-toast';
 import { seedProcessMapAction } from '@/app/actions';
+import { EntityOptionsDropdown } from '@/components/dashboard/EntityOptionsDropdown';
 
 const iconMap: { [key: string]: React.ElementType } = {
     'direccion-administrativa-y-financiera': Building,
@@ -41,7 +42,14 @@ const AreaCard = ({ area }: { area: any }) => {
     };
 
     const cardContent = (
-        <Card className="h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer hover:bg-muted/50 transition-colors">
+        <Card className="h-full flex flex-col items-center justify-center text-center p-6 transition-colors relative group">
+             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <EntityOptionsDropdown
+                    entityId={area.id}
+                    entityType="area"
+                    entityName={area.nombre}
+                />
+            </div>
             <Icon className="h-16 w-16 text-primary mb-4" />
             <CardHeader className="p-0">
                 <CardTitle className="font-headline text-xl">{area.nombre}</CardTitle>

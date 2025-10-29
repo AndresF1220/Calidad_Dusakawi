@@ -8,13 +8,14 @@ import { useProcesos, useSubprocesos } from '@/hooks/use-areas-data';
 import { Skeleton } from '../ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import React from 'react';
+import { EntityOptionsDropdown } from './EntityOptionsDropdown';
 
 interface ProcesoCardsProps {
     areaId: string;
     procesoId?: string;
 }
 
-const ItemCard = ({ item, linkHref }: { item: any, linkHref: string }) => {
+const ItemCard = ({ item, linkHref, entityType, parentId, grandParentId }: { item: any, linkHref: string, entityType: 'process' | 'subprocess', parentId?: string, grandParentId?: string }) => {
     const { toast } = useToast();
 
     const handleClick = (e: React.MouseEvent) => {
@@ -29,7 +30,16 @@ const ItemCard = ({ item, linkHref }: { item: any, linkHref: string }) => {
     };
     
     const cardContent = (
-         <Card className="h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer hover:bg-muted/50 transition-colors">
+         <Card className="h-full flex flex-col items-center justify-center text-center p-6 transition-colors relative group hover:bg-muted/50">
+             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <EntityOptionsDropdown
+                    entityId={item.id}
+                    entityType={entityType}
+                    entityName={item.nombre}
+                    parentId={parentId}
+                    grandParentId={grandParentId}
+                />
+            </div>
             <Folder className="h-16 w-16 text-primary mb-4" />
             <CardHeader className="p-0">
                 <CardTitle className="font-headline text-lg">{item?.nombre || 'Elemento inválido'}</CardTitle>
@@ -78,6 +88,9 @@ export default function ProcesoCards({ areaId, procesoId }: ProcesoCardsProps) {
                         key={sub.id}
                         item={sub}
                         linkHref={`/inicio/documentos/area/${areaId}/proceso/${procesoId}/subproceso/${sub.id}`}
+                        entityType="subprocess"
+                        parentId={procesoId}
+                        grandParentId={areaId}
                     />
                 ))}
              </div>
@@ -110,6 +123,8 @@ export default function ProcesoCards({ areaId, procesoId }: ProcesoCardsProps) {
                     key={proceso.id}
                     item={proceso}
                     linkHref={`/inicio/documentos/area/${areaId}/proceso/${proceso.id}`}
+                    entityType="process"
+                    parentId={areaId}
                 />
             ))}
         </div>

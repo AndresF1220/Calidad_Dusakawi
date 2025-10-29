@@ -9,10 +9,11 @@ import { useIsAdmin } from '@/lib/authMock';
 import { useArea } from '@/hooks/use-areas-data';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, ArrowLeft } from 'lucide-react';
+import { PlusCircle, ArrowLeft, MoreVertical } from 'lucide-react';
 import { AddEntityForm } from '@/components/dashboard/AddEntityForm';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
+import { EntityOptionsDropdown } from '@/components/dashboard/EntityOptionsDropdown';
 
 export default function AreaIdPage() {
   const params = useParams();
@@ -71,17 +72,25 @@ export default function AreaIdPage() {
     <div className="flex flex-col gap-8">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold font-headline">{area.nombre}</h1>
-        <AddEntityForm 
-            entityType="process"
-            parentId={area.id}
-            isOpen={isAdding}
-            onOpenChange={setIsAdding}
-        >
-            <Button onClick={() => setIsAdding(true)}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Agregar Proceso
-            </Button>
-        </AddEntityForm>
+         <div className="flex items-center gap-2">
+            <AddEntityForm 
+                entityType="process"
+                parentId={area.id}
+                isOpen={isAdding}
+                onOpenChange={setIsAdding}
+            >
+                <Button>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Agregar Proceso
+                </Button>
+            </AddEntityForm>
+            <EntityOptionsDropdown
+                entityId={area.id}
+                entityType="area"
+                entityName={area.nombre}
+                redirectOnDelete="/inicio/documentos"
+            />
+        </div>
       </div>
 
       <CaracterizacionPanel idEntidad={areaId} tipo="area" isAdmin={isAdmin} />

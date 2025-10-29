@@ -2,7 +2,7 @@
 'use server';
 
 import { z } from 'zod';
-import { collection, addDoc, serverTimestamp, writeBatch, doc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, writeBatch, doc, getDocs, deleteDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { revalidatePath } from 'next/cache';
 import { SEED_AREAS } from '@/data/seed-map';
@@ -64,6 +64,67 @@ export async function createEntityAction(
         return { message: 'Error', error: `No se pudo crear la entidad: ${e.message}` };
     }
 }
+
+
+const deleteSchema = z.object({
+  entityId: z.string(),
+  entityType: z.enum(['area', 'process', 'subprocess']),
+  parentId: z.string().optional(),
+  grandParentId: z.string().optional(),
+});
+
+export async function deleteEntityAction(
+  prevState: any,
+  formData: FormData
+): Promise<{ message: string; error?: string }> {
+  const validatedFields = deleteSchema.safeParse({
+    entityId: formData.get('entityId'),
+    entityType: formData.get('entityType'),
+    parentId: formData.get('parentId'),
+    grandParentId: formData.get('grandParentId'),
+  });
+
+  if (!validatedFields.success) {
+    return { message: 'Error', error: 'Parámetros de eliminación inválidos.' };
+  }
+
+  const { entityId, entityType, parentId, grandParentId } = validatedFields.data;
+
+  try {
+    const batch = writeBatch(db);
+
+    if (entityType === 'area') {
+      const areaRef = doc(db, 'areas', entityId);
+      const procesosSnap = await getDocs(collection(areaRef, 'procesos'));
+      for (const procesoDoc of procesosSnap.docs) {
+        const subprocesosSnap = await getDocs(collection(procesoDoc.ref, 'subprocesos'));
+        subprocesosSnap.forEach(subDoc => batch.delete(subDoc.ref));
+        batch.delete(procesoDoc.ref);
+      }
+      batch.delete(areaRef);
+      revalidatePath('/inicio/documentos');
+    } else if (entityType === 'process' && parentId) {
+      const processRef = doc(db, `areas/${parentId}/procesos`, entityId);
+      const subprocesosSnap = await getDocs(collection(processRef, 'subprocesos'));
+      subprocesosSnap.forEach(subDoc => batch.delete(subDoc.ref));
+      batch.delete(processRef);
+      revalidatePath(`/inicio/documentos/area/${parentId}`);
+    } else if (entityType === 'subprocess' && parentId && grandParentId) {
+      const subProcessRef = doc(db, `areas/${grandParentId}/procesos/${parentId}/subprocesos`, entityId);
+      batch.delete(subProcessRef);
+      revalidatePath(`/inicio/documentos/area/${grandParentId}/proceso/${parentId}`);
+    } else {
+      return { message: 'Error', error: 'Parámetros inválidos para la eliminación.' };
+    }
+
+    await batch.commit();
+    return { message: 'Elemento eliminado correctamente.' };
+  } catch (e: any) {
+    console.error('Error deleting entity:', e);
+    return { message: 'Error', error: `No se pudo eliminar el elemento: ${e.message}` };
+  }
+}
+
 
 export async function seedProcessMapAction(): Promise<{ message: string; error?: string }> {
     try {
