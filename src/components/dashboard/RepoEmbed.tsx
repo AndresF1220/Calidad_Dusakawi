@@ -68,7 +68,6 @@ type Folder = {
   id: string;
   name: string;
   children: Folder[];
-  files: File[];
   parentId: string | null;
 };
 
@@ -167,7 +166,9 @@ export default function RepoEmbed({
     );
   }, [firestore, selectedFolder]);
 
-  const { data: files, isLoading: isLoadingFiles } = useCollection(filesQuery);
+  const { data: filesData, isLoading: isLoadingFiles } = useCollection(filesQuery);
+  const files = filesData as File[] | null;
+
 
   useEffect(() => {
     const initRepo = async () => {
@@ -188,7 +189,7 @@ export default function RepoEmbed({
     const rootFolders: Folder[] = [];
     
     allFolders.forEach((doc: any) => {
-      folderMap.set(doc.id, { ...doc, children: [], files: [] });
+      folderMap.set(doc.id, { ...doc, children: [] });
     });
 
     folderMap.forEach(folder => {
@@ -200,7 +201,10 @@ export default function RepoEmbed({
       }
     });
     
+    // Sort children alphabetically
     folderMap.forEach(f => f.children.sort((a, b) => a.name.localeCompare(b.name)));
+    // Sort root folders alphabetically
+    rootFolders.sort((a,b) => a.name.localeCompare(b.name));
 
     return rootFolders;
 
@@ -250,7 +254,7 @@ export default function RepoEmbed({
               path: filePath, 
               createdAt: serverTimestamp(),
               modifiedAt: serverTimestamp(),
-              ownerId: 'superuser_id',
+              ownerId: 'superuser_id', // TODO: Replace with actual user ID
             });
             setUploadProgress(null);
           });
@@ -263,17 +267,22 @@ export default function RepoEmbed({
   const handleFileDelete = async (fileToDelete: File) => {
     if (!firestore || !storage) return;
 
+    if (!confirm(`¿Está seguro de que desea eliminar el archivo "${fileToDelete.name}"?`)) {
+        return;
+    }
+
     try {
         await deleteDoc(doc(firestore, 'files', fileToDelete.id));
 
         const fileRef = ref(storage, fileToDelete.path);
         await deleteObject(fileRef);
 
-        console.log("File deleted successfully");
     } catch (error) {
         console.error("Error deleting file:", error);
+        alert("No se pudo eliminar el archivo. Verifique los permisos de Storage.");
     }
   };
+
 
   const handleFileDownload = (file: File) => {
     window.open(file.url, '_blank');
@@ -367,7 +376,7 @@ export default function RepoEmbed({
                         </TableCell>
                     </TableRow>
                 ) : files && files.length > 0 ? (
-                  (files as File[]).map((file: File) => (
+                  files.map((file: File) => (
                     <TableRow key={file.id}>
                       <TableCell className="font-medium flex items-center gap-2">
                         <FileIcon className="h-5 w-5 text-gray-400" />
@@ -388,6 +397,7 @@ export default function RepoEmbed({
                           variant="ghost"
                           size="icon"
                           onClick={() => handleFileDownload(file)}
+                          title="Descargar"
                         >
                           <Download className="h-4 w-4" />
                           <span className="sr-only">Descargar</span>
@@ -396,6 +406,7 @@ export default function RepoEmbed({
                           variant="ghost"
                           size="icon"
                           onClick={() => handleFileDelete(file)}
+                          title="Eliminar"
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                           <span className="sr-only">Eliminar</span>
@@ -421,4 +432,3 @@ export default function RepoEmbed({
     </>
   );
 }
-
