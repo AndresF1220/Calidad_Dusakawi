@@ -9,10 +9,10 @@ import { SEED_AREAS } from '@/data/seed-map';
 import { slugify } from '@/lib/slug';
 
 const createSchema = z.object({
-  name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
-  objetivo: z.string().optional(),
-  alcance: z.string().optional(),
-  responsable: z.string().optional(),
+  name: z.string().min(3, 'Debe ingresar un nombre de al menos 3 caracteres.'),
+  objetivo: z.string().optional().default(''),
+  alcance: z.string().optional().default(''),
+  responsable: z.string().optional().default(''),
   type: z.enum(['area', 'process', 'subprocess']),
   parentId: z.string().optional(),
   grandParentId: z.string().optional(),
@@ -24,9 +24,9 @@ export async function createEntityAction(
 ): Promise<{ message: string; error?: string }> {
     const validatedFields = createSchema.safeParse({
         name: formData.get('name'),
-        objetivo: formData.get('objetivo') || '',
-        alcance: formData.get('alcance') || '',
-        responsable: formData.get('responsable') || '',
+        objetivo: formData.get('objetivo'),
+        alcance: formData.get('alcance'),
+        responsable: formData.get('responsable'),
         type: formData.get('type'),
         parentId: formData.get('parentId'),
         grandParentId: formData.get('grandParentId'),
@@ -35,7 +35,7 @@ export async function createEntityAction(
     if (!validatedFields.success) {
         const errors = validatedFields.error.flatten().fieldErrors;
         const errorMessages = Object.values(errors).map(err => err?.join(', ')).filter(Boolean);
-        return { message: 'Validation failed', error: errorMessages.join(' ') || 'Error de validación.' };
+        return { message: 'Validation failed', error: errorMessages.join(' ') || 'Debe ingresar un nombre.' };
     }
 
     const { name, objetivo, alcance, responsable, type, parentId, grandParentId } = validatedFields.data;

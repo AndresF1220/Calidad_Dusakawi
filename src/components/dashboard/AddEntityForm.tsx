@@ -98,13 +98,9 @@ export function AddEntityForm({
             <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
                     <Label htmlFor="name">Nombre</Label>
-                    <Input id="name" name="name" placeholder={`Nombre del ${labels.title}`} required minLength={3} />
+                    <Input id="name" name="name" placeholder={`Nombre del ${labels.title}`} required />
                 </div>
-                 {/* Fields are removed from form but need to be passed to action */}
-                <input type="hidden" name="objetivo" value="" />
-                <input type="hidden" name="alcance" value="" />
-                <input type="hidden" name="responsable" value="" />
-
+                
                 <input type="hidden" name="type" value={entityType} />
                 {parentId && <input type="hidden" name="parentId" value={parentId} />}
                 {grandParentId && <input type="hidden" name="grandParentId" value={grandParentId} />}
