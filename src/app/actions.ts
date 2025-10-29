@@ -1,78 +1,11 @@
+
 'use server';
 
-import {
-  analyzeQualityData as analyzeQualityDataFlow,
-  AnalyzeQualityDataInput,
-  AnalyzeQualityDataOutput,
-} from '@/ai/flows/analyze-quality-data';
-import {
-  suggestAdditionalData as suggestAdditionalDataFlow,
-  SuggestAdditionalDataInput,
-  SuggestAdditionalDataOutput,
-} from '@/ai/flows/suggest-additional-data';
 import { z } from 'zod';
-import { collection, addDoc, serverTimestamp, doc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { revalidatePath } from 'next/cache';
-
-const analyzeSchema = z.object({
-  qualityData: z.string().min(10, { message: "Please provide more detailed data for analysis."}),
-});
-
-export async function analyzeQualityDataAction(
-  prevState: any,
-  formData: FormData
-): Promise<{ message: string; data?: AnalyzeQualityDataOutput, error?: string }> {
-  const validatedFields = analyzeSchema.safeParse({
-    qualityData: formData.get('qualityData'),
-  });
-
-  if (!validatedFields.success) {
-    return {
-      message: 'Validation failed.',
-      error: validatedFields.error.flatten().fieldErrors.qualityData?.join(', '),
-    };
-  }
-
-  try {
-    const result = await analyzeQualityDataFlow(validatedFields.data);
-    return { message: 'Analysis complete.', data: result };
-  } catch (e) {
-    return { message: 'An error occurred during analysis.', error: (e as Error).message };
-  }
-}
-
-const suggestSchema = z.object({
-  currentAnalysis: z.string().min(10, { message: "Please provide a more detailed analysis."}),
-  metricsUsed: z.string().min(3, { message: "Please list the metrics used."}),
-});
-
-
-export async function suggestAdditionalDataAction(
-    prevState: any,
-    formData: FormData
-): Promise<{ message: string; data?: SuggestAdditionalDataOutput, error?: string }> {
-  const validatedFields = suggestSchema.safeParse({
-    currentAnalysis: formData.get('currentAnalysis'),
-    metricsUsed: formData.get('metricsUsed'),
-  });
-
-  if (!validatedFields.success) {
-      const errors = validatedFields.error.flatten().fieldErrors;
-      const errorString = Object.values(errors).map(e => e.join(', ')).join(' ');
-    return {
-      message: 'Validation failed.',
-      error: errorString,
-    };
-  }
-  
-  try {
-    const result = await suggestAdditionalDataFlow(validatedFields.data);
-    return { message: 'Suggestion generated.', data: result };
-  } catch (e) {
-    return { message: 'An error occurred while generating suggestions.', error: (e as Error).message };
-  }
-}
+import { SEED_AREAS } from '@/data/seed-map';
 
 
 const createSchema = z.object({
@@ -109,13 +42,13 @@ export async function createEntityAction(
         let revalidationPath = '/inicio/documentos';
 
         if (type === 'area') {
-            collectionPath = 'areas';
-            const newDoc = await addDoc(collection(db, collectionPath), data);
+            const newDocRef = await addDoc(collection(db, 'areas'), data);
+            // Also create the root "Documentación" folder for this new area
             await addDoc(collection(db, 'folders'), {
               name: "Documentación",
               parentId: null,
-              areaId: newDoc.id, 
-              procesoId: null, 
+              areaId: newDocRef.id,
+              procesoId: null,
               subprocesoId: null,
               createdAt: serverTimestamp()
             });
@@ -139,5 +72,43 @@ export async function createEntityAction(
     } catch (e: any) {
         console.error("Error creating entity:", e);
         return { message: 'Error', error: `No se pudo crear la entidad: ${e.message}` };
+    }
+}
+
+export async function seedProcessMapAction(): Promise<{ message: string; error?: string }> {
+    try {
+        const batch = writeBatch(db);
+
+        for (const area of SEED_AREAS) {
+            const areaRef = collection(db, 'areas');
+            const newAreaRef = await addDoc(areaRef, { nombre: area.titulo, createdAt: serverTimestamp() });
+            
+            // Create root folder for the area
+            batch.set(collection(db, 'folders'), {
+              name: "Documentación",
+              parentId: null,
+              areaId: newAreaRef.id,
+              procesoId: null,
+              subprocesoId: null,
+              createdAt: serverTimestamp()
+            });
+
+            for (const proceso of area.procesos) {
+                const procesoRef = collection(db, 'areas', newAreaRef.id, 'procesos');
+                const newProcesoRef = await addDoc(procesoRef, { nombre: proceso.nombre, createdAt: serverTimestamp() });
+
+                for (const subproceso of proceso.subprocesos) {
+                    const subprocesoRef = collection(db, 'areas', newAreaRef.id, 'procesos', newProcesoRef.id, 'subprocesos');
+                    batch.set(subprocesoRef, { nombre: subproceso.nombre, createdAt: serverTimestamp() });
+                }
+            }
+        }
+
+        await batch.commit();
+        revalidatePath('/inicio/documentos');
+        return { message: 'Mapa de procesos restaurado con éxito.' };
+    } catch (e: any) {
+        console.error("Error seeding process map:", e);
+        return { message: 'Error', error: `No se pudo restaurar el mapa de procesos: ${e.message}` };
     }
 }

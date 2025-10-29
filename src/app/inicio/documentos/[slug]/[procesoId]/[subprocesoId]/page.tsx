@@ -2,12 +2,14 @@
 'use client';
 
 import { useParams, notFound } from 'next/navigation';
-import { getAreaById, getProceso } from '@/data/areasProcesos';
 import CaracterizacionPanel from '@/components/dashboard/CaracterizacionPanel';
 import RepoEmbed from '@/components/dashboard/RepoEmbed';
 import { useIsAdmin } from '@/lib/authMock';
+import { useSubproceso, useProceso, useArea } from '@/hooks/use-areas-data';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const slugify = (text: string) => {
+    if (!text) return '';
     return text
         .toString()
         .normalize('NFD') // split an accented letter in the base letter and the accent
@@ -23,30 +25,37 @@ export default function SubprocesoPage() {
   const params = useParams();
   const areaId = params.slug as string;
   const procesoId = params.procesoId as string;
-  const subprocesoId = params.subprocesoId as string;
-  
-  const area = getAreaById(areaId);
-  const proceso = getProceso(areaId, procesoId);
+  const subprocesoSlug = params.subprocesoId as string;
   const isAdmin = useIsAdmin();
-  
-  // Find subproceso by comparing slugified version with the param
-  const subproceso = proceso?.subprocesos.find(s => slugify(s) === subprocesoId);
+
+  const { area, isLoading: isLoadingArea } = useArea(areaId);
+  const { proceso, isLoading: isLoadingProceso } = useProceso(areaId, procesoId);
+  const { subproceso, isLoading: isLoadingSubproceso } = useSubproceso(areaId, procesoId, subprocesoSlug);
+
+
+  if (isLoadingArea || isLoadingProceso || isLoadingSubproceso) {
+    return (
+        <div className="flex flex-col gap-8">
+            <Skeleton className="h-10 w-2/3" />
+            <Skeleton className="h-40 w-full" />
+            <Skeleton className="h-96 w-full" />
+        </div>
+    );
+  }
 
   if (!area || !proceso || !subproceso) {
     notFound();
   }
   
-  const formattedSubprocesoName = subproceso.charAt(0).toUpperCase() + subproceso.slice(1).replace(/-/g, ' ');
-
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-3xl font-bold font-headline capitalize">{formattedSubprocesoName}</h1>
+        <h1 className="text-3xl font-bold font-headline capitalize">{subproceso.nombre}</h1>
       </div>
 
-      <CaracterizacionPanel idEntidad={`${areaId}:${procesoId}:${subprocesoId}`} tipo="subproceso" isAdmin={isAdmin} />
+      <CaracterizacionPanel idEntidad={`${areaId}:${procesoId}:${subproceso.id}`} tipo="subproceso" isAdmin={isAdmin} />
       
-      <RepoEmbed areaId={areaId} procesoId={procesoId} subprocesoId={subprocesoId} />
+      <RepoEmbed areaId={areaId} procesoId={procesoId} subprocesoId={subproceso.id} />
     </div>
   );
 }
