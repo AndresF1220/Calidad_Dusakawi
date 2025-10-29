@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, notFound } from 'next/navigation';
 import CaracterizacionPanel from '@/components/dashboard/CaracterizacionPanel';
 import ProcesoCards from '@/components/dashboard/ProcesoCards';
 import RepoEmbed from '@/components/dashboard/RepoEmbed';
