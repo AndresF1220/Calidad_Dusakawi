@@ -150,7 +150,7 @@ export default function RepoEmbed({
     if (!firestore) return null;
     return query(
       collection(firestore, 'folders'),
-      where('areaId', '==', areaId),
+      where('areaId', '==', areaId ?? null),
       where('procesoId', '==', procesoId ?? null),
       where('subprocesoId', '==', subprocesoId ?? null)
     );
