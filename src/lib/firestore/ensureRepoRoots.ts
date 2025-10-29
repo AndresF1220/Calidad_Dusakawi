@@ -14,8 +14,8 @@ import {
 interface EnsureRepoRootsParams {
   firestore: Firestore;
   areaId: string;
-  procesoId?: string;
-  subprocesoId?: string;
+  procesoId?: string | null;
+  subprocesoId?: string | null;
 }
 
 const SUBFOLDER_NAMES = [
@@ -84,3 +84,5 @@ export async function ensureRepoRoots({
     return querySnapshot.docs[0].id;
   }
 }
+
+    

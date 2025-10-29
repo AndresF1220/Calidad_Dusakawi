@@ -44,6 +44,7 @@ import {
   ChevronRight,
   ChevronDown,
   Trash2,
+  Loader2,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Progress } from '../ui/progress';
@@ -57,7 +58,7 @@ interface RepoEmbedProps {
 type File = {
   id: string;
   name: string;
-  modifiedAt: string;
+  modifiedAt: any;
   size: number;
   url: string;
   path: string; // Storage path
@@ -96,7 +97,7 @@ const FolderTree = ({
             }`}
             onClick={() => onSelectFolder(folder)}
           >
-            {folder.children.length > 0 && (
+            {folder.children.length > 0 ? (
               <span
                 onClick={e => {
                   e.stopPropagation();
@@ -109,14 +110,12 @@ const FolderTree = ({
                   <ChevronRight className="h-4 w-4" />
                 )}
               </span>
-            )}
+            ) : <div className="w-4"></div>}
             <FolderIcon
-              className={`h-5 w-5 text-amber-500 ${
-                folder.children.length === 0 ? 'ml-5' : ''
-              }`}
+              className="h-5 w-5 text-amber-500"
             />
             <span className="text-sm font-medium">
-              {folder.name} {folder.files.length > 0 && `(${folder.files.length})`}
+              {folder.name}
             </span>
           </div>
           {openFolders[folder.id] && folder.children.length > 0 && (
@@ -183,34 +182,44 @@ export default function RepoEmbed({
 
 
   const folderStructure = useMemo(() => {
-    if (!allFolders || !rootFolderId) return [];
+    if (!allFolders) return [];
 
     const folderMap = new Map<string, Folder>();
     const rootFolders: Folder[] = [];
     
-    // Initialize all folders
+    // Initialize all folders from the query result
     allFolders.forEach((doc: any) => {
       folderMap.set(doc.id, { ...doc, children: [], files: [] });
     });
 
-    // Build the tree
+    // Build the tree by assigning children to their parents
     folderMap.forEach(folder => {
       if (folder.parentId) {
         const parent = folderMap.get(folder.parentId);
         parent?.children.push(folder);
       } else {
+        // This is a root-level folder for the current context
         rootFolders.push(folder);
       }
     });
-
-    if (!selectedFolder && rootFolders.length > 0) {
-       const root = rootFolders.find(f => f.id === rootFolderId);
-       if (root) setSelectedFolder(root);
-    }
     
+    // Sort children alphabetically
+    rootFolders.forEach(f => f.children.sort((a, b) => a.name.localeCompare(b.name)));
+
     return rootFolders;
 
-  }, [allFolders, rootFolderId, selectedFolder]);
+  }, [allFolders]);
+
+  // Effect to select the root folder once everything is loaded
+  useEffect(() => {
+     if (!selectedFolder && rootFolderId && folderStructure.length > 0) {
+        const root = folderStructure.find(f => f.id === rootFolderId);
+        if (root) {
+            setSelectedFolder(root);
+        }
+     }
+  }, [folderStructure, rootFolderId, selectedFolder]);
+
 
   const handleToggleFolder = (id: string) => {
     setOpenFolders(prev => ({ ...prev, [id]: !prev[id] }));
@@ -288,7 +297,12 @@ export default function RepoEmbed({
             <CardTitle className="font-headline text-lg">Carpetas</CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoadingFolders ? <p>Cargando carpetas...</p> : (
+            {isLoadingFolders ? (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Cargando carpetas...</span>
+                </div>
+            ) : (
               <FolderTree
                 folders={folderStructure}
                 onSelectFolder={setSelectedFolder}
@@ -349,12 +363,17 @@ export default function RepoEmbed({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {isLoadingFiles || isLoadingFolders ? (
+                {isLoadingFiles ? (
                     <TableRow>
-                        <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">Cargando archivos...</TableCell>
+                        <TableCell colSpan={4} className="h-24 text-center">
+                            <div className="flex justify-center items-center gap-2 text-muted-foreground">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <span>Cargando archivos...</span>
+                            </div>
+                        </TableCell>
                     </TableRow>
                 ) : files && files.length > 0 ? (
-                  files.map((file: any) => (
+                  (files as File[]).map((file: File) => (
                     <TableRow key={file.id}>
                       <TableCell className="font-medium flex items-center gap-2">
                         <FileIcon className="h-5 w-5 text-gray-400" />
