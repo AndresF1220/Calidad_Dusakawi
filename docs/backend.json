@@ -1,0 +1,118 @@
+{
+  "entities": {
+    "Area": {
+      "title": "Área (Macroproceso)",
+      "description": "Representa un área o macroproceso principal dentro de la organización.",
+      "type": "object",
+      "properties": {
+        "nombre": {
+          "type": "string",
+          "description": "El nombre del área."
+        },
+        "descripcion": {
+          "type": "string",
+          "description": "Una breve descripción del propósito del área."
+        },
+        "procesos": {
+          "type": "array",
+          "description": "Una lista de procesos que pertenecen a esta área.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "nombre": {
+                "type": "string",
+                "description": "El nombre del proceso."
+              },
+              "subprocesos": {
+                "type": "array",
+                "description": "Una lista de nombres de subprocesos anidados.",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": ["nombre", "subprocesos"]
+          }
+        }
+      },
+      "required": ["nombre", "descripcion", "procesos"]
+    },
+    "Caracterizacion": {
+      "title": "Caracterización",
+      "description": "Describe el objetivo, alcance y responsable de un área, proceso o subproceso.",
+      "type": "object",
+      "properties": {
+        "idEntidad": {
+          "type": "string",
+          "description": "ID del área, proceso o subproceso."
+        },
+        "tipo": {
+          "type": "string",
+          "enum": ["area", "proceso", "subproceso"]
+        },
+        "objetivo": { "type": "string" },
+        "responsable": { "type": "string" },
+        "alcance": { "type": "string" },
+        "fechaCreacion": { "type": "string", "format": "date-time" },
+        "creadaPor": { "type": "string" },
+        "repositorioId": { "type": "string" },
+        "editable": { "type": "boolean" }
+      },
+      "required": ["idEntidad", "tipo", "objetivo", "responsable", "alcance"]
+    },
+    "Folder": {
+      "title": "Folder",
+      "description": "Representa una carpeta en el repositorio de documentos.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "parentId": { "type": ["string", "null"] },
+        "areaId": { "type": "string" },
+        "procesoId": { "type": ["string", "null"] },
+        "subprocesoId": { "type": ["string", "null"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "parentId", "areaId"]
+    },
+    "File": {
+      "title": "File",
+      "description": "Representa un archivo en el repositorio de documentos.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "folderId": { "type": "string" },
+        "areaId": { "type": "string" },
+        "procesoId": { "type": ["string", "null"] },
+        "subprocesoId": { "type": ["string", "null"] },
+        "size": { "type": "number" },
+        "type": { "type": "string" },
+        "url": { "type": "string", "format": "uri" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "modifiedAt": { "type": "string", "format": "date-time" },
+        "ownerId": { "type": "string" }
+      },
+      "required": ["name", "folderId", "areaId", "size", "type", "url", "ownerId"]
+    }
+  },
+  "auth": {
+    "providers": ["anonymous"]
+  },
+  "firestore": {
+    "/areas/{areaId}": {
+      "schema": { "$ref": "#/entities/Area" },
+      "description": "Contiene los macroprocesos o áreas principales de la organización."
+    },
+    "/caracterizaciones/{caracterizacionId}": {
+      "schema": { "$ref": "#/entities/Caracterizacion" },
+      "description": "Contiene los detalles de caracterización para cada área, proceso o subproceso."
+    },
+    "/folders/{folderId}": {
+        "schema": { "$ref": "#/entities/Folder"},
+        "description": "Contiene todas las carpetas del sistema de gestión documental."
+    },
+    "/files/{fileId}": {
+        "schema": { "$ref": "#/entities/File"},
+        "description": "Contiene todos los archivos del sistema de gestión documental."
+    }
+  }
+}
