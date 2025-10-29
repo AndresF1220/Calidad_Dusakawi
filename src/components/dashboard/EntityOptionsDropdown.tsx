@@ -118,7 +118,7 @@ export function EntityOptionsDropdown({
         entityId={entityId}
         initialName={entityName}
       >
-        <></>
+        <div />
       </AddEntityForm>
 
       {/* Delete Confirmation Dialog */}
