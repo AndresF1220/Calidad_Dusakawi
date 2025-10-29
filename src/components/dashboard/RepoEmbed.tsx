@@ -19,7 +19,7 @@ import {
   getDownloadURL,
   deleteObject,
 } from 'firebase/storage';
-import { ensureRepoRoots } from '@/lib/firestore/ensureRepoRoots';
+import { getOrCreateRootFolder } from '@/lib/repoUtils';
 import {
   Card,
   CardContent,
@@ -172,9 +172,9 @@ export default function RepoEmbed({
   useEffect(() => {
     const initRepo = async () => {
       if (firestore) {
-        const rootId = await ensureRepoRoots({ firestore, areaId, procesoId: procesoId ?? null, subprocesoId: subprocesoId ?? null });
-        setRootFolderId(rootId);
-        setOpenFolders(prev => ({ ...prev, [rootId]: true }));
+        const root = await getOrCreateRootFolder(firestore, { areaId, procesoId: procesoId ?? null, subprocesoId: subprocesoId ?? null });
+        setRootFolderId(root.id);
+        setOpenFolders(prev => ({ ...prev, [root.id]: true }));
       }
     };
     initRepo();
@@ -187,30 +187,25 @@ export default function RepoEmbed({
     const folderMap = new Map<string, Folder>();
     const rootFolders: Folder[] = [];
     
-    // Initialize all folders from the query result
     allFolders.forEach((doc: any) => {
       folderMap.set(doc.id, { ...doc, children: [], files: [] });
     });
 
-    // Build the tree by assigning children to their parents
     folderMap.forEach(folder => {
       if (folder.parentId) {
         const parent = folderMap.get(folder.parentId);
         parent?.children.push(folder);
       } else {
-        // This is a root-level folder for the current context
         rootFolders.push(folder);
       }
     });
     
-    // Sort children alphabetically
     folderMap.forEach(f => f.children.sort((a, b) => a.name.localeCompare(b.name)));
 
     return rootFolders;
 
   }, [allFolders]);
 
-  // Effect to select the root folder once everything is loaded
   useEffect(() => {
      if (!selectedFolder && rootFolderId && folderStructure.length > 0) {
         const root = folderStructure.find(f => f.id === rootFolderId);
@@ -252,10 +247,10 @@ export default function RepoEmbed({
               size: file.size,
               type: file.type,
               url: downloadURL,
-              path: filePath, // Store the path for deletion
+              path: filePath, 
               createdAt: serverTimestamp(),
               modifiedAt: serverTimestamp(),
-              ownerId: 'superuser_id', // Replace with actual user ID
+              ownerId: 'superuser_id',
             });
             setUploadProgress(null);
           });
@@ -269,10 +264,8 @@ export default function RepoEmbed({
     if (!firestore || !storage) return;
 
     try {
-        // Delete Firestore document
         await deleteDoc(doc(firestore, 'files', fileToDelete.id));
 
-        // Delete file from Storage
         const fileRef = ref(storage, fileToDelete.path);
         await deleteObject(fileRef);
 
@@ -428,3 +421,4 @@ export default function RepoEmbed({
     </>
   );
 }
+
