@@ -27,10 +27,12 @@ export default function ProcesoPage() {
 
       <CaracterizacionPanel idEntidad={`${areaId}:${procesoId}`} tipo="proceso" />
 
-      <div className="flex flex-col gap-4">
-        <h2 className="text-2xl font-bold font-headline">Sub-procesos</h2>
-        <ProcesoCards areaId={areaId} procesoId={procesoId} />
-      </div>
+      {proceso.subprocesos && proceso.subprocesos.length > 0 && (
+        <div className="flex flex-col gap-4">
+          <h2 className="text-2xl font-bold font-headline">Sub-procesos</h2>
+          <ProcesoCards areaId={areaId} procesoId={procesoId} />
+        </div>
+      )}
 
       <RepoEmbed areaId={areaId} procesoId={procesoId} />
     </div>
