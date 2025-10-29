@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams, notFound } from 'next/navigation';
@@ -8,29 +7,16 @@ import { useIsAdmin } from '@/lib/authMock';
 import { useSubproceso, useProceso, useArea } from '@/hooks/use-areas-data';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const slugify = (text: string) => {
-    if (!text) return '';
-    return text
-        .toString()
-        .normalize('NFD') // split an accented letter in the base letter and the accent
-        .replace(/[\u0300-\u036f]/g, '') // remove all previously split accents
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, '-')
-        .replace(/[^\w-]+/g, '')
-        .replace(/--+/g, '-');
-}
-
 export default function SubprocesoPage() {
   const params = useParams();
-  const areaId = params.slug as string;
+  const areaId = params.areaId as string;
   const procesoId = params.procesoId as string;
-  const subprocesoSlug = params.subprocesoId as string;
+  const subprocesoId = params.subprocesoId as string;
   const isAdmin = useIsAdmin();
 
   const { area, isLoading: isLoadingArea } = useArea(areaId);
   const { proceso, isLoading: isLoadingProceso } = useProceso(areaId, procesoId);
-  const { subproceso, isLoading: isLoadingSubproceso } = useSubproceso(areaId, procesoId, subprocesoSlug);
+  const { subproceso, isLoading: isLoadingSubproceso } = useSubproceso(areaId, procesoId, subprocesoId);
 
 
   if (isLoadingArea || isLoadingProceso || isLoadingSubproceso) {
@@ -59,5 +45,3 @@ export default function SubprocesoPage() {
     </div>
   );
 }
-
-    

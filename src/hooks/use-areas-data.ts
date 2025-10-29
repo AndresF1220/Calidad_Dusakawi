@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useMemo } from 'react';
-import { collection, doc, query, where, getDocs } from 'firebase/firestore';
+import { collection, doc, query } from 'firebase/firestore';
 import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 
 export type Subproceso = {
@@ -18,19 +17,6 @@ export type Proceso = {
 export type Area = {
     id: string;
     nombre: string;
-}
-
-const slugify = (text: string) => {
-    if (!text) return '';
-    return text
-        .toString()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, '-')
-        .replace(/[^\w-]+/g, '')
-        .replace(/--+/g, '-');
 }
 
 export function useAreas() {
@@ -73,14 +59,10 @@ export function useSubprocesos(areaId: string | null, procesoId: string | null) 
     return { subprocesos, isLoading, error };
 }
 
-// This hook is more complex as it needs to find a sub-process by its slugified name, not by ID.
-export function useSubproceso(areaId: string | null, procesoId: string | null, subprocesoSlug: string | null) {
-    const { subprocesos, isLoading, error } = useSubprocesos(areaId, procesoId);
-    
-    const subproceso = useMemo(() => {
-        if (!subprocesos || !subprocesoSlug) return null;
-        return subprocesos.find(sp => slugify(sp.nombre) === subprocesoSlug) || null;
-    }, [subprocesos, subprocesoSlug]);
+export function useSubproceso(areaId: string | null, procesoId: string | null, subprocesoId: string | null) {
+    const firestore = useFirestore();
+    const subprocesoRef = useMemoFirebase(() => areaId && procesoId && subprocesoId ? doc(firestore, 'areas', areaId, 'procesos', procesoId, 'subprocesos', subprocesoId) : null, [firestore, areaId, procesoId, subprocesoId]);
+    const { data: subproceso, isLoading, error } = useDoc<Subproceso>(subprocesoRef);
 
     return { subproceso, isLoading, error };
 }

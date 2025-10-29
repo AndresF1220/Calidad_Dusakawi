@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -23,9 +22,9 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
 import AppSidebarNav from './app-sidebar-nav';
-import { Fragment } from 'react';
+import { Fragment, useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { getAreaById, getProceso } from '@/data/areasProcesos';
+import { useArea, useProceso, useSubproceso } from '@/hooks/use-areas-data';
 
 const hardcodedTranslations: Record<string, string> = {
     inicio: "Inicio",
@@ -36,43 +35,50 @@ const hardcodedTranslations: Record<string, string> = {
     account: "Cuenta",
 };
 
+// A hook to fetch breadcrumb data dynamically
+function useBreadcrumbData(segments: string[]) {
+    const areaId = segments[1] === 'documentos' && segments.length > 2 ? segments[2] : null;
+    const procesoId = segments[1] === 'documentos' && segments.length > 3 ? segments[3] : null;
+    const subprocesoId = segments[1] === 'documentos' && segments.length > 4 ? segments[4] : null;
+
+    const { area, isLoading: isLoadingArea } = useArea(areaId);
+    const { proceso, isLoading: isLoadingProceso } = useProceso(areaId, procesoId);
+    const { subproceso, isLoading: isLoadingSubproceso } = useSubproceso(areaId, procesoId, subprocesoId);
+
+    return {
+        area,
+        proceso,
+        subproceso,
+        isLoading: isLoadingArea || isLoadingProceso || isLoadingSubproceso,
+    };
+}
+
 
 export default function AppHeader() {
   const pathname = usePathname();
   const pathSegments = pathname.split('/').filter(Boolean);
 
-  const breadcrumbItems = pathSegments.map((segment, index) => {
-    const href = `/${pathSegments.slice(0, index + 1).join('/')}`;
-    const isLast = index === pathSegments.length - 1;
-    let label = hardcodedTranslations[segment] || segment;
+  const { area, proceso, subproceso, isLoading } = useBreadcrumbData(pathSegments);
 
-    if (pathSegments[1] === 'documentos' && index > 1) { // after /inicio/documentos
-      const areaId = pathSegments[2];
-      const area = getAreaById(areaId);
-      if (index === 2 && area) {
-        label = area.titulo;
-      } else if (index === 3 && area) {
-        const procesoId = pathSegments[3];
-        const proceso = getProceso(areaId, procesoId);
-        if (proceso) {
-            label = proceso.nombre;
+  const breadcrumbItems = useMemo(() => {
+    return pathSegments.map((segment, index) => {
+        const href = `/${pathSegments.slice(0, index + 1).join('/')}`;
+        const isLast = index === pathSegments.length - 1;
+        let label = hardcodedTranslations[segment] || segment;
+
+        if (pathSegments[1] === 'documentos' && !isLoading) {
+            if (index === 2) {
+                label = area?.nombre || segment;
+            } else if (index === 3) {
+                label = proceso?.nombre || segment;
+            } else if (index === 4) {
+                label = subproceso?.nombre || segment;
+            }
         }
-      } else if (index === 4 && area) {
-          const procesoId = pathSegments[3];
-          const proceso = getProceso(areaId, procesoId);
-          const subprocesoId = pathSegments[4];
-          // Assuming subprocesos are just strings, find the matching one
-          const subproceso = proceso?.subprocesos?.find(s => s.toLowerCase().replace(/ /g, '-') === subprocesoId);
-          if (subproceso) {
-            label = subproceso;
-          } else {
-              label = subprocesoId.replace(/-/g, ' ');
-          }
-      }
-    }
-    
-    return { href, label, isLast };
-  });
+        
+        return { href, label, isLast };
+    });
+  }, [pathSegments, area, proceso, subproceso, isLoading]);
 
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">

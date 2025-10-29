@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -62,7 +61,7 @@ export default function RepositoryAreasPage() {
 
   const macroprocesos = areas?.map(area => ({
       title: area.nombre,
-      slug: area.id,
+      id: area.id,
       icon: iconMap[area.id] || iconMap['default'],
       description: `Gestión de ${area.nombre.toLowerCase()}`
   }));
@@ -91,7 +90,7 @@ export default function RepositoryAreasPage() {
             <Skeleton key={i} className="h-48 w-full" />
         ))}
         {!isSeeding && macroprocesos?.map((area) => (
-            <Link key={area.slug} href={`/inicio/documentos/${area.slug}`} className="block hover:shadow-lg transition-shadow rounded-lg">
+            <Link key={area.id} href={`/inicio/documentos/${area.id}`} className="block hover:shadow-lg transition-shadow rounded-lg">
                 <Card className="h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer hover:bg-muted/50 transition-colors">
                     <area.icon className="h-16 w-16 text-primary mb-4" />
                     <CardHeader className="p-0">

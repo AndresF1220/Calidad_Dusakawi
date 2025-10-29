@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams, notFound } from 'next/navigation';
@@ -15,7 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function AreaPage() {
   const params = useParams();
-  const areaId = params.slug as string;
+  const areaId = params.areaId as string;
   const { area, isLoading } = useArea(areaId);
   const isAdmin = useIsAdmin();
   const [isAdding, setIsAdding] = useState(false);

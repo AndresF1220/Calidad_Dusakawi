@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -10,19 +9,6 @@ import { Skeleton } from '../ui/skeleton';
 interface ProcesoCardsProps {
     areaId: string;
     procesoId?: string;
-}
-
-const slugify = (text: string) => {
-    if (!text) return '';
-    return text
-        .toString()
-        .normalize('NFD') // split an accented letter in the base letter and the accent
-        .replace(/[\u0300-\u036f]/g, '') // remove all previously split accents
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, '-')
-        .replace(/[^\w-]+/g, '')
-        .replace(/--+/g, '-');
 }
 
 export default function ProcesoCards({ areaId, procesoId }: ProcesoCardsProps) {
@@ -50,7 +36,7 @@ export default function ProcesoCards({ areaId, procesoId }: ProcesoCardsProps) {
         return (
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {subprocesos?.map((sub, index) => (
-                     <Link key={sub.id || index} href={`/inicio/documentos/${areaId}/${procesoId}/${slugify(sub.nombre)}`} className="block hover:shadow-lg transition-shadow rounded-lg">
+                     <Link key={sub.id || index} href={`/inicio/documentos/${areaId}/${procesoId}/${sub.id}`} className="block hover:shadow-lg transition-shadow rounded-lg">
                         <Card className="h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer hover:bg-muted/50 transition-colors">
                             <Folder className="h-16 w-16 text-primary mb-4" />
                             <CardHeader className="p-0">
@@ -91,11 +77,6 @@ export default function ProcesoCards({ areaId, procesoId }: ProcesoCardsProps) {
                         <CardHeader className="p-0">
                             <CardTitle className="font-headline text-lg">{proceso.nombre}</CardTitle>
                         </CardHeader>
-                            {proceso.subprocesos && proceso.subprocesos.length > 0 && (
-                            <CardDescription className="mt-2 text-xs">
-                                {proceso.subprocesos.join(', ')}
-                            </CardDescription>
-                        )}
                     </Card>
                 </Link>
             ))}
