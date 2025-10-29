@@ -7,10 +7,11 @@ import ProcesoCards from '@/components/dashboard/ProcesoCards';
 import RepoEmbed from '@/components/dashboard/RepoEmbed';
 import { useProceso, useArea } from '@/hooks/use-areas-data';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
 import { AddEntityForm } from '@/components/dashboard/AddEntityForm';
 import { Skeleton } from '@/components/ui/skeleton';
+import Link from 'next/link';
 
 export default function ProcesoIdPage() {
   const params = useParams();
@@ -38,7 +39,18 @@ export default function ProcesoIdPage() {
   }
 
   if (!area || !proceso) {
-    notFound();
+    return (
+      <div className="flex flex-col items-center justify-center h-96 text-center">
+        <h2 className="text-2xl font-bold font-headline mb-4">Proceso no encontrado</h2>
+        <p className="text-muted-foreground mb-6">El proceso que busca no existe, ha sido eliminado o el área es incorrecta.</p>
+        <Button asChild>
+          <Link href={areaId ? `/inicio/documentos/area/${areaId}` : '/inicio/documentos'}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Volver al Área
+          </Link>
+        </Button>
+      </div>
+    );
   }
 
   return (
