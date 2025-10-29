@@ -11,7 +11,6 @@ import {
   serverTimestamp,
   deleteDoc,
   doc,
-  getDocs,
 } from 'firebase/firestore';
 import {
   ref,
@@ -20,6 +19,7 @@ import {
   deleteObject,
 } from 'firebase/storage';
 import { getOrCreateRootFolder } from '@/lib/repoUtils';
+import { migrateDedupRoots } from '@/lib/migrateRepo';
 import {
   Card,
   CardContent,
@@ -45,6 +45,7 @@ import {
   ChevronDown,
   Trash2,
   Loader2,
+  AlertTriangle,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Progress } from '../ui/progress';
@@ -145,16 +146,21 @@ export default function RepoEmbed({
   const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({});
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [rootFolderId, setRootFolderId] = useState<string | null>(null);
+  const [needsMigration, setNeedsMigration] = useState(false);
+  const [isMigrating, setIsMigrating] = useState(false);
+  const [key, setKey] = useState(0); // Used to force re-render
+
+  const norm = (v:string|null|undefined) => v === "" || v === undefined ? null : v;
 
   const foldersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(
       collection(firestore, 'folders'),
-      where('areaId', '==', areaId ?? null),
-      where('procesoId', '==', procesoId ?? null),
-      where('subprocesoId', '==', subprocesoId ?? null)
+      where('areaId', '==', norm(areaId)),
+      where('procesoId', '==', norm(procesoId)),
+      where('subprocesoId', '==', norm(subprocesoId))
     );
-  }, [firestore, areaId, procesoId, subprocesoId]);
+  }, [firestore, areaId, procesoId, subprocesoId, key]);
 
   const { data: allFolders, isLoading: isLoadingFolders } = useCollection(foldersQuery);
 
@@ -164,7 +170,7 @@ export default function RepoEmbed({
         collection(firestore, 'files'),
         where('folderId', '==', selectedFolder.id)
     );
-  }, [firestore, selectedFolder]);
+  }, [firestore, selectedFolder, key]);
 
   const { data: filesData, isLoading: isLoadingFiles } = useCollection(filesQuery);
   const files = filesData as File[] | null;
@@ -173,21 +179,28 @@ export default function RepoEmbed({
   useEffect(() => {
     const initRepo = async () => {
       if (firestore) {
-        const root = await getOrCreateRootFolder(firestore, { areaId, procesoId: procesoId ?? null, subprocesoId: subprocesoId ?? null });
+        const root = await getOrCreateRootFolder(firestore, { areaId, procesoId, subprocesoId });
         setRootFolderId(root.id);
-        setOpenFolders(prev => ({ ...prev, [root.id]: true }));
+        if (root.id) {
+          setOpenFolders(prev => ({ ...prev, [root.id]: true }));
+        }
       }
     };
     initRepo();
-  }, [firestore, areaId, procesoId, subprocesoId]);
+  }, [firestore, areaId, procesoId, subprocesoId, key]);
 
 
   const folderStructure = useMemo(() => {
     if (!allFolders) return [];
 
-    const folderMap = new Map<string, Folder>();
     const rootFolders: Folder[] = [];
+    if(allFolders.filter(f => f.parentId === null).length > 1) {
+        setNeedsMigration(true);
+    } else {
+        setNeedsMigration(false);
+    }
     
+    const folderMap = new Map<string, Folder>();
     allFolders.forEach((doc: any) => {
       folderMap.set(doc.id, { ...doc, children: [] });
     });
@@ -219,6 +232,20 @@ export default function RepoEmbed({
      }
   }, [folderStructure, rootFolderId, selectedFolder]);
 
+  const handleRunMigration = async () => {
+    if (!firestore) return;
+    setIsMigrating(true);
+    try {
+        await migrateDedupRoots(firestore);
+        setKey(k => k + 1); // Force a re-fetch of all data
+    } catch(e) {
+        console.error("Migration failed", e);
+        alert("La migración falló. Revise la consola para más detalles.");
+    } finally {
+        setIsMigrating(false);
+    }
+  }
+
 
   const handleToggleFolder = (id: string) => {
     setOpenFolders(prev => ({ ...prev, [id]: !prev[id] }));
@@ -227,7 +254,7 @@ export default function RepoEmbed({
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0 && selectedFolder && firestore && storage) {
       const file = event.target.files[0];
-      const filePath = `repositorio/${areaId}/${procesoId || 'global'}/${subprocesoId || 'global'}/${selectedFolder.id}/${file.name}`;
+      const filePath = `repositorio/${norm(areaId)}/${norm(procesoId) || 'global'}/${norm(subprocesoId) || 'global'}/${selectedFolder.id}/${file.name}`;
       const storageRef = ref(storage, filePath);
       const uploadTask = uploadBytesResumable(storageRef, file);
 
@@ -245,9 +272,9 @@ export default function RepoEmbed({
             await addDoc(collection(firestore, 'files'), {
               name: file.name,
               folderId: selectedFolder.id,
-              areaId: areaId,
-              procesoId: procesoId ?? null,
-              subprocesoId: subprocesoId ?? null,
+              areaId: norm(areaId),
+              procesoId: norm(procesoId),
+              subprocesoId: norm(subprocesoId),
               size: file.size,
               type: file.type,
               url: downloadURL,
@@ -299,7 +326,25 @@ export default function RepoEmbed({
             <CardTitle className="font-headline text-lg">Carpetas</CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoadingFolders ? (
+            {needsMigration && (
+                <div className="mb-4 p-3 rounded-md bg-yellow-100 border border-yellow-300 text-yellow-800">
+                    <div className='flex items-center gap-2'>
+                        <AlertTriangle className='h-5 w-5'/>
+                        <h4 className='font-bold'>Datos Inconsistentes</h4>
+                    </div>
+                    <p className="text-sm mt-1">Se han detectado carpetas raíz duplicadas. Ejecute la corrección para consolidarlas.</p>
+                    <Button
+                        size="sm"
+                        className="mt-2 w-full"
+                        onClick={handleRunMigration}
+                        disabled={isMigrating}
+                    >
+                        {isMigrating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        Corregir Duplicados
+                    </Button>
+                </div>
+            )}
+            {isLoadingFolders || isMigrating ? (
                 <div className="flex items-center gap-2 text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span>Cargando carpetas...</span>
