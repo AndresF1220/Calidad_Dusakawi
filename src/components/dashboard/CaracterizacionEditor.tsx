@@ -92,7 +92,6 @@ export default function CaracterizacionEditor({ idEntidad, tipo, onSaved }: Cara
         ...data,
         idEntidad,
         tipo,
-        editable: true,
         fechaActualizacion: serverTimestamp(),
       }, { merge: true });
 

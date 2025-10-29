@@ -74,15 +74,6 @@ export function AddEntityForm({
     }
   }, [state, toast, onOpenChange]);
 
-  // Reset form state when dialog is closed
-  useEffect(() => {
-    if (!isOpen) {
-        // Resetting form state is tricky with server actions.
-        // A simple approach is to rely on re-mounting or key changes.
-        // For now, we'll just close it.
-    }
-  }, [isOpen]);
-
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
@@ -97,7 +88,7 @@ export function AddEntityForm({
                     <Label htmlFor="name" className="text-right">
                         Nombre
                     </Label>
-                    <Input id="name" name="name" className="col-span-3" placeholder={labels.field} />
+                    <Input id="name" name="name" className="col-span-3" placeholder={labels.field} required minLength={3} />
                     <input type="hidden" name="type" value={entityType} />
                     {parentId && <input type="hidden" name="parentId" value={parentId} />}
                     {grandParentId && <input type="hidden" name="grandParentId" value={grandParentId} />}

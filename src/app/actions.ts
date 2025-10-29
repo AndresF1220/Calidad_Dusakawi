@@ -28,13 +28,12 @@ export async function createEntityAction(
 
     if (!validatedFields.success) {
         const errors = validatedFields.error.flatten().fieldErrors;
-        return { message: 'Validation failed', error: errors.name?.join(', ') };
+        return { message: 'Validation failed', error: errors.name?.join(', ') || 'Error de validación.' };
     }
 
     const { name, type, parentId, grandParentId } = validatedFields.data;
 
     try {
-        let collectionPath = '';
         const data: any = {
             nombre: name,
             createdAt: serverTimestamp(),
@@ -42,32 +41,30 @@ export async function createEntityAction(
         let revalidationPath = '/inicio/documentos';
 
         if (type === 'area') {
-            const newDocRef = await addDoc(collection(db, 'areas'), data);
-            // Also create the root "Documentación" folder for this new area
+            const newAreaRef = await addDoc(collection(db, 'areas'), data);
+            // También crear la carpeta raíz "Documentación" para esta nueva área
             await addDoc(collection(db, 'folders'), {
               name: "Documentación",
               parentId: null,
-              areaId: newDocRef.id,
+              areaId: newAreaRef.id,
               procesoId: null,
               subprocesoId: null,
               createdAt: serverTimestamp()
             });
 
         } else if (type === 'process' && parentId) {
-            collectionPath = `areas/${parentId}/procesos`;
-            await addDoc(collection(db, collectionPath), data);
-            revalidationPath = `/inicio/documentos/${parentId}`;
+            await addDoc(collection(db, `areas/${parentId}/procesos`), data);
+            revalidationPath = `/inicio/documentos/area/${parentId}`;
 
         } else if (type === 'subprocess' && parentId && grandParentId) {
-            collectionPath = `areas/${grandParentId}/procesos/${parentId}/subprocesos`;
-            await addDoc(collection(db, collectionPath), data);
-            revalidationPath = `/inicio/documentos/${grandParentId}/${parentId}`;
+            await addDoc(collection(db, `areas/${grandParentId}/procesos/${parentId}/subprocesos`), data);
+            revalidationPath = `/inicio/documentos/area/${grandParentId}/proceso/${parentId}`;
         } else {
             return { message: 'Error', error: 'Parámetros inválidos para la creación.' };
         }
         
         revalidatePath(revalidationPath);
-        return { message: `${type} "${name}" creado con éxito.` };
+        return { message: `Creado correctamente.` };
 
     } catch (e: any) {
         console.error("Error creating entity:", e);
@@ -78,13 +75,17 @@ export async function createEntityAction(
 export async function seedProcessMapAction(): Promise<{ message: string; error?: string }> {
     try {
         const batch = writeBatch(db);
+        const areasCollection = collection(db, 'areas');
+        const foldersCollection = collection(db, 'folders');
 
         for (const area of SEED_AREAS) {
-            const areaRef = collection(db, 'areas');
-            const newAreaRef = await addDoc(areaRef, { nombre: area.titulo, createdAt: serverTimestamp() });
+            // Usamos addDoc para obtener una referencia con ID único
+            const newAreaRef = doc(areasCollection);
+            batch.set(newAreaRef, { nombre: area.titulo, createdAt: serverTimestamp() });
             
-            // Create root folder for the area
-            batch.set(collection(db, 'folders'), {
+            // Crear carpeta raíz para el área
+            const newFolderRef = doc(foldersCollection);
+            batch.set(newFolderRef, {
               name: "Documentación",
               parentId: null,
               areaId: newAreaRef.id,
@@ -94,12 +95,12 @@ export async function seedProcessMapAction(): Promise<{ message: string; error?:
             });
 
             for (const proceso of area.procesos) {
-                const procesoRef = collection(db, 'areas', newAreaRef.id, 'procesos');
-                const newProcesoRef = await addDoc(procesoRef, { nombre: proceso.nombre, createdAt: serverTimestamp() });
+                const newProcesoRef = doc(collection(db, 'areas', newAreaRef.id, 'procesos'));
+                batch.set(newProcesoRef, { nombre: proceso.nombre, createdAt: serverTimestamp() });
 
                 for (const subproceso of proceso.subprocesos) {
-                    const subprocesoRef = collection(db, 'areas', newAreaRef.id, 'procesos', newProcesoRef.id, 'subprocesos');
-                    batch.set(subprocesoRef, { nombre: subproceso.nombre, createdAt: serverTimestamp() });
+                    const newSubprocesoRef = doc(collection(db, 'areas', newAreaRef.id, 'procesos', newProcesoRef.id, 'subprocesos'));
+                    batch.set(newSubprocesoRef, { nombre: subproceso.nombre, createdAt: serverTimestamp() });
                 }
             }
         }
