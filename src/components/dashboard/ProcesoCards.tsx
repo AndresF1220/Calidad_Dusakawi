@@ -11,6 +11,18 @@ interface ProcesoCardsProps {
     procesoId?: string;
 }
 
+const slugify = (text: string) => {
+    return text
+        .toString()
+        .normalize('NFD') // split an accented letter in the base letter and the accent
+        .replace(/[\u0300-\u036f]/g, '') // remove all previously split accents
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/[^\w-]+/g, '')
+        .replace(/--+/g, '-');
+}
+
 export default function ProcesoCards({ areaId, procesoId }: ProcesoCardsProps) {
     
     if (procesoId) {
@@ -29,7 +41,7 @@ export default function ProcesoCards({ areaId, procesoId }: ProcesoCardsProps) {
         return (
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {subprocesos.map((sub, index) => (
-                     <Link key={index} href={`/inicio/documentos/${areaId}/${procesoId}/${sub.toLowerCase().replace(/ /g, '-')}`} className="block hover:shadow-lg transition-shadow rounded-lg">
+                     <Link key={index} href={`/inicio/documentos/${areaId}/${procesoId}/${slugify(sub)}`} className="block hover:shadow-lg transition-shadow rounded-lg">
                         <Card className="h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer hover:bg-muted/50 transition-colors">
                             <Folder className="h-16 w-16 text-primary mb-4" />
                             <CardHeader className="p-0">

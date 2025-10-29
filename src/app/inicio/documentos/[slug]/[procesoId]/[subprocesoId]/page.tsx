@@ -7,6 +7,18 @@ import CaracterizacionPanel from '@/components/dashboard/CaracterizacionPanel';
 import RepoEmbed from '@/components/dashboard/RepoEmbed';
 import { useIsAdmin } from '@/lib/authMock';
 
+const slugify = (text: string) => {
+    return text
+        .toString()
+        .normalize('NFD') // split an accented letter in the base letter and the accent
+        .replace(/[\u0300-\u036f]/g, '') // remove all previously split accents
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/[^\w-]+/g, '')
+        .replace(/--+/g, '-');
+}
+
 export default function SubprocesoPage() {
   const params = useParams();
   const areaId = params.slug as string;
@@ -18,7 +30,7 @@ export default function SubprocesoPage() {
   const isAdmin = useIsAdmin();
   
   // Find subproceso by comparing slugified version with the param
-  const subproceso = proceso?.subprocesos.find(s => s.toLowerCase().replace(/ /g, '-') === subprocesoId);
+  const subproceso = proceso?.subprocesos.find(s => slugify(s) === subprocesoId);
 
   if (!area || !proceso || !subproceso) {
     notFound();
