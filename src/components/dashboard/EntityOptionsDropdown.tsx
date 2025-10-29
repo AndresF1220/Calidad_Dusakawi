@@ -26,7 +26,8 @@ import { Button } from '@/components/ui/button';
 import { MoreVertical, Edit, Trash2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { deleteEntityAction } from '@/app/actions';
-import { AddEntityForm } from './AddEntityForm';
+import { EditEntityForm } from './EditEntityForm';
+import { useCaracterizacion } from '@/hooks/use-areas-data';
 
 interface EntityOptionsDropdownProps {
   entityId: string;
@@ -63,6 +64,12 @@ export function EntityOptionsDropdown({
   const router = useRouter();
 
   const [deleteState, deleteFormAction] = useActionState(deleteEntityAction, { message: '', error: undefined });
+
+  let caracterizacionId = `${entityType}-${entityId}`;
+  if(entityType === 'subproceso' && grandParentId && parentId) {
+     caracterizacionId = `${entityType}-${grandParentId}:${parentId}:${entityId}`;
+  }
+  const { caracterizacion } = useCaracterizacion(caracterizacionId);
 
   useEffect(() => {
     if (deleteState.message && !deleteState.error) {
@@ -107,21 +114,23 @@ export function EntityOptionsDropdown({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Edit Dialog (uses AddEntityForm for editing) */}
-      <AddEntityForm
+      <EditEntityForm
         entityType={entityType}
         parentId={parentId}
         grandParentId={grandParentId}
         isOpen={isEditing}
         onOpenChange={setIsEditing}
-        isEditing={true}
         entityId={entityId}
-        initialName={entityName}
+        initialData={{
+          name: entityName,
+          objetivo: caracterizacion?.objetivo || '',
+          alcance: caracterizacion?.alcance || '',
+          responsable: caracterizacion?.responsable || '',
+        }}
       >
         <div />
-      </AddEntityForm>
-
-      {/* Delete Confirmation Dialog */}
+      </EditEntityForm>
+      
       <AlertDialog open={isDeleting} onOpenChange={setIsDeleting}>
         <AlertDialogContent>
           <AlertDialogHeader>

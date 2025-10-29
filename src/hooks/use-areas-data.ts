@@ -22,6 +22,14 @@ export type Area = {
     slug: string;
 }
 
+export interface CaracterizacionData {
+  objetivo: string;
+  alcance: string;
+  responsable: string;
+  editable?: boolean;
+}
+
+
 export function useAreas() {
     const firestore = useFirestore();
     const areasQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'areas')) : null, [firestore]);
@@ -68,4 +76,12 @@ export function useSubproceso(areaId: string | null, procesoId: string | null, s
     const { data: subproceso, isLoading, error } = useDoc<Subproceso>(subprocesoRef);
 
     return { subproceso, isLoading, error };
+}
+
+export function useCaracterizacion(caracterizacionId: string | null) {
+    const firestore = useFirestore();
+    const caracterizacionRef = useMemoFirebase(() => (caracterizacionId && firestore) ? doc(firestore, 'caracterizaciones', caracterizacionId) : null, [firestore, caracterizacionId]);
+    const { data: caracterizacion, isLoading, error } = useDoc<CaracterizacionData>(caracterizacionRef);
+
+    return { caracterizacion, isLoading, error };
 }

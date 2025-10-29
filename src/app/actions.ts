@@ -2,7 +2,7 @@
 'use server';
 
 import { z } from 'zod';
-import { collection, addDoc, serverTimestamp, writeBatch, doc, getDocs, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, writeBatch, doc, getDocs, deleteDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { revalidatePath } from 'next/cache';
 import { SEED_AREAS } from '@/data/seed-map';
@@ -123,6 +123,91 @@ export async function deleteEntityAction(
     console.error('Error deleting entity:', e);
     return { message: 'Error', error: `No se pudo eliminar el elemento: ${e.message}` };
   }
+}
+
+const updateSchema = z.object({
+  entityId: z.string(),
+  entityType: z.enum(['area', 'process', 'subprocess']),
+  parentId: z.string().optional(),
+  grandParentId: z.string().optional(),
+  name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
+  objetivo: z.string().optional(),
+  alcance: z.string().optional(),
+  responsable: z.string().optional(),
+});
+
+export async function updateEntityAction(
+  prevState: any,
+  formData: FormData
+): Promise<{ message: string; error?: string }> {
+    const validatedFields = updateSchema.safeParse({
+        entityId: formData.get('entityId'),
+        entityType: formData.get('entityType'),
+        parentId: formData.get('parentId'),
+        grandParentId: formData.get('grandParentId'),
+        name: formData.get('name'),
+        objetivo: formData.get('objetivo'),
+        alcance: formData.get('alcance'),
+        responsable: formData.get('responsable'),
+    });
+
+    if (!validatedFields.success) {
+        const errors = validatedFields.error.flatten().fieldErrors;
+        return { message: 'Validation failed', error: errors.name?.join(', ') || 'Error de validación.' };
+    }
+    
+    const { entityId, entityType, parentId, grandParentId, name, objetivo, alcance, responsable } = validatedFields.data;
+
+    try {
+        const batch = writeBatch(db);
+
+        // 1. Update entity name and slug
+        let entityPath = '';
+        let revalidationPath = '/inicio/documentos';
+
+        if (entityType === 'area') {
+            entityPath = `areas/${entityId}`;
+        } else if (entityType === 'process' && parentId) {
+            entityPath = `areas/${parentId}/procesos/${entityId}`;
+            revalidationPath = `/inicio/documentos/area/${parentId}`;
+        } else if (entityType === 'subprocess' && parentId && grandParentId) {
+            entityPath = `areas/${grandParentId}/procesos/${parentId}/subprocesos/${entityId}`;
+            revalidationPath = `/inicio/documentos/area/${grandParentId}/proceso/${parentId}`;
+        } else {
+            return { message: 'Error', error: 'Parámetros inválidos para la actualización.' };
+        }
+
+        const entityRef = doc(db, entityPath);
+        batch.update(entityRef, { nombre: name, slug: slugify(name) });
+
+        // 2. Update caracterizacion
+        let caracterizacionId = `${entityType}-${entityId}`;
+        if(entityType === 'subproceso' && grandParentId && parentId) {
+           caracterizacionId = `${entityType}-${grandParentId}:${parentId}:${entityId}`;
+        }
+
+        const caracterizacionRef = doc(db, 'caracterizaciones', caracterizacionId);
+        batch.set(caracterizacionRef, {
+            objetivo,
+            alcance,
+            responsable,
+            fechaActualizacion: serverTimestamp(),
+        }, { merge: true });
+
+        await batch.commit();
+        
+        revalidatePath(revalidationPath);
+        if (entityType !== 'area') {
+          revalidatePath(`/inicio/documentos/area/${grandParentId || parentId}/proceso/${parentId}`);
+          revalidatePath(`/inicio/documentos/area/${grandParentId || parentId}`);
+        }
+        
+        return { message: `Cambios guardados correctamente.` };
+
+    } catch (e: any) {
+        console.error("Error updating entity:", e);
+        return { message: 'Error', error: `No se pudo actualizar la entidad: ${e.message}` };
+    }
 }
 
 

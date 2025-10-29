@@ -26,17 +26,14 @@ interface AddEntityFormProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   children: React.ReactNode;
-  isEditing?: boolean;
-  entityId?: string;
-  initialName?: string;
 }
 
-function SubmitButton({ isEditing }: { isEditing?: boolean }) {
+function SubmitButton() {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" disabled={pending}>
       {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-      {isEditing ? 'Guardar Cambios' : 'Crear'}
+      Crear
     </Button>
   );
 }
@@ -48,9 +45,6 @@ export function AddEntityForm({
   isOpen,
   onOpenChange,
   children,
-  isEditing = false,
-  entityId,
-  initialName = '',
 }: AddEntityFormProps) {
   const { toast } = useToast();
   const [state, formAction] = useActionState(createEntityAction, { message: '', error: undefined });
@@ -63,9 +57,8 @@ export function AddEntityForm({
   };
 
   const labels = typeLabels[entityType];
-  const actionText = isEditing ? 'Editar' : 'Crear';
-  const title = `${actionText} ${labels.title}`;
-  const description = `${actionText} ${labels.description}`;
+  const title = `Crear ${labels.title}`;
+  const description = `Crear ${labels.description}`;
 
   useEffect(() => {
     if (state.message && !state.error) {
@@ -79,11 +72,11 @@ export function AddEntityForm({
     if (state.error) {
         toast({
             variant: 'destructive',
-            title: `Error al ${actionText.toLowerCase()}`,
+            title: `Error al crear`,
             description: state.error,
         });
     }
-  }, [state, toast, onOpenChange, actionText]);
+  }, [state, toast, onOpenChange]);
 
   // Reset form when dialog closes
   useEffect(() => {
@@ -113,17 +106,15 @@ export function AddEntityForm({
                         placeholder={labels.field} 
                         required 
                         minLength={3}
-                        defaultValue={initialName}
                      />
                     <input type="hidden" name="type" value={entityType} />
-                    {isEditing && entityId && <input type="hidden" name="entityId" value={entityId} />}
                     {parentId && <input type="hidden" name="parentId" value={parentId} />}
                     {grandParentId && <input type="hidden" name="grandParentId" value={grandParentId} />}
                 </div>
             </div>
             <DialogFooter>
                 <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                <SubmitButton isEditing={isEditing} />
+                <SubmitButton />
             </DialogFooter>
         </form>
       </DialogContent>
