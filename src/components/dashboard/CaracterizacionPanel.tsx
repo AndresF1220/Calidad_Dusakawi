@@ -56,8 +56,12 @@ export default function CaracterizacionPanel({
   const docId = `${tipo}-${idEntidad.replace(/:/g, '_')}`;
 
   useEffect(() => {
-    if (!firestore) return;
+    if (!firestore) {
+        setLoading(false); // If firestore is not ready, stop loading
+        return;
+    };
 
+    setLoading(true);
     const docRef = doc(firestore, 'caracterizaciones', docId);
     const unsubscribe = onSnapshot(
       docRef,
@@ -79,7 +83,8 @@ export default function CaracterizacionPanel({
           };
           try {
             await setDoc(docRef, newCaracterizacion);
-            // Listener will pick up the new document, but we can set state here to be faster
+            // The listener will pick up the new document, but we can set state here to be faster
+            // and avoid showing the "not registered" message for a split second.
             setCaracterizacion(newCaracterizacion);
           } catch (error) {
              console.error("Error creating caracterizacion:", error);
