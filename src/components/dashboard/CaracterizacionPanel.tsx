@@ -1,7 +1,14 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useFirestore } from '@/firebase';
+import {
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp,
+  onSnapshot,
+} from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +22,7 @@ import {
   Edit,
   Save,
   X,
+  Loader,
 } from 'lucide-react';
 
 interface CaracterizacionPanelProps {
@@ -22,73 +30,70 @@ interface CaracterizacionPanelProps {
   tipo: 'area' | 'proceso' | 'subproceso';
 }
 
-// Mock data - replace with Firestore data
-const getCaracterizacion = (idEntidad: string, tipo: string) => {
-  const mockData: any = {
-    area: {
-      financiera: {
-        objetivo:
-          'Garantizar la gestión eficiente de los recursos financieros y administrativos para apoyar la operación de la EPSI.',
-        alcance:
-          'Cubre todos los procesos de contabilidad, tesorería, compras, gestión documental y talento humano.',
-        responsable: 'Director(a) Administrativo y Financiero',
-      },
-      'gestion-riesgo': {
-        objetivo:
-          'Gestionar integralmente el riesgo en salud de la población afiliada, desde la promoción hasta el tratamiento de alta complejidad.',
-        alcance:
-          'Incluye la gestión de programas de promoción y mantenimiento, autorizaciones, y la auditoría de todos los niveles de atención.',
-        responsable: 'Director(a) de Gestión del Riesgo',
-      },
-    },
-    proceso: {
-      contabilidad: {
-        objetivo:
-          'Registrar, clasificar y resumir las operaciones financieras para proporcionar información precisa para la toma de decisiones.',
-        alcance:
-          'Desde el registro de transacciones hasta la preparación de estados financieros y el cumplimiento de obligaciones tributarias.',
-        responsable: 'Jefe de Contabilidad',
-      },
-      siau: {
-        objetivo:
-          'Garantizar la atención oportuna y efectiva de las solicitudes, quejas, reclamos y sugerencias de los usuarios.',
-        alcance:
-          'Cubre todos los canales de atención al usuario y la gestión de respuestas hasta el cierre del caso.',
-        responsable: 'Coordinador(a) SIAU',
-      },
-    },
-  };
-  return mockData[tipo]?.[idEntidad] || null;
-};
+interface CaracterizacionData {
+  objetivo: string;
+  alcance: string;
+  responsable: string;
+  editable?: boolean;
+}
 
 export default function CaracterizacionPanel({
   idEntidad,
   tipo,
 }: CaracterizacionPanelProps) {
-  // SIMULATE SUPERUSER
-  const isSuperuser = true;
+  const firestore = useFirestore();
+  const isSuperuser = true; // Mock superuser role
 
-  const [caracterizacion, setCaracterizacion] = useState(
-    getCaracterizacion(idEntidad, tipo)
-  );
+  const [caracterizacion, setCaracterizacion] =
+    useState<CaracterizacionData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    objetivo: caracterizacion?.objetivo || '',
-    alcance: caracterizacion?.alcance || '',
-    responsable: caracterizacion?.responsable || '',
+  const [formData, setFormData] = useState<CaracterizacionData>({
+    objetivo: '',
+    alcance: '',
+    responsable: '',
   });
 
   useEffect(() => {
-    // In a real app, you would fetch this from Firestore
-    // e.g., const docSnap = await getDoc(doc(firestore, 'caracterizaciones', `${tipo}-${idEntidad}`));
-    const fetchedData = getCaracterizacion(idEntidad, tipo);
-    setCaracterizacion(fetchedData);
-    setFormData({
-      objetivo: fetchedData?.objetivo || '',
-      alcance: fetchedData?.alcance || '',
-      responsable: fetchedData?.responsable || '',
-    });
-  }, [idEntidad, tipo]);
+    if (!firestore) return;
+
+    const docId = `${tipo}-${idEntidad.replace(/:/g, '_')}`;
+    const docRef = doc(firestore, 'caracterizaciones', docId);
+
+    const unsubscribe = onSnapshot(
+      docRef,
+      async (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data() as CaracterizacionData;
+          setCaracterizacion(data);
+          setFormData(data);
+        } else {
+          // Document doesn't exist, create it with default empty values
+          const newCaracterizacion = {
+            idEntidad,
+            tipo,
+            objetivo: '',
+            alcance: '',
+            responsable: '',
+            fechaCreacion: serverTimestamp(),
+            creadaPor: 'system', // or a superuser id
+            repositorioId: idEntidad,
+            editable: true,
+          };
+          await setDoc(docRef, newCaracterizacion);
+          setCaracterizacion(newCaracterizacion);
+          setFormData(newCaracterizacion);
+        }
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error fetching caracterizacion:', error);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [firestore, idEntidad, tipo]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -98,30 +103,37 @@ export default function CaracterizacionPanel({
   };
 
   const handleSave = async () => {
-    console.log('Saving data to Firestore:', {
-      idEntidad: idEntidad,
-      tipo: tipo,
-      ...formData,
-    });
-    // try {
-    //   const docRef = doc(firestore, 'caracterizaciones', `${tipo}-${idEntidad}`);
-    //   await setDoc(docRef, {
-    //     idEntidad: idEntidad,
-    //     tipo: tipo,
-    //     ...formData,
-    //     fechaCreacion: serverTimestamp(),
-    //     creadaPor: 'superuser_id', // Replace with actual user ID
-    //     repositorioId: idEntidad,
-    //     editable: true,
-    //   }, { merge: true });
-    //   setCaracterizacion(formData); // Optimistically update UI
-    //   setIsEditing(false);
-    // } catch (error) {
-    //   console.error("Error saving characterization: ", error);
-    // }
-    setCaracterizacion(formData); // Simulate save
+    if (!firestore) return;
     setIsEditing(false);
+    
+    const docId = `${tipo}-${idEntidad.replace(/:/g, '_')}`;
+    const docRef = doc(firestore, 'caracterizaciones', docId);
+
+    try {
+      await setDoc(
+        docRef,
+        {
+          ...formData,
+          fechaModificacion: serverTimestamp(),
+        },
+        { merge: true }
+      );
+      // Optimistic update in UI is handled by onSnapshot
+    } catch (error) {
+      console.error('Error saving characterization: ', error);
+      // Optionally, revert UI changes or show an error toast
+    }
   };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    // Reset form data to the original state
+    if (caracterizacion) {
+      setFormData(caracterizacion);
+    }
+  };
+  
+  const canEdit = isSuperuser && caracterizacion?.editable;
 
   return (
     <Card>
@@ -132,7 +144,7 @@ export default function CaracterizacionPanel({
             Caracterización del {tipo.charAt(0).toUpperCase() + tipo.slice(1)}
           </CardTitle>
         </div>
-        {isSuperuser && !isEditing && (
+        {canEdit && !isEditing && (
           <Button
             variant="outline"
             size="sm"
@@ -144,7 +156,11 @@ export default function CaracterizacionPanel({
         )}
       </CardHeader>
       <CardContent className="space-y-4">
-        {!caracterizacion && !isEditing ? (
+        {loading ? (
+           <div className="flex justify-center items-center h-40">
+                <Loader className="h-8 w-8 animate-spin text-primary" />
+           </div>
+        ) : !caracterizacion && !isEditing ? (
           <p className="text-muted-foreground text-center py-4">
             No se ha registrado la caracterización para este elemento.
           </p>
@@ -157,7 +173,8 @@ export default function CaracterizacionPanel({
                 name="objetivo"
                 value={formData.objetivo}
                 onChange={handleInputChange}
-                rows={3}
+                placeholder="Defina el propósito fundamental..."
+                rows={4}
               />
             </div>
             <div className="grid gap-2">
@@ -167,7 +184,8 @@ export default function CaracterizacionPanel({
                 name="alcance"
                 value={formData.alcance}
                 onChange={handleInputChange}
-                rows={3}
+                placeholder="Describa los límites y el ámbito de aplicación..."
+                rows={4}
               />
             </div>
             <div className="grid gap-2">
@@ -177,10 +195,11 @@ export default function CaracterizacionPanel({
                 name="responsable"
                 value={formData.responsable}
                 onChange={handleInputChange}
+                placeholder="Cargo o rol responsable"
               />
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setIsEditing(false)}>
+              <Button variant="ghost" onClick={handleCancel}>
                 <X className="h-4 w-4 mr-2" />
                 Cancelar
               </Button>
@@ -191,33 +210,42 @@ export default function CaracterizacionPanel({
             </div>
           </div>
         ) : (
-          <div className="space-y-6 text-sm">
-            <div className="space-y-2">
-              <h3 className="font-semibold flex items-center gap-2">
-                <Target className="h-5 w-5 text-primary" />
-                Objetivo
-              </h3>
-              <p className="text-muted-foreground">
-                {caracterizacion?.objetivo}
-              </p>
+          (caracterizacion?.objetivo || caracterizacion?.alcance || caracterizacion?.responsable) ? (
+            <div className="space-y-6 text-sm">
+                <div className="space-y-2">
+                <h3 className="font-semibold flex items-center gap-2">
+                    <Target className="h-5 w-5 text-primary" />
+                    Objetivo
+                </h3>
+                <p className="text-muted-foreground whitespace-pre-wrap">
+                    {caracterizacion?.objetivo || <em>No definido.</em>}
+                </p>
+                </div>
+                <div className="space-y-2">
+                <h3 className="font-semibold flex items-center gap-2">
+                    <GitBranch className="h-5 w-5 text-primary" />
+                    Alcance
+                </h3>
+                <p className="text-muted-foreground whitespace-pre-wrap">
+                    {caracterizacion?.alcance || <em>No definido.</em>}
+                </p>
+                </div>
+                <div className="space-y-2">
+                <h3 className="font-semibold flex items-center gap-2">
+                    <User className="h-5 w-5 text-primary" />
+                    Responsable
+                </h3>
+                <p className="text-muted-foreground">
+                    {caracterizacion?.responsable || <em>No definido.</em>}
+                </p>
+                </div>
             </div>
-            <div className="space-y-2">
-              <h3 className="font-semibold flex items-center gap-2">
-                <GitBranch className="h-5 w-5 text-primary" />
-                Alcance
-              </h3>
-              <p className="text-muted-foreground">{caracterizacion?.alcance}</p>
-            </div>
-            <div className="space-y-2">
-              <h3 className="font-semibold flex items-center gap-2">
-                <User className="h-5 w-5 text-primary" />
-                Responsable
-              </h3>
-              <p className="text-muted-foreground">
-                {caracterizacion?.responsable}
-              </p>
-            </div>
-          </div>
+           ) : (
+             <p className="text-muted-foreground text-center py-4">
+               No se ha registrado la caracterización para este elemento.
+               {canEdit && " Haga clic en 'Editar' para comenzar."}
+            </p>
+           )
         )}
       </CardContent>
     </Card>
