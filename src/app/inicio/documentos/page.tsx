@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -24,6 +25,45 @@ const iconMap: { [key: string]: React.ElementType } = {
     'default': Building,
 };
 
+const AreaCard = ({ area }: { area: any }) => {
+    const { toast } = useToast();
+    const Icon = iconMap[area.slug] || iconMap['default'];
+
+    const handleClick = (e: React.MouseEvent) => {
+        if (!area || !area.id) {
+            e.preventDefault();
+            toast({
+                variant: 'destructive',
+                title: 'Elemento no encontrado',
+                description: 'El área que intenta abrir ya no existe o no se pudo cargar.',
+            });
+        }
+    };
+
+    const cardContent = (
+        <Card className="h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer hover:bg-muted/50 transition-colors">
+            <Icon className="h-16 w-16 text-primary mb-4" />
+            <CardHeader className="p-0">
+                <CardTitle className="font-headline text-xl">{area.nombre}</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 mt-2">
+                <CardDescription>
+                    Gestión de {area.nombre.toLowerCase()}
+                </CardDescription>
+            </CardContent>
+        </Card>
+    );
+
+    if (!area || !area.id) {
+        return <div onClick={handleClick}>{cardContent}</div>;
+    }
+
+    return (
+        <Link href={`/inicio/documentos/area/${area.id}`} onClick={handleClick} className="block hover:shadow-lg transition-shadow rounded-lg">
+            {cardContent}
+        </Link>
+    );
+}
 
 export default function RepositoryAreasPage() {
   const { areas, isLoading } = useAreas();
@@ -32,8 +72,8 @@ export default function RepositoryAreasPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const seedData = async () => {
-        if (!isLoading && areas?.length === 0) {
+    const ensureSeeded = async () => {
+        if (!isLoading && areas && areas.length === 0) {
             setIsSeeding(true);
             toast({
                 title: "Restaurando mapa de procesos...",
@@ -55,16 +95,9 @@ export default function RepositoryAreasPage() {
             setIsSeeding(false);
         }
     };
-    seedData();
+    ensureSeeded();
   }, [isLoading, areas, toast]);
 
-
-  const macroprocesos = areas?.map(area => ({
-      title: area.nombre,
-      id: area.id,
-      icon: iconMap[area.id] || iconMap['default'],
-      description: `Gestión de ${area.nombre.toLowerCase()}`
-  }));
 
   return (
     <div className="flex flex-col gap-8">
@@ -89,23 +122,11 @@ export default function RepositoryAreasPage() {
         {(isLoading || isSeeding) && Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="h-48 w-full" />
         ))}
-        {!isSeeding && macroprocesos?.map((area) => (
-            <Link key={area.id} href={`/inicio/documentos/${area.id}`} className="block hover:shadow-lg transition-shadow rounded-lg">
-                <Card className="h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer hover:bg-muted/50 transition-colors">
-                    <area.icon className="h-16 w-16 text-primary mb-4" />
-                    <CardHeader className="p-0">
-                    <CardTitle className="font-headline text-xl">{area.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-0 mt-2">
-                    <CardDescription>
-                        {area.description}
-                    </CardDescription>
-                    </CardContent>
-                </Card>
-            </Link>
+        {!isSeeding && areas?.map((area) => (
+            <AreaCard key={area.id} area={area} />
         ))}
       </div>
-       {!isLoading && !isSeeding && macroprocesos?.length === 0 && (
+       {!isLoading && !isSeeding && areas?.length === 0 && (
             <div className="col-span-full text-center py-10">
                 <Loader2 className="mx-auto h-12 w-12 animate-spin text-muted-foreground" />
                 <p className="mt-4 text-center text-muted-foreground">No hay áreas creadas. Comience por agregar una o espere la restauración automática.</p>

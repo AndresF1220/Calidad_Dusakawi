@@ -2,11 +2,11 @@
 'use server';
 
 import { z } from 'zod';
-import { collection, addDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, writeBatch, doc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { revalidatePath } from 'next/cache';
 import { SEED_AREAS } from '@/data/seed-map';
-
+import { slugify } from '@/lib/slug';
 
 const createSchema = z.object({
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
@@ -36,13 +36,13 @@ export async function createEntityAction(
     try {
         const data: any = {
             nombre: name,
+            slug: slugify(name),
             createdAt: serverTimestamp(),
         };
         let revalidationPath = '/inicio/documentos';
 
         if (type === 'area') {
             const newAreaRef = await addDoc(collection(db, 'areas'), data);
-            // También crear la carpeta raíz "Documentación" para esta nueva área
             await addDoc(collection(db, 'folders'), {
               name: "Documentación",
               parentId: null,
@@ -79,11 +79,13 @@ export async function seedProcessMapAction(): Promise<{ message: string; error?:
         const foldersCollection = collection(db, 'folders');
 
         for (const area of SEED_AREAS) {
-            // Usamos addDoc para obtener una referencia con ID único
             const newAreaRef = doc(areasCollection);
-            batch.set(newAreaRef, { nombre: area.titulo, createdAt: serverTimestamp() });
+            batch.set(newAreaRef, { 
+                nombre: area.titulo, 
+                slug: slugify(area.titulo),
+                createdAt: serverTimestamp() 
+            });
             
-            // Crear carpeta raíz para el área
             const newFolderRef = doc(foldersCollection);
             batch.set(newFolderRef, {
               name: "Documentación",
@@ -96,11 +98,19 @@ export async function seedProcessMapAction(): Promise<{ message: string; error?:
 
             for (const proceso of area.procesos) {
                 const newProcesoRef = doc(collection(db, 'areas', newAreaRef.id, 'procesos'));
-                batch.set(newProcesoRef, { nombre: proceso.nombre, createdAt: serverTimestamp() });
+                batch.set(newProcesoRef, { 
+                    nombre: proceso.nombre,
+                    slug: slugify(proceso.nombre),
+                    createdAt: serverTimestamp() 
+                });
 
                 for (const subproceso of proceso.subprocesos) {
                     const newSubprocesoRef = doc(collection(db, 'areas', newAreaRef.id, 'procesos', newProcesoRef.id, 'subprocesos'));
-                    batch.set(newSubprocesoRef, { nombre: subproceso.nombre, createdAt: serverTimestamp() });
+                    batch.set(newSubprocesoRef, { 
+                        nombre: subproceso.nombre,
+                        slug: slugify(subproceso.nombre),
+                        createdAt: serverTimestamp() 
+                    });
                 }
             }
         }
