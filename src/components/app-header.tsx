@@ -33,13 +33,16 @@ const hardcodedTranslations: Record<string, string> = {
     feedback: "Feedback",
     documentos: "Mapa de Procesos",
     account: "Cuenta",
+    area: "Área",
+    proceso: "Proceso",
+    subproceso: "Subproceso",
 };
 
 // A hook to fetch breadcrumb data dynamically
 function useBreadcrumbData(segments: string[]) {
-    const areaId = segments[1] === 'documentos' && segments.length > 2 ? segments[2] : null;
-    const procesoId = segments[1] === 'documentos' && segments.length > 3 ? segments[3] : null;
-    const subprocesoId = segments[1] === 'documentos' && segments.length > 4 ? segments[4] : null;
+    const areaId = segments[2] === 'area' && segments.length > 3 ? segments[3] : null;
+    const procesoId = segments[2] === 'area' && segments.length > 5 ? segments[5] : null;
+    const subprocesoId = segments[2] === 'area' && segments.length > 7 ? segments[7] : null;
 
     const { area, isLoading: isLoadingArea } = useArea(areaId);
     const { proceso, isLoading: isLoadingProceso } = useProceso(areaId, procesoId);
@@ -66,14 +69,14 @@ export default function AppHeader() {
         const isLast = index === pathSegments.length - 1;
         let label = hardcodedTranslations[segment] || segment;
 
-        if (pathSegments[1] === 'documentos' && !isLoading) {
-            if (index === 2) {
-                label = area?.nombre || segment;
-            } else if (index === 3) {
-                label = proceso?.nombre || segment;
-            } else if (index === 4) {
-                label = subproceso?.nombre || segment;
-            }
+        if (index === 3 && area) { // areaId
+            label = area.nombre;
+        } else if (index === 5 && proceso) { // procesoId
+            label = proceso.nombre;
+        } else if (index === 7 && subproceso) { // subprocesoId
+            label = subproceso.nombre;
+        } else if (isLast && isLoading) {
+            label = 'Cargando...';
         }
         
         return { href, label, isLast };

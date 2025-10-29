@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams, notFound } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import CaracterizacionPanel from '@/components/dashboard/CaracterizacionPanel';
 import ProcesoCards from '@/components/dashboard/ProcesoCards';
 import RepoEmbed from '@/components/dashboard/RepoEmbed';
@@ -8,9 +8,10 @@ import { useIsAdmin } from '@/lib/authMock';
 import { useArea } from '@/hooks/use-areas-data';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, ArrowLeft } from 'lucide-react';
 import { AddEntityForm } from '@/components/dashboard/AddEntityForm';
 import { Skeleton } from '@/components/ui/skeleton';
+import Link from 'next/link';
 
 export default function AreaIdPage() {
   const params = useParams();
@@ -35,7 +36,18 @@ export default function AreaIdPage() {
   }
 
   if (!area) {
-    notFound();
+    return (
+      <div className="flex flex-col items-center justify-center h-96 text-center">
+        <h2 className="text-2xl font-bold font-headline mb-4">Área no encontrada</h2>
+        <p className="text-muted-foreground mb-6">El área que busca no existe o ha sido eliminada.</p>
+        <Button asChild>
+          <Link href="/inicio/documentos">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Volver al Mapa de Procesos
+          </Link>
+        </Button>
+      </div>
+    );
   }
 
   return (
