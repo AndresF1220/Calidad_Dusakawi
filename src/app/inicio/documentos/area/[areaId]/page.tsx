@@ -23,7 +23,7 @@ export default function AreaIdPage() {
   const [isAdding, setIsAdding] = useState(false);
 
   // If params are not yet available or data is loading, show a loading state.
-  if (isLoading || !areaId) {
+  if (!areaId || isLoading) {
     return (
         <div className="flex flex-col gap-8">
             <Skeleton className="h-10 w-1/2" />

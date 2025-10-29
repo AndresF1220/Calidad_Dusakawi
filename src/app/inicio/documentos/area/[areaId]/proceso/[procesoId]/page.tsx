@@ -26,7 +26,7 @@ export default function ProcesoIdPage() {
   const { proceso, isLoading: isLoadingProceso } = useProceso(areaId, procesoId);
   
   // If params are not yet available, show a loading state.
-  if (!areaId || !procesoId) {
+  if (!areaId || !procesoId || isLoadingArea || isLoadingProceso) {
     return (
         <div className="flex flex-col gap-8">
             <Skeleton className="h-10 w-1/2" />
@@ -40,22 +40,6 @@ export default function ProcesoIdPage() {
     );
   }
   
-  const isLoading = isLoadingArea || isLoadingProceso;
-
-  if (isLoading) {
-    return (
-        <div className="flex flex-col gap-8">
-            <Skeleton className="h-10 w-1/2" />
-            <Skeleton className="h-40 w-full" />
-            <Skeleton className="h-10 w-1/4" />
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <Skeleton className="h-48 w-full" />
-                <Skeleton className="h-48 w-full" />
-            </div>
-        </div>
-    );
-  }
-
   // After loading, if a document is missing, show a user-friendly message
   if (!area || !proceso) {
     return (

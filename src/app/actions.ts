@@ -207,7 +207,9 @@ export async function updateEntityAction(
 
         // 2. Update caracterizacion
         let caracterizacionId = `${entityType}-${entityId}`;
-        if(entityType === 'subprocess' && grandParentId && parentId) {
+        if(entityType === 'process' && parentId) {
+            caracterizacionId = `process-${entityId}`;
+        } else if(entityType === 'subprocess' && grandParentId && parentId) {
            caracterizacionId = `subprocess-${grandParentId}:${parentId}:${entityId}`;
         }
 
