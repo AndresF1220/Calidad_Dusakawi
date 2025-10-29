@@ -65,7 +65,7 @@ export default function SubprocesoIdPage() {
         )}
       </div>
 
-      <CaracterizacionPanel idEntidad={`${areaId}:${procesoId}:${subproceso.id}`} tipo="subproceso" />
+      <CaracterizacionPanel idEntidad={subproceso.id} tipo="subproceso" />
       
       <RepoEmbed areaId={areaId} procesoId={procesoId} subprocesoId={subproceso.id} />
     </div>

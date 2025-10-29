@@ -65,7 +65,7 @@ export async function createEntityAction(
         } else if (type === 'subprocess' && parentId && grandParentId) {
             newEntityRef = doc(collection(db, `areas/${grandParentId}/procesos/${parentId}/subprocesos`));
             batch.set(newEntityRef, entityData);
-            caracterizacionId = `subprocess-${grandParentId}:${parentId}:${newEntityRef.id}`;
+            caracterizacionId = `subprocess-${newEntityRef.id}`;
             revalidationPath = `/inicio/documentos/area/${grandParentId}/proceso/${parentId}`;
         } else {
             return { message: 'Error', error: 'Parámetros inválidos para la creación.' };
@@ -206,11 +206,11 @@ export async function updateEntityAction(
         batch.update(entityRef, { nombre: name, slug: slugify(name) });
 
         // 2. Update caracterizacion
-        let caracterizacionId = `${entityType}-${entityId}`;
-        if(entityType === 'process' && parentId) {
+        let caracterizacionId = `area-${entityId}`;
+        if (entityType === 'proceso') {
             caracterizacionId = `process-${entityId}`;
-        } else if(entityType === 'subprocess' && grandParentId && parentId) {
-           caracterizacionId = `subprocess-${grandParentId}:${parentId}:${entityId}`;
+        } else if (entityType === 'subproceso') {
+           caracterizacionId = `subprocess-${entityId}`;
         }
 
         const caracterizacionRef = doc(db, 'caracterizaciones', caracterizacionId);

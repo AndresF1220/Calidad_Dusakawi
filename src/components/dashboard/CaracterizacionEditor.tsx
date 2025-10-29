@@ -40,13 +40,11 @@ export default function CaracterizacionEditor({ idEntidad, tipo, onSaved }: Cara
   const firestore = useFirestore();
   const { toast } = useToast();
   
-  let caracterizacionId = `${tipo}-${idEntidad}`;
-   if(tipo === 'subproceso') {
-     // Subproceso IDs are composite, but the editor receives the final part.
-     // The panel should pass the full composite ID for caracterizacion.
-     caracterizacionId = `subproceso-${idEntidad}`;
-   } else if (tipo === 'proceso') {
+  let caracterizacionId = `area-${idEntidad}`;
+   if (tipo === 'proceso') {
      caracterizacionId = `process-${idEntidad}`;
+   } else if (tipo === 'subproceso') {
+     caracterizacionId = `subprocess-${idEntidad}`;
    }
 
 
