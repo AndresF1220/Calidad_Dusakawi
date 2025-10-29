@@ -17,12 +17,12 @@ export default function ProcesoIdPage() {
   const params = useParams();
   const areaId = params.areaId as string;
   const procesoId = params.procesoId as string;
-
   const [isAdding, setIsAdding] = useState(false);
 
-  // Hooks are called conditionally based on params existence
   const { area, isLoading: isLoadingArea } = useArea(areaId);
   const { proceso, isLoading: isLoadingProceso } = useProceso(areaId, procesoId);
+  
+  // Wait for params and data loading
   const isLoading = !areaId || !procesoId || isLoadingArea || isLoadingProceso;
 
   if (isLoading) {
@@ -39,6 +39,7 @@ export default function ProcesoIdPage() {
     );
   }
 
+  // After loading, if a document is missing, show a user-friendly message
   if (!area || !proceso) {
     return (
       <div className="flex flex-col items-center justify-center h-96 text-center">

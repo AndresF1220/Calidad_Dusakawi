@@ -17,6 +17,7 @@ export default function SubprocesoIdPage() {
   const { proceso, isLoading: isLoadingProceso } = useProceso(areaId, procesoId);
   const { subproceso, isLoading: isLoadingSubproceso } = useSubproceso(areaId, procesoId, subprocesoId);
 
+  // Wait for params and all data to load
   const isLoading = !areaId || !procesoId || !subprocesoId || isLoadingArea || isLoadingProceso || isLoadingSubproceso;
 
   if (isLoading) {
@@ -29,6 +30,7 @@ export default function SubprocesoIdPage() {
     );
   }
 
+  // Only call notFound after loading is complete and data is missing
   if (!area || !proceso || !subproceso) {
     notFound();
   }
