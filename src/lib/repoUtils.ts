@@ -52,7 +52,7 @@ export async function getOrCreateRootFolder(firestore: Firestore, { areaId, proc
   const subSnap = await getDocs(subQ);
   const existing = new Set(subSnap.docs.map(d => (d.data() as any).name));
   
-  const batch = runTransaction(firestore, async (tx) => {
+  await runTransaction(firestore, async (tx) => {
     DEFAULT_FOLDERS
       .filter(n => !existing.has(n))
       .forEach(n => {
@@ -65,8 +65,6 @@ export async function getOrCreateRootFolder(firestore: Firestore, { areaId, proc
         });
       });
   });
-
-  await batch;
 
   return { id: rootKey, name: "Documentación", parentId: null, areaId, procesoId, subprocesoId };
 }
