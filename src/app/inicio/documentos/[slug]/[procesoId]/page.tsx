@@ -24,7 +24,7 @@ export default function ProcesoPage() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-3xl font-bold font-headline">{proceso.nombre} — {area.titulo}</h1>
+        <h1 className="text-3xl font-bold font-headline">{proceso.nombre}</h1>
       </div>
 
       <CaracterizacionPanel idEntidad={`${areaId}:${procesoId}`} tipo="proceso" isAdmin={isAdmin} />

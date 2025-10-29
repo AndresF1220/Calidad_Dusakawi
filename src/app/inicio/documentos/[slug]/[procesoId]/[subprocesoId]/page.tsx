@@ -23,11 +23,13 @@ export default function SubprocesoPage() {
   if (!area || !proceso || !subproceso) {
     notFound();
   }
+  
+  const formattedSubprocesoName = subproceso.charAt(0).toUpperCase() + subproceso.slice(1).replace(/-/g, ' ');
 
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-3xl font-bold font-headline capitalize">{subproceso.replace(/-/g, ' ')} — {proceso.nombre} — {area.titulo}</h1>
+        <h1 className="text-3xl font-bold font-headline capitalize">{formattedSubprocesoName}</h1>
       </div>
 
       <CaracterizacionPanel idEntidad={`${areaId}:${procesoId}:${subprocesoId}`} tipo="subproceso" isAdmin={isAdmin} />
