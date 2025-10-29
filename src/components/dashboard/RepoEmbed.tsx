@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { useFirestore, useCollection, useDoc } from '@/firebase';
+import { useFirestore, useCollection, useStorage } from '@/firebase';
 import {
   collection,
   query,
@@ -18,7 +18,6 @@ import {
   uploadBytesResumable,
   getDownloadURL,
   deleteObject,
-  getStorage,
 } from 'firebase/storage';
 import { ensureRepoRoots } from '@/lib/firestore/ensureRepoRoots';
 import {
@@ -142,7 +141,7 @@ export default function RepoEmbed({
   subprocesoId,
 }: RepoEmbedProps) {
   const firestore = useFirestore();
-  const storage = getStorage();
+  const storage = useStorage();
   
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
   const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({});
@@ -218,7 +217,7 @@ export default function RepoEmbed({
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files.length > 0 && selectedFolder && firestore) {
+    if (event.target.files && event.target.files.length > 0 && selectedFolder && firestore && storage) {
       const file = event.target.files[0];
       const filePath = `repositorio/${areaId}/${procesoId || 'global'}/${subprocesoId || 'global'}/${selectedFolder.id}/${file.name}`;
       const storageRef = ref(storage, filePath);
@@ -258,7 +257,7 @@ export default function RepoEmbed({
   };
 
   const handleFileDelete = async (fileToDelete: File) => {
-    if (!firestore) return;
+    if (!firestore || !storage) return;
 
     try {
         // Delete Firestore document
@@ -350,7 +349,7 @@ export default function RepoEmbed({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {isLoadingFiles ? (
+                {isLoadingFiles || isLoadingFolders ? (
                     <TableRow>
                         <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">Cargando archivos...</TableCell>
                     </TableRow>
@@ -367,6 +366,7 @@ export default function RepoEmbed({
                         >
                           {file.name}
                         </a>
+
                       </TableCell>
                       <TableCell>{file.modifiedAt ? new Date(file.modifiedAt.seconds * 1000).toLocaleDateString() : 'N/A'}</TableCell>
                       <TableCell>{(file.size / (1024)).toFixed(2)} KB</TableCell>
@@ -409,3 +409,4 @@ export default function RepoEmbed({
   );
 }
 
+    
