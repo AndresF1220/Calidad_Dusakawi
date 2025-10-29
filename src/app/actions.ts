@@ -75,18 +75,6 @@ export async function suggestAdditionalDataAction(
 }
 
 
-const slugify = (text: string) => {
-    return text
-        .toString()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, '-')
-        .replace(/[^\w-]+/g, '')
-        .replace(/--+/g, '-');
-}
-
 const createSchema = z.object({
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
   type: z.enum(['area', 'process', 'subprocess']),
@@ -113,10 +101,8 @@ export async function createEntityAction(
     const { name, type, parentId, grandParentId } = validatedFields.data;
 
     try {
-        const slug = slugify(name);
         let collectionPath = '';
-        let data: any = {
-            id: slug,
+        const data: any = {
             nombre: name,
             createdAt: serverTimestamp(),
         };
@@ -124,12 +110,21 @@ export async function createEntityAction(
 
         if (type === 'area') {
             collectionPath = 'areas';
-            await setDoc(doc(db, collectionPath, slug), data);
+            const newDoc = await addDoc(collection(db, collectionPath), data);
+            await addDoc(collection(db, 'folders'), {
+              name: "Documentación",
+              parentId: null,
+              areaId: newDoc.id, 
+              procesoId: null, 
+              subprocesoId: null,
+              createdAt: serverTimestamp()
+            });
+
         } else if (type === 'process' && parentId) {
             collectionPath = `areas/${parentId}/procesos`;
-            data.subprocesos = [];
-            await setDoc(doc(db, collectionPath, slug), data);
+            await addDoc(collection(db, collectionPath), data);
             revalidationPath = `/inicio/documentos/${parentId}`;
+
         } else if (type === 'subprocess' && parentId && grandParentId) {
             collectionPath = `areas/${grandParentId}/procesos/${parentId}/subprocesos`;
             await addDoc(collection(db, collectionPath), data);
