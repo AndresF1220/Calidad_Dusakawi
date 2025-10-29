@@ -70,6 +70,7 @@ type Folder = {
   name: string;
   children: Folder[];
   parentId: string | null;
+  createdAt: any; // Keep timestamp for sorting
 };
 
 const FolderTree = ({
@@ -201,14 +202,32 @@ export default function RepoEmbed({
     }
     
     const folderMap = new Map<string, Folder>();
+    
+    // Deduplicate folders by name at the same level
+    const uniqueFolders = new Map<string, Folder>();
     allFolders.forEach((doc: any) => {
-      folderMap.set(doc.id, { ...doc, children: [] });
+      const key = `${doc.parentId || 'root'}-${doc.name}`;
+      if (!uniqueFolders.has(key)) {
+        uniqueFolders.set(key, { ...doc, children: [] });
+      } else {
+        // Keep the oldest one if duplicated
+        const existing = uniqueFolders.get(key)!;
+        if (doc.createdAt?.seconds < existing.createdAt?.seconds) {
+           uniqueFolders.set(key, { ...doc, children: [] });
+        }
+      }
+    });
+
+    uniqueFolders.forEach(folder => {
+      folderMap.set(folder.id, folder);
     });
 
     folderMap.forEach(folder => {
       if (folder.parentId) {
         const parent = folderMap.get(folder.parentId);
-        parent?.children.push(folder);
+        if (parent) { // Only add if parent exists in the deduplicated map
+          parent.children.push(folder);
+        }
       } else {
         rootFolders.push(folder);
       }
