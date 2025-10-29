@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { useFirestore, useCollection, useStorage } from '@/firebase';
+import { useFirestore, useCollection, useStorage, useMemoFirebase } from '@/firebase';
 import {
   collection,
   query,
@@ -147,7 +147,7 @@ export default function RepoEmbed({
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [rootFolderId, setRootFolderId] = useState<string | null>(null);
 
-  const foldersQuery = useMemo(() => {
+  const foldersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(
       collection(firestore, 'folders'),
@@ -159,7 +159,7 @@ export default function RepoEmbed({
 
   const { data: allFolders, isLoading: isLoadingFolders } = useCollection(foldersQuery);
 
-  const filesQuery = useMemo(() => {
+  const filesQuery = useMemoFirebase(() => {
     if (!firestore || !selectedFolder) return null;
     return query(
         collection(firestore, 'files'),
@@ -428,3 +428,5 @@ export default function RepoEmbed({
     </>
   );
 }
+
+    
