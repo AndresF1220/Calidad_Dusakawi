@@ -17,7 +17,7 @@ export default function SubprocesoIdPage() {
   const { proceso, isLoading: isLoadingProceso } = useProceso(areaId, procesoId);
   const { subproceso, isLoading: isLoadingSubproceso } = useSubproceso(areaId, procesoId, subprocesoId);
 
-  const isLoading = isLoadingArea || isLoadingProceso || isLoadingSubproceso;
+  const isLoading = !areaId || !procesoId || !subprocesoId || isLoadingArea || isLoadingProceso || isLoadingSubproceso;
 
   if (isLoading) {
     return (

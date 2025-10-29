@@ -32,7 +32,7 @@ const ItemCard = ({ item, linkHref }: { item: any, linkHref: string }) => {
          <Card className="h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer hover:bg-muted/50 transition-colors">
             <Folder className="h-16 w-16 text-primary mb-4" />
             <CardHeader className="p-0">
-                <CardTitle className="font-headline text-lg">{item.nombre}</CardTitle>
+                <CardTitle className="font-headline text-lg">{item?.nombre || 'Elemento inválido'}</CardTitle>
             </CardHeader>
         </Card>
     );

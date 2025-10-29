@@ -20,9 +20,10 @@ export default function ProcesoIdPage() {
 
   const [isAdding, setIsAdding] = useState(false);
 
+  // Hooks are called conditionally based on params existence
   const { area, isLoading: isLoadingArea } = useArea(areaId);
   const { proceso, isLoading: isLoadingProceso } = useProceso(areaId, procesoId);
-  const isLoading = isLoadingArea || isLoadingProceso;
+  const isLoading = !areaId || !procesoId || isLoadingArea || isLoadingProceso;
 
   if (isLoading) {
     return (
