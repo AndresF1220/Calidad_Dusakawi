@@ -1,8 +1,9 @@
-
 'use client';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import React from 'react';
 import { useFirebaseApp } from '@/firebase';
 import { getAuth, signInAnonymously } from 'firebase/auth';
@@ -16,11 +17,12 @@ export default function LoginPage() {
   const handleLogin = async () => {
     const auth = getAuth(app);
     try {
+      // For now, we'll use anonymous sign-in as it's enabled.
       await signInAnonymously(auth);
       router.push('/inicio');
     } catch (error: any) {
-        console.error("Anonymous sign-in failed:", error);
-        alert(`El inicio de sesión anónimo ha fallado: ${error.message}. Por favor, asegúrese de que el proveedor de inicio de sesión 'Anónimo' esté habilitado en su consola de Firebase.`);
+        console.error("Authentication failed:", error);
+        alert(`El inicio de sesión falló: ${error.message}. Por favor, asegúrese de que el proveedor de inicio de sesión 'Anónimo' o 'Correo electrónico/Contraseña' esté habilitado en su consola de Firebase.`);
     }
   };
 
@@ -31,8 +33,26 @@ export default function LoginPage() {
            <Image src="/Imagenes/DSK.png" alt="Logo DSK" width={300} height={150} />
         </div>
         <Card className="w-full border-0 shadow-lg">
+          <CardHeader className="text-center">
+            <CardTitle className="font-headline text-3xl">Bienvenido</CardTitle>
+            <CardDescription>
+              Ingrese a Quality Central para continuar.
+            </CardDescription>
+          </CardHeader>
           <CardContent className="p-8">
             <div className="grid gap-6">
+              <div className="grid gap-2">
+                <Label htmlFor="email">Correo Electrónico</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="usuario@ejemplo.com"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="password">Contraseña</Label>
+                <Input id="password" type="password" />
+              </div>
               <Button type="submit" className="w-full" onClick={handleLogin}>
                 Entrar
               </Button>
