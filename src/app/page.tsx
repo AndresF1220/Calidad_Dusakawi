@@ -7,24 +7,23 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import React from 'react';
-import { useAuth } from '@/firebase';
-import { signInAnonymously } from 'firebase/auth';
+import { useFirebaseApp } from '@/firebase';
+import { getAuth, signInAnonymously } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 
 
 export default function LoginPage() {
-  const auth = useAuth();
+  const app = useFirebaseApp();
   const router = useRouter();
 
   const handleLogin = async () => {
-    if (auth) {
-      try {
-        await signInAnonymously(auth);
-        router.push('/inicio');
-      } catch (error) {
-        console.error("Anonymous sign-in failed:", error);
-        // Optionally, show an error to the user
-      }
+    const auth = getAuth(app);
+    try {
+      await signInAnonymously(auth);
+      router.push('/inicio');
+    } catch (error) {
+      console.error("Anonymous sign-in failed:", error);
+      // Optionally, show an error to the user
     }
   };
 
