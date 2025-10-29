@@ -204,7 +204,7 @@ export default function RepoEmbed({
     });
     
     // Sort children alphabetically
-    rootFolders.forEach(f => f.children.sort((a, b) => a.name.localeCompare(b.name)));
+    folderMap.forEach(f => f.children.sort((a, b) => a.name.localeCompare(b.name)));
 
     return rootFolders;
 
@@ -427,5 +427,3 @@ export default function RepoEmbed({
     </>
   );
 }
-
-    
