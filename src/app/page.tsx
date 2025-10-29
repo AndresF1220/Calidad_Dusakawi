@@ -19,27 +19,34 @@ export default function LoginPage() {
   const handleLogin = async () => {
     const auth = getAuth(app);
     try {
-      // First, try to sign in anonymously as it's the simplest method for dev
-      await signInAnonymously(auth);
+      // First, try to sign in with a dummy email/password as it's a common provider.
+      // NOTE: This is a fallback for development. 
+      // Ensure this user exists in your Firebase project or change credentials if you have users.
+      await signInWithEmailAndPassword(auth, 'admin@dusakawi.com', 'password');
       router.push('/inicio');
     } catch (error: any) {
+        // This error means the email/password provider is not enabled in the Firebase console.
         if (error.code === 'auth/operation-not-allowed' || error.code === 'auth/admin-restricted-operation') {
-            // This error means anonymous sign-in is not enabled in the Firebase console.
-            // As a fallback for development, let's try signing in with a dummy email/password.
-            // In a real app, you'd show an error or a proper login form.
-            console.warn("Anonymous sign-in is disabled. Falling back to email/password for development.");
+            console.warn("Email/Password sign-in is disabled. Falling back to anonymous sign-in for development.");
             try {
-                // NOTE: This is a fallback for development. 
-                // Ensure this user exists in your Firebase project or change credentials.
-                await signInWithEmailAndPassword(auth, 'admin@dusakawi.com', 'password');
+                // As a fallback for development, let's try signing in anonymously.
+                await signInAnonymously(auth);
                 router.push('/inicio');
-            } catch (fallbackError) {
-                console.error("Email/password fallback sign-in failed:", fallbackError);
-                alert("El inicio de sesión ha fallado. Por favor, habilite el inicio de sesión anónimo o con correo/contraseña en su consola de Firebase.");
+            } catch (fallbackError: any) {
+                 if (fallbackError.code === 'auth/operation-not-allowed' || fallbackError.code === 'auth/admin-restricted-operation') {
+                    console.error("All sign-in methods failed:", fallbackError);
+                    alert("El inicio de sesión ha fallado. Ni el inicio de sesión con correo/contraseña ni el anónimo están habilitados. Por favor, vaya a su Consola de Firebase -> Authentication -> Sign-in method y habilite al menos uno de estos proveedores para continuar.");
+                 } else {
+                    console.error("Anonymous sign-in fallback failed:", fallbackError);
+                    alert(`El inicio de sesión anónimo ha fallado: ${fallbackError.message}`);
+                 }
             }
+        } else if (error.code === 'auth/invalid-credential') {
+             console.error("Invalid credentials for test user:", error);
+             alert("Credenciales inválidas para el usuario de prueba (admin@dusakawi.com). Si ha configurado sus propios usuarios, utilícelos. De lo contrario, asegúrese de que el proveedor de correo electrónico/contraseña esté habilitado en Firebase.");
         } else {
-            console.error("Anonymous sign-in failed:", error);
-            alert(`Anonymous sign-in failed: ${error.message}`);
+            console.error("Authentication failed:", error);
+            alert(`La autenticación ha fallado: ${error.message}`);
         }
     }
   };
