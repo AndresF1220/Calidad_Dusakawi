@@ -7,9 +7,27 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import React from 'react';
+import { useAuth } from '@/firebase';
+import { signInAnonymously } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
 
 
 export default function LoginPage() {
+  const auth = useAuth();
+  const router = useRouter();
+
+  const handleLogin = async () => {
+    if (auth) {
+      try {
+        await signInAnonymously(auth);
+        router.push('/inicio');
+      } catch (error) {
+        console.error("Anonymous sign-in failed:", error);
+        // Optionally, show an error to the user
+      }
+    }
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
       <div className="w-full max-w-sm mx-auto">
@@ -35,8 +53,8 @@ export default function LoginPage() {
                 </div>
                 <Input id="password" type="password" required className="bg-white" placeholder="Ingrese su contraseña" />
               </div>
-              <Button type="submit" className="w-full" asChild>
-                <Link href="/inicio">Entrar</Link>
+              <Button type="submit" className="w-full" onClick={handleLogin}>
+                Entrar
               </Button>
             </div>
           </CardContent>
