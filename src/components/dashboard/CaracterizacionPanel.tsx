@@ -76,24 +76,29 @@ export default function CaracterizacionPanel({
           const data = docSnap.data() as CaracterizacionData;
           setCaracterizacion(data);
         } else {
-          // Document doesn't exist, create it with default empty values
-          const newCaracterizacion = {
-            idEntidad,
-            tipo,
-            objetivo: '',
-            alcance: '',
-            responsable: '',
-            fechaCreacion: serverTimestamp(),
-            creadaPor: 'system',
-          };
-          try {
-            // No merge here, we are creating it for the first time.
-            await setDoc(docRef, newCaracterizacion);
-            // The listener will pick up the new document, but we can set state here to be faster
-            // and avoid showing the "not registered" message for a split second.
-            setCaracterizacion(newCaracterizacion);
-          } catch (error) {
-             console.error("Error creating caracterizacion:", error);
+          // Document doesn't exist, create it with default empty values if user is admin
+          // This ensures that new entities always have a characterization doc ready
+          if (isAdmin) {
+             const newCaracterizacion = {
+              idEntidad,
+              tipo,
+              objetivo: '',
+              alcance: '',
+              responsable: '',
+              fechaCreacion: serverTimestamp(),
+              creadaPor: 'system', // or a user ID
+            };
+            try {
+              // No merge here, we are creating it for the first time.
+              await setDoc(docRef, newCaracterizacion);
+              // The listener will pick up the new document, but we can set state here to be faster
+              // and avoid showing the "not registered" message for a split second.
+              setCaracterizacion(newCaracterizacion);
+            } catch (error) {
+               console.error("Error creating caracterizacion:", error);
+            }
+          } else {
+            setCaracterizacion(null);
           }
         }
         setLoading(false);
@@ -105,9 +110,9 @@ export default function CaracterizacionPanel({
     );
 
     return () => unsubscribe();
-  }, [firestore, idEntidad, tipo, docId]);
+  }, [firestore, idEntidad, tipo, docId, isAdmin]);
   
-  const isDataEmpty = !caracterizacion?.objetivo && !caracterizacion?.alcance && !caracterizacion?.responsable;
+  const isDataEmpty = !caracterizacion || (!caracterizacion.objetivo && !caracterizacion.alcance && !caracterizacion.responsable);
 
   return (
     <Card>
@@ -153,8 +158,10 @@ export default function CaracterizacionPanel({
            </div>
         ) : isDataEmpty ? (
              <p className="text-muted-foreground text-center py-4">
-               No se ha registrado la caracterización para este elemento.
-               {isAdmin && " Haga clic en 'Editar' para comenzar."}
+               {isAdmin 
+                 ? "No se ha registrado la caracterización para este elemento. Haga clic en 'Editar' para comenzar."
+                 : "Aún no se ha agregado información."
+               }
             </p>
         ) : (
           <div className="space-y-6 text-sm">

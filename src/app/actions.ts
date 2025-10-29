@@ -10,9 +10,9 @@ import { slugify } from '@/lib/slug';
 
 const createSchema = z.object({
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
-  objetivo: z.string().min(10, 'El objetivo debe tener al menos 10 caracteres.'),
-  alcance: z.string().min(10, 'El alcance debe tener al menos 10 caracteres.'),
-  responsable: z.string().min(1, 'El responsable es requerido.'),
+  objetivo: z.string().optional(),
+  alcance: z.string().optional(),
+  responsable: z.string().optional(),
   type: z.enum(['area', 'process', 'subprocess']),
   parentId: z.string().optional(),
   grandParentId: z.string().optional(),
@@ -24,9 +24,9 @@ export async function createEntityAction(
 ): Promise<{ message: string; error?: string }> {
     const validatedFields = createSchema.safeParse({
         name: formData.get('name'),
-        objetivo: formData.get('objetivo'),
-        alcance: formData.get('alcance'),
-        responsable: formData.get('responsable'),
+        objetivo: formData.get('objetivo') || '',
+        alcance: formData.get('alcance') || '',
+        responsable: formData.get('responsable') || '',
         type: formData.get('type'),
         parentId: formData.get('parentId'),
         grandParentId: formData.get('grandParentId'),

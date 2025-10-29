@@ -59,7 +59,7 @@ export function AddEntityForm({
 
   const labels = typeLabels[entityType];
   const title = `Crear ${labels.title}`;
-  const description = `Complete la información para crear ${labels.description}`;
+  const description = `Escriba un nombre para crear ${labels.description} La caracterización se podrá añadir más tarde.`;
 
   useEffect(() => {
     if (state.message && !state.error) {
@@ -89,7 +89,7 @@ export function AddEntityForm({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[625px]">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
@@ -100,18 +100,10 @@ export function AddEntityForm({
                     <Label htmlFor="name">Nombre</Label>
                     <Input id="name" name="name" placeholder={`Nombre del ${labels.title}`} required minLength={3} />
                 </div>
-                 <div className="grid gap-2">
-                    <Label htmlFor="objetivo">Objetivo</Label>
-                    <Textarea id="objetivo" name="objetivo" placeholder="Defina el propósito fundamental..." rows={3} required minLength={10}/>
-                </div>
-                 <div className="grid gap-2">
-                    <Label htmlFor="alcance">Alcance</Label>
-                    <Textarea id="alcance" name="alcance" placeholder="Describa los límites y el ámbito de aplicación..." rows={3} required minLength={10} />
-                </div>
-                <div className="grid gap-2">
-                    <Label htmlFor="responsable">Responsable</Label>
-                    <Input id="responsable" name="responsable" placeholder="Cargo o rol responsable" required />
-                </div>
+                 {/* Fields are removed from form but need to be passed to action */}
+                <input type="hidden" name="objetivo" value="" />
+                <input type="hidden" name="alcance" value="" />
+                <input type="hidden" name="responsable" value="" />
 
                 <input type="hidden" name="type" value={entityType} />
                 {parentId && <input type="hidden" name="parentId" value={parentId} />}

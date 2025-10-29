@@ -22,23 +22,8 @@ export default function AreaIdPage() {
   const isAdmin = useIsAdmin();
   const [isAdding, setIsAdding] = useState(false);
 
-  // If params are not yet available, show a loading state.
-  if (!areaId) {
-    return (
-        <div className="flex flex-col gap-8">
-            <Skeleton className="h-10 w-1/2" />
-            <Skeleton className="h-40 w-full" />
-            <Skeleton className="h-10 w-1/4" />
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <Skeleton className="h-48 w-full" />
-                <Skeleton className="h-48 w-full" />
-                <Skeleton className="h-48 w-full" />
-            </div>
-        </div>
-    );
-  }
-
-  if (isLoading) {
+  // If params are not yet available or data is loading, show a loading state.
+  if (isLoading || !areaId) {
     return (
         <div className="flex flex-col gap-8">
             <Skeleton className="h-10 w-1/2" />
