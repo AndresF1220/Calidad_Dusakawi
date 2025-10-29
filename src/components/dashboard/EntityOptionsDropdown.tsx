@@ -65,10 +65,13 @@ export function EntityOptionsDropdown({
 
   const [deleteState, deleteFormAction] = useActionState(deleteEntityAction, { message: '', error: undefined });
 
-  let caracterizacionId = `${entityType}-${entityId}`;
-  if(entityType === 'subproceso' && grandParentId && parentId) {
-     caracterizacionId = `${entityType}-${grandParentId}:${parentId}:${entityId}`;
+  let caracterizacionId = `area-${entityId}`;
+  if (entityType === 'process') {
+    caracterizacionId = `process-${entityId}`;
+  } else if (entityType === 'subprocess') {
+    caracterizacionId = `subprocess-${entityId}`;
   }
+  
   const { caracterizacion } = useCaracterizacion(caracterizacionId);
 
   useEffect(() => {
