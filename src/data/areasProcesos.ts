@@ -1,5 +1,25 @@
 
-export const AREAS = [
+export type Subproceso = {
+    id: string;
+    nombre: string;
+}
+
+export type Proceso = {
+    id: string;
+    nombre: string;
+    subprocesos: Subproceso[];
+}
+
+export type Area = {
+    id: string;
+    nombre: string;
+    procesos: Proceso[];
+}
+
+// THIS FILE IS NOW DEPRECATED AND DATA IS FETCHED FROM FIRESTORE
+// It is kept for type definitions and historical reference.
+
+export const AREAS_DEPRECATED = [
   {
     id: "financiera",
     titulo: "Dirección Administrativa y Financiera",
@@ -79,7 +99,7 @@ export const AREAS = [
  * @returns The area object or undefined if not found.
  */
 export function getAreaById(id: string) {
-  return AREAS.find(area => area.id === id);
+  return AREAS_DEPRECATED.find(area => area.id === id);
 }
 
 /**

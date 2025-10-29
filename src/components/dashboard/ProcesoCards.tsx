@@ -3,8 +3,9 @@
 
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Folder } from 'lucide-react';
-import { getAreaById, getProceso } from '@/data/areasProcesos';
+import { Folder, Loader2 } from 'lucide-react';
+import { useProcesos, useSubprocesos } from '@/hooks/use-areas-data';
+import { Skeleton } from '../ui/skeleton';
 
 interface ProcesoCardsProps {
     areaId: string;
@@ -12,6 +13,7 @@ interface ProcesoCardsProps {
 }
 
 const slugify = (text: string) => {
+    if (!text) return '';
     return text
         .toString()
         .normalize('NFD') // split an accented letter in the base letter and the accent
@@ -27,10 +29,17 @@ export default function ProcesoCards({ areaId, procesoId }: ProcesoCardsProps) {
     
     if (procesoId) {
         // Logic to display sub-processes
-        const proceso = getProceso(areaId, procesoId);
-        const subprocesos = proceso?.subprocesos || [];
+        const { subprocesos, isLoading } = useSubprocesos(areaId, procesoId);
 
-        if (subprocesos.length === 0) {
+        if (isLoading) {
+            return (
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-40 w-full" />)}
+                 </div>
+            )
+        }
+        
+        if (subprocesos?.length === 0) {
             return (
                 <div className="col-span-full text-center text-muted-foreground mt-8">
                     <p>No hay sub-procesos definidos para este proceso.</p>
@@ -40,36 +49,42 @@ export default function ProcesoCards({ areaId, procesoId }: ProcesoCardsProps) {
 
         return (
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {subprocesos.map((sub, index) => (
-                     <Link key={index} href={`/inicio/documentos/${areaId}/${procesoId}/${slugify(sub)}`} className="block hover:shadow-lg transition-shadow rounded-lg">
+                {subprocesos?.map((sub, index) => (
+                     <Link key={sub.id || index} href={`/inicio/documentos/${areaId}/${procesoId}/${slugify(sub.nombre)}`} className="block hover:shadow-lg transition-shadow rounded-lg">
                         <Card className="h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer hover:bg-muted/50 transition-colors">
                             <Folder className="h-16 w-16 text-primary mb-4" />
                             <CardHeader className="p-0">
-                                <CardTitle className="font-headline text-lg">{sub}</CardTitle>
+                                <CardTitle className="font-headline text-lg">{sub.nombre}</CardTitle>
                             </CardHeader>
                         </Card>
                     </Link>
                 ))}
              </div>
         )
-
     }
 
     // Logic to display processes
-    const area = getAreaById(areaId);
-    const procesos = area?.procesos || [];
+    const { procesos, isLoading } = useProcesos(areaId);
+
+    if (isLoading) {
+        return (
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-40 w-full" />)}
+             </div>
+        )
+    }
     
-    if (procesos.length === 0) {
+    if (procesos?.length === 0) {
         return (
             <div className="col-span-full text-center text-muted-foreground mt-8">
-                <p>No hay procesos definidos para esta área todavía.</p>
+                <p>No hay procesos definidos para esta área todavía. Agregue uno para comenzar.</p>
             </div>
         );
     }
     
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {procesos.map((proceso) => (
+            {procesos?.map((proceso) => (
                 <Link key={proceso.id} href={`/inicio/documentos/${areaId}/${proceso.id}`} className="block hover:shadow-lg transition-shadow rounded-lg">
                     <Card className="h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer hover:bg-muted/50 transition-colors">
                         <Folder className="h-16 w-16 text-primary mb-4" />

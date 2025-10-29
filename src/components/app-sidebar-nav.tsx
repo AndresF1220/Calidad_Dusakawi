@@ -17,6 +17,7 @@ import {
   Bell,
   MessageSquareHeart,
   User,
+  FolderKanban,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
@@ -30,13 +31,14 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
   
   const menuItems = [
     { href: '/inicio', label: 'Inicio', icon: LayoutDashboard },
+    { href: '/inicio/documentos', label: 'Mapa de Procesos', icon: FolderKanban },
     { href: '/inicio/reports', label: 'Informes', icon: BarChart3 },
     { href: '/inicio/alerts', label: 'Alertas', icon: Bell },
     { href: '/inicio/feedback', label: 'Feedback', icon: MessageSquareHeart },
     { href: '/inicio/account', label: 'Cuenta', icon: User },
   ];
 
-  const isInicioActive = pathname === '/inicio' || pathname.startsWith('/inicio/documentos');
+  const isInicioActive = pathname === '/inicio';
 
   return (
     <>
