@@ -332,6 +332,7 @@ export default function RepoEmbed({
                 className="hidden"
                 id="upload-file-input"
                 onChange={handleFileUpload}
+                disabled={!selectedFolder}
               />
               <Button asChild variant="outline" disabled={!selectedFolder}>
                 <label
