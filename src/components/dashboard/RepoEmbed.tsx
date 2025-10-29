@@ -172,7 +172,7 @@ export default function RepoEmbed({
   useEffect(() => {
     const initRepo = async () => {
       if (firestore) {
-        const rootId = await ensureRepoRoots({ firestore, areaId, procesoId, subprocesoId });
+        const rootId = await ensureRepoRoots({ firestore, areaId, procesoId: procesoId ?? null, subprocesoId: subprocesoId ?? null });
         setRootFolderId(rootId);
         setOpenFolders(prev => ({ ...prev, [rootId]: true }));
       }
@@ -428,5 +428,3 @@ export default function RepoEmbed({
     </>
   );
 }
-
-    

@@ -84,5 +84,3 @@ export async function ensureRepoRoots({
     return querySnapshot.docs[0].id;
   }
 }
-
-    
