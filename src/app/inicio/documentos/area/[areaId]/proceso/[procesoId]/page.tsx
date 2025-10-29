@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, notFound } from 'next/navigation';
@@ -59,7 +60,7 @@ export default function ProcesoIdPage() {
         </AddEntityForm>
       </div>
 
-      <CaracterizacionPanel idEntidad={`${areaId}:${procesoId}`} tipo="proceso" isAdmin={isAdmin} />
+      <CaracterizacionPanel idEntidad={`${proceso.id}`} tipo="proceso" isAdmin={isAdmin} />
 
       <div className="flex flex-col gap-4">
         <h2 className="text-2xl font-bold font-headline">Sub-procesos</h2>

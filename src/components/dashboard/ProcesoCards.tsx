@@ -73,9 +73,9 @@ export default function ProcesoCards({ areaId, procesoId }: ProcesoCardsProps) {
 
         return (
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {subprocesos?.map((sub, index) => (
+                {subprocesos?.map((sub) => (
                     <ItemCard 
-                        key={sub.id || index}
+                        key={sub.id}
                         item={sub}
                         linkHref={`/inicio/documentos/area/${areaId}/proceso/${procesoId}/subproceso/${sub.id}`}
                     />

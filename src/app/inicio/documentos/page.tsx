@@ -13,15 +13,15 @@ import { useToast } from '@/hooks/use-toast';
 import { seedProcessMapAction } from '@/app/actions';
 
 const iconMap: { [key: string]: React.ElementType } = {
-    financiera: Building,
-    'gestion-riesgo': ShieldCheck,
-    intercultural: Users,
-    contratacion: Briefcase,
+    'direccion-administrativa-y-financiera': Building,
+    'direccion-de-gestion-del-riesgo': ShieldCheck,
+    'direccion-de-participacion-intercultural': Users,
+    'contratacion': Briefcase,
     'control-interno': Shield,
-    'gestion-calidad': CheckCircle,
+    'gestion-de-calidad': CheckCircle,
     'asesoria-juridica': Gavel,
-    sarlaft: AlertTriangle,
-    comunicaciones: Megaphone,
+    'sarlaft': AlertTriangle,
+    'comunicaciones': Megaphone,
     'default': Building,
 };
 

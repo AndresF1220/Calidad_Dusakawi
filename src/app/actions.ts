@@ -39,18 +39,11 @@ export async function createEntityAction(
             slug: slugify(name),
             createdAt: serverTimestamp(),
         };
+        
         let revalidationPath = '/inicio/documentos';
 
         if (type === 'area') {
-            const newAreaRef = await addDoc(collection(db, 'areas'), data);
-            await addDoc(collection(db, 'folders'), {
-              name: "Documentación",
-              parentId: null,
-              areaId: newAreaRef.id,
-              procesoId: null,
-              subprocesoId: null,
-              createdAt: serverTimestamp()
-            });
+            await addDoc(collection(db, 'areas'), data);
 
         } else if (type === 'process' && parentId) {
             await addDoc(collection(db, `areas/${parentId}/procesos`), data);
@@ -86,7 +79,8 @@ export async function seedProcessMapAction(): Promise<{ message: string; error?:
                 createdAt: serverTimestamp() 
             });
             
-            const newFolderRef = doc(foldersCollection);
+            const rootFolderKey = `root__${newAreaRef.id}____`;
+            const newFolderRef = doc(foldersCollection, rootFolderKey);
             batch.set(newFolderRef, {
               name: "Documentación",
               parentId: null,
@@ -122,4 +116,32 @@ export async function seedProcessMapAction(): Promise<{ message: string; error?:
         console.error("Error seeding process map:", e);
         return { message: 'Error', error: `No se pudo restaurar el mapa de procesos: ${e.message}` };
     }
+}
+
+export async function analyzeQualityDataAction(prevState: any, formData: FormData): Promise<{ message: string; error?: string, data?: any }> {
+    // This function will be implemented in a future step.
+    await new Promise(resolve => setTimeout(resolve, 1500)); 
+    console.log("Analyzing data:", formData.get('qualityData'));
+     return { 
+        message: 'Análisis completo',
+        data: {
+            analysisSummary: 'Se identificó una tendencia a la baja en la satisfacción del paciente durante el último trimestre, posiblemente correlacionada con un aumento en los tiempos de espera.',
+            improvementSuggestions: 'Implementar un sistema de triaje más eficiente en emergencias y realizar encuestas de seguimiento post-consulta.',
+            additionalDataRequest: 'Se necesitan datos sobre la proporción de personal por paciente y las tasas de finalización de capacitaciones del personal para un análisis más profundo.'
+        }
+    };
+}
+
+
+export async function suggestAdditionalDataAction(prevState: any, formData: FormData): Promise<{ message: string; error?: string, data?: any }> {
+    // This function will be implemented in a future step.
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    console.log("Suggesting data based on:", formData.get('currentAnalysis'), formData.get('metricsUsed'));
+    return {
+        message: 'Sugerencia generada',
+        data: {
+            suggestedDataPoints: '1. Tasa de rotación de personal de enfermería.\n2. Costo promedio por estancia hospitalaria.\n3. Cumplimiento de las guías de práctica clínica.',
+            reasoning: 'La rotación de personal puede afectar la continuidad de la atención. El costo por estancia es un indicador clave de eficiencia. El cumplimiento de guías clínicas se relaciona directamente con la calidad y seguridad del paciente.'
+        }
+    };
 }

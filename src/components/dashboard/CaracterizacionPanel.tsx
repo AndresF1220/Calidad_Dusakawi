@@ -53,10 +53,10 @@ export default function CaracterizacionPanel({
   const [loading, setLoading] = useState(true);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   
-  const docId = `${tipo}-${idEntidad.replace(/:/g, '_')}`;
+  const docId = `${tipo}-${idEntidad}`;
 
   useEffect(() => {
-    if (!firestore) {
+    if (!firestore || !idEntidad) {
         setLoading(false); // If firestore is not ready, stop loading
         return;
     };
@@ -82,7 +82,7 @@ export default function CaracterizacionPanel({
             editable: true,
           };
           try {
-            await setDoc(docRef, newCaracterizacion);
+            await setDoc(docRef, newCaracterizacion, { merge: true });
             // The listener will pick up the new document, but we can set state here to be faster
             // and avoid showing the "not registered" message for a split second.
             setCaracterizacion(newCaracterizacion);
@@ -128,7 +128,7 @@ export default function CaracterizacionPanel({
                 <DialogHeader>
                     <DialogTitle>Editar Caracterización</DialogTitle>
                     <DialogDescription>
-                        Ajuste los detalles para el {tipo} &quot;{idEntidad}&quot;.
+                        Ajuste los detalles para este {tipo}.
                     </DialogDescription>
                 </DialogHeader>
                 <CaracterizacionEditor 
