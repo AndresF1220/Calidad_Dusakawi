@@ -5,7 +5,6 @@ import { useParams, notFound } from 'next/navigation';
 import CaracterizacionPanel from '@/components/dashboard/CaracterizacionPanel';
 import ProcesoCards from '@/components/dashboard/ProcesoCards';
 import RepoEmbed from '@/components/dashboard/RepoEmbed';
-import { useIsAdmin } from '@/lib/authMock';
 import { useProceso, useArea } from '@/hooks/use-areas-data';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
@@ -17,14 +16,14 @@ export default function ProcesoIdPage() {
   const params = useParams();
   const areaId = params.areaId as string;
   const procesoId = params.procesoId as string;
-  const isAdmin = useIsAdmin();
 
   const [isAdding, setIsAdding] = useState(false);
 
   const { area, isLoading: isLoadingArea } = useArea(areaId);
   const { proceso, isLoading: isLoadingProceso } = useProceso(areaId, procesoId);
+  const isLoading = isLoadingArea || isLoadingProceso;
 
-  if (isLoadingArea || isLoadingProceso) {
+  if (isLoading) {
     return (
         <div className="flex flex-col gap-8">
             <Skeleton className="h-10 w-1/2" />
@@ -60,7 +59,7 @@ export default function ProcesoIdPage() {
         </AddEntityForm>
       </div>
 
-      <CaracterizacionPanel idEntidad={`${proceso.id}`} tipo="proceso" isAdmin={isAdmin} />
+      <CaracterizacionPanel idEntidad={`${proceso.id}`} tipo="proceso" />
 
       <div className="flex flex-col gap-4">
         <h2 className="text-2xl font-bold font-headline">Sub-procesos</h2>
