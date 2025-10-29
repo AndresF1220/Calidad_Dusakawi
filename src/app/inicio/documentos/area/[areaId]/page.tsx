@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useParams, notFound } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import CaracterizacionPanel from '@/components/dashboard/CaracterizacionPanel';
 import ProcesoCards from '@/components/dashboard/ProcesoCards';
 import RepoEmbed from '@/components/dashboard/RepoEmbed';
@@ -9,7 +9,7 @@ import { useIsAdmin } from '@/lib/authMock';
 import { useArea } from '@/hooks/use-areas-data';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, ArrowLeft, MoreVertical } from 'lucide-react';
+import { PlusCircle, ArrowLeft } from 'lucide-react';
 import { AddEntityForm } from '@/components/dashboard/AddEntityForm';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
@@ -73,34 +73,38 @@ export default function AreaIdPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold font-headline">{area.nombre}</h1>
          <div className="flex items-center gap-2">
-            <AddEntityForm 
-                entityType="process"
-                parentId={area.id}
-                isOpen={isAdding}
-                onOpenChange={setIsAdding}
-            >
-                <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Agregar Proceso
-                </Button>
-            </AddEntityForm>
-            <EntityOptionsDropdown
-                entityId={area.id}
-                entityType="area"
-                entityName={area.nombre}
-                redirectOnDelete="/inicio/documentos"
-            />
+            {isAdmin && (
+                <AddEntityForm 
+                    entityType="process"
+                    parentId={area.id}
+                    isOpen={isAdding}
+                    onOpenChange={setIsAdding}
+                >
+                    <Button>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Agregar Proceso
+                    </Button>
+                </AddEntityForm>
+            )}
+            {isAdmin && (
+                <EntityOptionsDropdown
+                    entityId={area.id}
+                    entityType="area"
+                    entityName={area.nombre}
+                    redirectOnDelete="/inicio/documentos"
+                />
+            )}
         </div>
       </div>
 
-      <CaracterizacionPanel idEntidad={areaId} tipo="area" isAdmin={isAdmin} />
+      <CaracterizacionPanel idEntidad={area.id} tipo="area" />
 
        <div className="flex flex-col gap-4">
           <h2 className="text-2xl font-bold font-headline">Procesos</h2>
-          <ProcesoCards areaId={areaId} />
+          <ProcesoCards areaId={area.id} />
        </div>
        
-       <RepoEmbed areaId={areaId} />
+       <RepoEmbed areaId={area.id} />
     </div>
   );
 }

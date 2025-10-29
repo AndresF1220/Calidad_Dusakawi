@@ -25,7 +25,7 @@ import { Loader2 } from 'lucide-react';
 interface CaracterizacionEditorProps {
   idEntidad: string;
   tipo: 'area' | 'proceso' | 'subproceso';
-  onSaved?: () => void;
+  onSaved: () => void;
 }
 
 const formSchema = z.object({
@@ -40,6 +40,16 @@ export default function CaracterizacionEditor({ idEntidad, tipo, onSaved }: Cara
   const firestore = useFirestore();
   const { toast } = useToast();
   
+  let caracterizacionId = `${tipo}-${idEntidad}`;
+   if(tipo === 'subproceso') {
+     // Subproceso IDs are composite, but the editor receives the final part.
+     // The panel should pass the full composite ID for caracterizacion.
+     caracterizacionId = `subproceso-${idEntidad}`;
+   } else if (tipo === 'proceso') {
+     caracterizacionId = `process-${idEntidad}`;
+   }
+
+
   const form = useForm<CaracterizacionFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -55,11 +65,10 @@ export default function CaracterizacionEditor({ idEntidad, tipo, onSaved }: Cara
     formState: { isSubmitting, isLoading },
   } = form;
   
-  const docId = `${tipo}-${idEntidad.replace(/:/g, '_')}`;
 
   useEffect(() => {
     if (!firestore) return;
-    const docRef = doc(firestore, 'caracterizaciones', docId);
+    const docRef = doc(firestore, 'caracterizaciones', caracterizacionId);
 
     const fetchCaracterizacion = async () => {
       const docSnap = await getDoc(docRef);
@@ -73,7 +82,7 @@ export default function CaracterizacionEditor({ idEntidad, tipo, onSaved }: Cara
       }
     };
     fetchCaracterizacion();
-  }, [firestore, docId, reset]);
+  }, [firestore, caracterizacionId, reset]);
 
   const onSubmit = async (data: CaracterizacionFormValues) => {
     if (!firestore) {
@@ -85,7 +94,7 @@ export default function CaracterizacionEditor({ idEntidad, tipo, onSaved }: Cara
       return;
     }
     
-    const docRef = doc(firestore, 'caracterizaciones', docId);
+    const docRef = doc(firestore, 'caracterizaciones', caracterizacionId);
 
     try {
       await setDoc(docRef, {
@@ -99,7 +108,7 @@ export default function CaracterizacionEditor({ idEntidad, tipo, onSaved }: Cara
         title: '¡Guardado!',
         description: `La caracterización del ${tipo} ha sido actualizada.`,
       });
-      onSaved?.();
+      onSaved();
 
     } catch (error) {
       console.error("Error guardando caracterización:", error);

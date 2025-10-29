@@ -7,12 +7,14 @@ import RepoEmbed from '@/components/dashboard/RepoEmbed';
 import { useSubproceso, useProceso, useArea } from '@/hooks/use-areas-data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EntityOptionsDropdown } from '@/components/dashboard/EntityOptionsDropdown';
+import { useIsAdmin } from '@/lib/authMock';
 
 export default function SubprocesoIdPage() {
   const params = useParams();
   const areaId = params.areaId as string;
   const procesoId = params.procesoId as string;
   const subprocesoId = params.subprocesoId as string;
+  const isAdmin = useIsAdmin();
 
   // If params are not yet available, show a loading state.
   if (!areaId || !procesoId || !subprocesoId) {
@@ -51,14 +53,16 @@ export default function SubprocesoIdPage() {
     <div className="flex flex-col gap-8">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold font-headline capitalize">{subproceso.nombre}</h1>
-        <EntityOptionsDropdown
-            entityId={subproceso.id}
-            entityType="subprocess"
-            entityName={subproceso.nombre}
-            parentId={proceso.id}
-            grandParentId={area.id}
-            redirectOnDelete={`/inicio/documentos/area/${area.id}/proceso/${proceso.id}`}
-        />
+        {isAdmin && (
+            <EntityOptionsDropdown
+                entityId={subproceso.id}
+                entityType="subprocess"
+                entityName={subproceso.nombre}
+                parentId={proceso.id}
+                grandParentId={area.id}
+                redirectOnDelete={`/inicio/documentos/area/${area.id}/proceso/${proceso.id}`}
+            />
+        )}
       </div>
 
       <CaracterizacionPanel idEntidad={`${areaId}:${procesoId}:${subproceso.id}`} tipo="subproceso" />

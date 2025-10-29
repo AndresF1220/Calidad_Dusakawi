@@ -28,11 +28,11 @@ import {
   Loader,
 } from 'lucide-react';
 import CaracterizacionEditor from './CaracterizacionEditor';
+import { useIsAdmin } from '@/lib/authMock';
 
 interface CaracterizacionPanelProps {
   idEntidad: string;
   tipo: 'area' | 'proceso' | 'subproceso';
-  isAdmin?: boolean;
 }
 
 interface CaracterizacionData {
@@ -45,15 +45,21 @@ interface CaracterizacionData {
 export default function CaracterizacionPanel({
   idEntidad,
   tipo,
-  isAdmin = false,
 }: CaracterizacionPanelProps) {
   const firestore = useFirestore();
+  const isAdmin = useIsAdmin();
   const [caracterizacion, setCaracterizacion] =
     useState<CaracterizacionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   
-  const docId = `${tipo}-${idEntidad}`;
+  let docId = `area-${idEntidad}`;
+  if (tipo === 'proceso') {
+      docId = `process-${idEntidad}`;
+  } else if (tipo === 'subproceso') {
+      docId = `subprocess-${idEntidad}`;
+  }
+
 
   useEffect(() => {
     if (!firestore || !idEntidad) {
@@ -79,10 +85,10 @@ export default function CaracterizacionPanel({
             responsable: '',
             fechaCreacion: serverTimestamp(),
             creadaPor: 'system',
-            editable: true,
           };
           try {
-            await setDoc(docRef, newCaracterizacion, { merge: true });
+            // No merge here, we are creating it for the first time.
+            await setDoc(docRef, newCaracterizacion);
             // The listener will pick up the new document, but we can set state here to be faster
             // and avoid showing the "not registered" message for a split second.
             setCaracterizacion(newCaracterizacion);
@@ -101,7 +107,7 @@ export default function CaracterizacionPanel({
     return () => unsubscribe();
   }, [firestore, idEntidad, tipo, docId]);
   
-  const canEdit = isAdmin && (caracterizacion ? caracterizacion.editable !== false : true);
+  const isDataEmpty = !caracterizacion?.objetivo && !caracterizacion?.alcance && !caracterizacion?.responsable;
 
   return (
     <Card>
@@ -112,7 +118,7 @@ export default function CaracterizacionPanel({
             Caracterización del {tipo.charAt(0).toUpperCase() + tipo.slice(1)}
           </CardTitle>
         </div>
-        {canEdit && (
+        {isAdmin && (
           <Dialog open={isEditorOpen} onOpenChange={setIsEditorOpen}>
             <DialogTrigger asChild>
               <Button
@@ -145,43 +151,41 @@ export default function CaracterizacionPanel({
            <div className="flex justify-center items-center h-40">
                 <Loader className="h-8 w-8 animate-spin text-primary" />
            </div>
-        ) : (
-          (caracterizacion?.objetivo || caracterizacion?.alcance || caracterizacion?.responsable) ? (
-            <div className="space-y-6 text-sm">
-                <div className="space-y-2">
-                <h3 className="font-semibold flex items-center gap-2">
-                    <Target className="h-5 w-5 text-primary" />
-                    Objetivo
-                </h3>
-                <p className="text-muted-foreground whitespace-pre-wrap">
-                    {caracterizacion?.objetivo || <em>No definido.</em>}
-                </p>
-                </div>
-                <div className="space-y-2">
-                <h3 className="font-semibold flex items-center gap-2">
-                    <GitBranch className="h-5 w-5 text-primary" />
-                    Alcance
-                </h3>
-                <p className="text-muted-foreground whitespace-pre-wrap">
-                    {caracterizacion?.alcance || <em>No definido.</em>}
-                </p>
-                </div>
-                <div className="space-y-2">
-                <h3 className="font-semibold flex items-center gap-2">
-                    <User className="h-5 w-5 text-primary" />
-                    Responsable
-                </h3>
-                <p className="text-muted-foreground">
-                    {caracterizacion?.responsable || <em>No definido.</em>}
-                </p>
-                </div>
-            </div>
-           ) : (
+        ) : isDataEmpty ? (
              <p className="text-muted-foreground text-center py-4">
                No se ha registrado la caracterización para este elemento.
-               {canEdit && " Haga clic en 'Editar' para comenzar."}
+               {isAdmin && " Haga clic en 'Editar' para comenzar."}
             </p>
-           )
+        ) : (
+          <div className="space-y-6 text-sm">
+              <div className="space-y-2">
+              <h3 className="font-semibold flex items-center gap-2">
+                  <Target className="h-5 w-5 text-primary" />
+                  Objetivo
+              </h3>
+              <p className="text-muted-foreground whitespace-pre-wrap">
+                  {caracterizacion?.objetivo || <em>No definido.</em>}
+              </p>
+              </div>
+              <div className="space-y-2">
+              <h3 className="font-semibold flex items-center gap-2">
+                  <GitBranch className="h-5 w-5 text-primary" />
+                  Alcance
+              </h3>
+              <p className="text-muted-foreground whitespace-pre-wrap">
+                  {caracterizacion?.alcance || <em>No definido.</em>}
+              </p>
+              </div>
+              <div className="space-y-2">
+              <h3 className="font-semibold flex items-center gap-2">
+                  <User className="h-5 w-5 text-primary" />
+                  Responsable
+              </h3>
+              <p className="text-muted-foreground">
+                  {caracterizacion?.responsable || <em>No definido.</em>}
+              </p>
+              </div>
+          </div>
         )}
       </CardContent>
     </Card>
