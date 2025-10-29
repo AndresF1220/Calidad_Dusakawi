@@ -9,6 +9,7 @@ import {
   doc,
   serverTimestamp,
   runTransaction,
+  writeBatch,
   type Firestore,
 } from "firebase/firestore";
 
@@ -35,36 +36,44 @@ export async function getOrCreateRootFolder(firestore: Firestore, { areaId, proc
   const foldersCol = collection(firestore, "folders");
 
   // Transacción para crear/leer de forma atómica
-  await runTransaction(firestore, async (tx)=>{
-    const snap = await tx.get(rootRef);
-    if (!snap.exists()){
-      tx.set(rootRef, {
-        name: "Documentación",
-        parentId: null,
-        areaId, procesoId, subprocesoId,
-        createdAt: serverTimestamp()
-      });
-    }
-  });
+  try {
+    await runTransaction(firestore, async (tx)=>{
+      const snap = await tx.get(rootRef);
+      if (!snap.exists()){
+        console.log(`Root folder ${rootKey} does not exist. Creating...`);
+        tx.set(rootRef, {
+          name: "Documentación",
+          parentId: null,
+          areaId, procesoId, subprocesoId,
+          createdAt: serverTimestamp()
+        });
+      }
+    });
+  } catch (error) {
+    console.error("Transaction to get or create root folder failed:", error);
+  }
+
 
   // Crear subcarpetas estándar si faltan (una sola vez por nombre)
   const subQ = query(foldersCol, where("parentId","==", rootKey));
   const subSnap = await getDocs(subQ);
   const existing = new Set(subSnap.docs.map(d => (d.data() as any).name));
   
-  await runTransaction(firestore, async (tx) => {
-    DEFAULT_FOLDERS
-      .filter(n => !existing.has(n))
-      .forEach(n => {
-        const newSubFolderRef = doc(foldersCol);
-        tx.set(newSubFolderRef, {
-          name: n,
-          parentId: rootKey,
-          areaId, procesoId, subprocesoId,
-          createdAt: serverTimestamp()
-        });
+  const foldersToCreate = DEFAULT_FOLDERS.filter(n => !existing.has(n));
+
+  if (foldersToCreate.length > 0) {
+    const batch = writeBatch(firestore);
+    foldersToCreate.forEach(n => {
+      const newSubFolderRef = doc(foldersCol); // Auto-generate ID
+      batch.set(newSubFolderRef, {
+        name: n,
+        parentId: rootKey,
+        areaId, procesoId, subprocesoId,
+        createdAt: serverTimestamp()
       });
-  });
+    });
+    await batch.commit();
+  }
 
   return { id: rootKey, name: "Documentación", parentId: null, areaId, procesoId, subprocesoId };
 }
