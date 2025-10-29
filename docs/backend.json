@@ -1,119 +1,286 @@
-
 {
   "entities": {
-    "Area": {
-      "title": "Área (Macroproceso)",
-      "description": "Representa un área o macroproceso principal dentro de la organización.",
+    "QualityMetric": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "QualityMetric",
       "type": "object",
+      "description": "Represents a specific quality metric being tracked within Dusakawi EPSI.",
       "properties": {
-        "nombre": {
+        "id": {
           "type": "string",
-          "description": "El nombre del área."
+          "description": "Unique identifier for the quality metric."
         },
-        "descripcion": {
+        "name": {
           "type": "string",
-          "description": "Una breve descripción del propósito del área."
+          "description": "Name of the quality metric (e.g., Patient Satisfaction, Error Rate)."
         },
-        "procesos": {
-          "type": "array",
-          "description": "Una lista de procesos que pertenecen a esta área.",
-          "items": {
-            "type": "object",
-            "properties": {
-              "nombre": {
-                "type": "string",
-                "description": "El nombre del proceso."
-              },
-              "subprocesos": {
-                "type": "array",
-                "description": "Una lista de nombres de subprocesos anidados.",
-                "items": {
-                  "type": "string"
-                }
-              }
-            },
-            "required": ["nombre", "subprocesos"]
-          }
+        "description": {
+          "type": "string",
+          "description": "Detailed description of the quality metric."
+        },
+        "targetValue": {
+          "type": "number",
+          "description": "The target value for this quality metric."
+        },
+        "unitOfMeasure": {
+          "type": "string",
+          "description": "The unit of measure for the metric (e.g., Percentage, Count)."
         }
       },
-      "required": ["nombre", "descripcion", "procesos"]
+      "required": [
+        "id",
+        "name",
+        "description",
+        "targetValue",
+        "unitOfMeasure"
+      ]
     },
-    "Caracterizacion": {
-      "title": "Caracterización",
-      "description": "Describe el objetivo, alcance y responsable de un área, proceso o subproceso.",
+    "QualityDataPoint": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "QualityDataPoint",
       "type": "object",
+      "description": "Represents a single data point for a specific quality metric at a specific time.",
       "properties": {
-        "idEntidad": {
+        "id": {
           "type": "string",
-          "description": "ID del área, proceso o subproceso."
+          "description": "Unique identifier for the quality data point."
         },
-        "tipo": {
+        "metricId": {
           "type": "string",
-          "enum": ["area", "proceso", "subproceso"]
+          "description": "Reference to QualityMetric. (Relationship: QualityMetric 1:N QualityDataPoint)"
         },
-        "objetivo": { "type": "string" },
-        "responsable": { "type": "string" },
-        "alcance": { "type": "string" },
-        "fechaCreacion": { "type": "string", "format": "date-time" },
-        "creadaPor": { "type": "string" },
-        "repositorioId": { "type": "string" },
-        "editable": { "type": "boolean" }
+        "timestamp": {
+          "type": "string",
+          "description": "The timestamp when the data point was recorded.",
+          "format": "date-time"
+        },
+        "value": {
+          "type": "number",
+          "description": "The actual value of the quality metric at the recorded timestamp."
+        }
       },
-      "required": ["idEntidad", "tipo", "objetivo", "responsable", "alcance"]
+      "required": [
+        "id",
+        "metricId",
+        "timestamp",
+        "value"
+      ]
     },
-    "Folder": {
-      "title": "Folder",
-      "description": "Representa una carpeta en el repositorio de documentos.",
+    "Alert": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Alert",
       "type": "object",
+      "description": "Represents a real-time notification for critical quality deviations based on predefined thresholds.",
       "properties": {
-        "name": { "type": "string" },
-        "parentId": { "type": ["string", "null"] },
-        "areaId": { "type": "string" },
-        "procesoId": { "type": ["string", "null"] },
-        "subprocesoId": { "type": ["string", "null"] },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the alert."
+        },
+        "metricId": {
+          "type": "string",
+          "description": "Reference to QualityMetric. (Relationship: QualityMetric 1:N Alert)"
+        },
+        "threshold": {
+          "type": "number",
+          "description": "The threshold value that triggers the alert."
+        },
+        "severity": {
+          "type": "string",
+          "description": "The severity level of the alert (e.g., Low, Medium, High)."
+        },
+        "message": {
+          "type": "string",
+          "description": "The message associated with the alert."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "The timestamp when the alert was triggered.",
+          "format": "date-time"
+        }
       },
-      "required": ["name", "parentId", "areaId"]
+      "required": [
+        "id",
+        "metricId",
+        "threshold",
+        "severity",
+        "message",
+        "timestamp"
+      ]
     },
-    "File": {
-      "title": "File",
-      "description": "Representa un archivo en el repositorio de documentos.",
+    "Feedback": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Feedback",
       "type": "object",
+      "description": "Represents user feedback regarding key performance indicators (KPIs).",
       "properties": {
-        "name": { "type": "string" },
-        "folderId": { "type": "string" },
-        "areaId": { "type": "string" },
-        "procesoId": { "type": ["string", "null"] },
-        "subprocesoId": { "type": ["string", "null"] },
-        "size": { "type": "number" },
-        "type": { "type": "string" },
-        "url": { "type": "string", "format": "uri" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "modifiedAt": { "type": "string", "format": "date-time" },
-        "ownerId": { "type": "string" }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the feedback entry."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Feedback)"
+        },
+        "kpi": {
+          "type": "string",
+          "description": "The key performance indicator that the feedback is related to."
+        },
+        "rating": {
+          "type": "number",
+          "description": "The user's rating or score for the KPI."
+        },
+        "comment": {
+          "type": "string",
+          "description": "Additional comments provided by the user."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "The timestamp when the feedback was submitted.",
+          "format": "date-time"
+        }
       },
-      "required": ["name", "folderId", "areaId", "size", "type", "url", "ownerId"]
+      "required": [
+        "id",
+        "userId",
+        "kpi",
+        "rating",
+        "comment",
+        "timestamp"
+      ]
+    },
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the Dusakawi Quality Central application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user."
+        },
+        "username": {
+          "type": "string",
+          "description": "The username of the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the user.",
+          "format": "email"
+        },
+        "role": {
+          "type": "string",
+          "description": "The role of the user (e.g., Administrator, Analyst, Staff)."
+        }
+      },
+      "required": [
+        "id",
+        "username",
+        "email",
+        "role"
+      ]
     }
   },
   "auth": {
-    "providers": ["anonymous"]
+    "providers": [
+      "password",
+      "anonymous"
+    ]
   },
   "firestore": {
-    "/areas/{areaId}": {
-      "schema": { "$ref": "#/entities/Area" },
-      "description": "Contiene los macroprocesos o áreas principales de la organización."
-    },
-    "/caracterizaciones/{caracterizacionId}": {
-      "schema": { "$ref": "#/entities/Caracterizacion" },
-      "description": "Contiene los detalles de caracterización para cada área, proceso o subproceso."
-    },
-    "/folders/{folderId}": {
-        "schema": { "$ref": "#/entities/Folder"},
-        "description": "Contiene todas las carpetas del sistema de gestión documental."
-    },
-    "/files/{fileId}": {
-        "schema": { "$ref": "#/entities/File"},
-        "description": "Contiene todos los archivos del sistema de gestión documental."
-    }
+    "structure": [
+      {
+        "path": "/qualityMetrics/{metricId}",
+        "definition": {
+          "entityName": "QualityMetric",
+          "schema": {
+            "$ref": "#/backend/entities/QualityMetric"
+          },
+          "description": "Collection of quality metrics.",
+          "params": [
+            {
+              "name": "metricId",
+              "description": "Unique identifier for the quality metric."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/qualityMetrics/{metricId}/dataPoints/{dataPointId}",
+        "definition": {
+          "entityName": "QualityDataPoint",
+          "schema": {
+            "$ref": "#/backend/entities/QualityDataPoint"
+          },
+          "description": "Collection of quality data points associated with a specific quality metric.",
+          "params": [
+            {
+              "name": "metricId",
+              "description": "Unique identifier for the quality metric."
+            },
+            {
+              "name": "dataPointId",
+              "description": "Unique identifier for the quality data point."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/qualityMetrics/{metricId}/alerts/{alertId}",
+        "definition": {
+          "entityName": "Alert",
+          "schema": {
+            "$ref": "#/backend/entities/Alert"
+          },
+          "description": "Collection of alerts associated with a specific quality metric.",
+          "params": [
+            {
+              "name": "metricId",
+              "description": "Unique identifier for the quality metric."
+            },
+            {
+              "name": "alertId",
+              "description": "Unique identifier for the alert."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Collection of user profiles.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/feedbacks/{feedbackId}",
+        "definition": {
+          "entityName": "Feedback",
+          "schema": {
+            "$ref": "#/backend/entities/Feedback"
+          },
+          "description": "Collection of user feedback entries. Path based ownership, no denormalization needed.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user."
+            },
+            {
+              "name": "feedbackId",
+              "description": "Unique identifier for the feedback entry."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to manage quality metrics, data points, alerts, feedback, and user information for the Dusakawi Quality Central application. The design emphasizes authorization independence and clear access control using path-based ownership for user-specific data and membership maps for collaborative data. Here's a detailed explanation of the structure and how it addresses the core design principles and strategy mandates:\n\n*   **Authorization Independence:**\n\n    *   Data is structured to avoid hierarchical dependencies, eliminating the need for `get()` calls in security rules. For example, user-specific data (feedback) is placed under `/users/{userId}/feedbacks/{feedbackId}`, ensuring that access control can be enforced based solely on the `userId` without needing to retrieve parent document data.\n*   **Structural Segregation:**\n\n    *   Each collection houses documents with similar access control needs, adhering to the principle of homogeneous security posture. For example, user profiles are stored in `/users/{userId}`, while quality metrics, which might have different access requirements, are stored separately in `/qualityMetrics/{metricId}`.\n*   **Access Modeling:**\n\n    *   **Path-Based Ownership:** User-owned data (e.g., feedback) is stored under `/users/{userId}`, simplifying ownership-based security rules.\n\n\n*   **Data Clarity and Predictability:**\n\n    *   The schema for each entity is well-defined, promoting consistency and making it easier to understand and maintain the data structure.\n*   **QAPs (Rules are not Filters):**\n\n    *   The structure supports secure `list` operations. Path-based ownership allows listing operations to be scoped to a specific user's data (e.g., listing all feedback entries for a user). Since there are no top level collections with mixed access, listing can be allowed at the collection level."
   }
 }

@@ -1,22 +1,113 @@
+/**
+ * @fileoverview Firestore Security Rules for Dusakawi Quality Central.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model for user-specific data (feedback).
+ * It provides public read access to quality metrics, data points, and alerts, while restricting write access to authenticated users.
+ * User profiles are protected with owner-only access, ensuring that only a user can read/write their own profile.
+ *
+ * Data Structure:
+ * - /qualityMetrics/{metricId}: Stores quality metrics (public read, authenticated write).
+ * - /qualityMetrics/{metricId}/dataPoints/{dataPointId}: Stores data points for quality metrics (public read, authenticated write).
+ * - /qualityMetrics/{metricId}/alerts/{alertId}: Stores alerts for quality metrics (public read, authenticated write).
+ * - /users/{userId}: Stores user profiles (owner-only access).
+ * - /users/{userId}/feedbacks/{feedbackId}: Stores user feedback (owner-only access).
+ *
+ * Key Security Decisions:
+ * - Public read access to quality metrics and related data to allow for open data consumption.
+ * - Owner-only access to user profiles and feedback to ensure privacy.
+ * - Authenticated write access to quality metrics, data points, and alerts to prevent anonymous modifications.
+ * - No validation of data shapes during write operations for rapid iteration.
+ *
+ * Denormalization for Authorization:
+ * - Path-based ownership is used for user-specific data (feedback) to avoid the need for data denormalization. The userId is directly available in the path.
+ *
+ * Structural Segregation:
+ * - Public data (quality metrics) and private data (user profiles, feedback) are stored in separate collections to simplify access control and improve security.
+ */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if false;
+
+    /**
+     * @description Allows read access to all quality metrics. Only authenticated users can create, update, or delete metrics.
+     * @path /qualityMetrics/{metricId}
+     * @allow (get, list): if true;
+     * @allow (create, update, delete): if request.auth != null;
+     * @deny (create): if request.auth == null;
+     * @principle Allows public read access, while requiring authentication for write operations.
+     */
+    match /qualityMetrics/{metricId} {
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn();
     }
-    match /areas/{areaId} {
-        allow read: if request.auth != null;
-        allow write: if false; // Data should be seeded, not written by client
+
+    /**
+     * @description Allows read access to all quality data points for a specific quality metric. Only authenticated users can create, update, or delete data points.
+     * @path /qualityMetrics/{metricId}/dataPoints/{dataPointId}
+     * @allow (get, list): if true;
+     * @allow (create, update, delete): if request.auth != null;
+     * @deny (create): if request.auth == null;
+     * @principle Allows public read access, while requiring authentication for write operations.
+     */
+    match /qualityMetrics/{metricId}/dataPoints/{dataPointId} {
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn();
     }
-    match /caracterizaciones/{caracterizacionId} {
-        allow read: if request.auth != null;
-        allow write: if request.auth != null; // Allow logged-in users to create/update
+
+    /**
+     * @description Allows read access to all alerts for a specific quality metric. Only authenticated users can create, update, or delete alerts.
+     * @path /qualityMetrics/{metricId}/alerts/{alertId}
+     * @allow (get, list): if true;
+     * @allow (create, update, delete): if request.auth != null;
+     * @deny (create): if request.auth == null;
+     * @principle Allows public read access, while requiring authentication for write operations.
+     */
+    match /qualityMetrics/{metricId}/alerts/{alertId} {
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn();
     }
-    match /folders/{folderId} {
-        allow read, write, delete: if request.auth != null;
+
+    /**
+     * @description Allows a user to read, create, update, and delete their own user profile.
+     * @path /users/{userId}
+     * @allow (get, create, update, delete, list): if request.auth.uid == userId;
+     * @deny (get, create, update, delete): if request.auth.uid != userId;
+     * @principle Enforces document ownership for user profiles.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
-    match /files/{fileId} {
-        allow read, write, delete: if request.auth != null;
+
+    /**
+     * @description Allows a user to read, create, update, and delete their own feedback entries.
+     * @path /users/{userId}/feedbacks/{feedbackId}
+     * @allow (get, create, update, delete, list): if request.auth.uid == userId;
+     * @deny (get, create, update, delete): if request.auth.uid != userId;
+     * @principle Enforces document ownership for feedback entries.
+     */
+    match /users/{userId}/feedbacks/{feedbackId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
+  }
+
+  // Helper functions
+  function isSignedIn() {
+    return request.auth != null;
+  }
+
+  function isOwner(userId) {
+    return request.auth.uid == userId;
+  }
+
+  function isExistingOwner(userId) {
+    return isOwner(userId) && resource != null;
   }
 }
