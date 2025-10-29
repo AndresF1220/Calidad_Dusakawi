@@ -40,10 +40,10 @@ const hardcodedTranslations: Record<string, string> = {
 
 // A hook to fetch breadcrumb data dynamically
 function useBreadcrumbData(segments: string[]) {
-    const areaId = segments[2] === 'area' && segments.length > 3 ? segments[3] : null;
-    const procesoId = segments[2] === 'area' && segments.length > 5 ? segments[5] : null;
-    const subprocesoId = segments[2] === 'area' && segments.length > 7 ? segments[7] : null;
-
+    const areaId = segments.includes('area') ? segments[segments.indexOf('area') + 1] : null;
+    const procesoId = segments.includes('proceso') ? segments[segments.indexOf('proceso') + 1] : null;
+    const subprocesoId = segments.includes('subproceso') ? segments[segments.indexOf('subproceso') + 1] : null;
+    
     const { area, isLoading: isLoadingArea } = useArea(areaId);
     const { proceso, isLoading: isLoadingProceso } = useProceso(areaId, procesoId);
     const { subproceso, isLoading: isLoadingSubproceso } = useSubproceso(areaId, procesoId, subprocesoId);
@@ -53,6 +53,11 @@ function useBreadcrumbData(segments: string[]) {
         proceso,
         subproceso,
         isLoading: isLoadingArea || isLoadingProceso || isLoadingSubproceso,
+        dataMap: {
+            ...(areaId && { [areaId]: area?.nombre }),
+            ...(procesoId && { [procesoId]: proceso?.nombre }),
+            ...(subprocesoId && { [subprocesoId]: subproceso?.nombre }),
+        }
     };
 }
 
@@ -61,27 +66,29 @@ export default function AppHeader() {
   const pathname = usePathname();
   const pathSegments = pathname.split('/').filter(Boolean);
 
-  const { area, proceso, subproceso, isLoading } = useBreadcrumbData(pathSegments);
+  const { isLoading, dataMap } = useBreadcrumbData(pathSegments);
 
   const breadcrumbItems = useMemo(() => {
-    return pathSegments.map((segment, index) => {
-        const href = `/${pathSegments.slice(0, index + 1).join('/')}`;
-        const isLast = index === pathSegments.length - 1;
-        let label = hardcodedTranslations[segment] || segment;
+    let accumulatedPath = '';
+    return pathSegments
+      .filter(segment => !['area', 'proceso', 'subproceso'].includes(segment))
+      .map((segment, index, arr) => {
+        accumulatedPath += `/${segment}`;
+        
+        // Find the original segment index to build the correct href
+        const originalSegmentIndex = pathSegments.indexOf(segment);
+        const href = `/${pathSegments.slice(0, originalSegmentIndex + 1).join('/')}`;
 
-        if (index === 3 && area) { // areaId
-            label = area.nombre;
-        } else if (index === 5 && proceso) { // procesoId
-            label = proceso.nombre;
-        } else if (index === 7 && subproceso) { // subprocesoId
-            label = subproceso.nombre;
-        } else if (isLast && isLoading) {
+        const isLast = index === arr.length - 1;
+        let label = hardcodedTranslations[segment] || dataMap[segment] || segment;
+        
+        if (isLast && isLoading) {
             label = 'Cargando...';
         }
         
         return { href, label, isLast };
     });
-  }, [pathSegments, area, proceso, subproceso, isLoading]);
+  }, [pathSegments, dataMap, isLoading]);
 
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
