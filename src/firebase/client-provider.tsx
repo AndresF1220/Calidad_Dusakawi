@@ -30,15 +30,18 @@ export function FirebaseClientProvider({
       appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
     };
     
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const firestore = getFirestore(app);
-    const storage = getStorage(app);
+    // Basic validation
+    if (firebaseConfig.apiKey && firebaseConfig.projectId) {
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const firestore = getFirestore(app);
+        const storage = getStorage(app);
 
-    setApp(app);
-    setAuth(auth);
-    setFirestore(firestore);
-    setStorage(storage);
+        setApp(app);
+        setAuth(auth);
+        setFirestore(firestore);
+        setStorage(storage);
+    }
   }, []);
 
   return (
