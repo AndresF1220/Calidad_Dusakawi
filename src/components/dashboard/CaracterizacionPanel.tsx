@@ -32,7 +32,7 @@ import { useIsAdmin } from '@/lib/authMock';
 
 interface CaracterizacionPanelProps {
   idEntidad: string;
-  tipo: 'area' | 'proceso' | 'subproceso';
+  tipo: 'area' | 'proceso' | 'subprocess';
 }
 
 interface CaracterizacionData {
@@ -56,7 +56,7 @@ export default function CaracterizacionPanel({
   let docId = `area-${idEntidad}`;
   if (tipo === 'proceso') {
       docId = `process-${idEntidad}`;
-  } else if (tipo === 'subproceso') {
+  } else if (tipo === 'subprocess') {
       docId = `subprocess-${idEntidad}`;
   }
 
@@ -76,30 +76,7 @@ export default function CaracterizacionPanel({
           const data = docSnap.data() as CaracterizacionData;
           setCaracterizacion(data);
         } else {
-          // Document doesn't exist, create it with default empty values if user is admin
-          // This ensures that new entities always have a characterization doc ready
-          if (isAdmin) {
-             const newCaracterizacion = {
-              idEntidad,
-              tipo,
-              objetivo: '',
-              alcance: '',
-              responsable: '',
-              fechaCreacion: serverTimestamp(),
-              creadaPor: 'system', // or a user ID
-            };
-            try {
-              // No merge here, we are creating it for the first time.
-              await setDoc(docRef, newCaracterizacion);
-              // The listener will pick up the new document, but we can set state here to be faster
-              // and avoid showing the "not registered" message for a split second.
-              setCaracterizacion(newCaracterizacion);
-            } catch (error) {
-               console.error("Error creating caracterizacion:", error);
-            }
-          } else {
-            setCaracterizacion(null);
-          }
+          setCaracterizacion(null);
         }
         setLoading(false);
       },

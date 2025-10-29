@@ -186,7 +186,6 @@ export async function updateEntityAction(
     try {
         const batch = writeBatch(db);
 
-        // 1. Update entity name and slug
         let entityPath = '';
         let revalidationPath = '/inicio/documentos';
 
@@ -205,11 +204,10 @@ export async function updateEntityAction(
         const entityRef = doc(db, entityPath);
         batch.update(entityRef, { nombre: name, slug: slugify(name) });
 
-        // 2. Update caracterizacion
         let caracterizacionId = `area-${entityId}`;
-        if (entityType === 'proceso') {
+        if (entityType === 'process') {
             caracterizacionId = `process-${entityId}`;
-        } else if (entityType === 'subproceso') {
+        } else if (entityType === 'subprocess') {
            caracterizacionId = `subprocess-${entityId}`;
         }
 
