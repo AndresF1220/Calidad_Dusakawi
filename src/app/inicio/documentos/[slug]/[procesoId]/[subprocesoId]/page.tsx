@@ -5,6 +5,7 @@ import { useParams, notFound } from 'next/navigation';
 import { getAreaById, getProceso } from '@/data/areasProcesos';
 import CaracterizacionPanel from '@/components/dashboard/CaracterizacionPanel';
 import RepoEmbed from '@/components/dashboard/RepoEmbed';
+import { useIsAdmin } from '@/lib/authMock';
 
 export default function SubprocesoPage() {
   const params = useParams();
@@ -14,6 +15,7 @@ export default function SubprocesoPage() {
   
   const area = getAreaById(areaId);
   const proceso = getProceso(areaId, procesoId);
+  const isAdmin = useIsAdmin();
   
   // Find subproceso by comparing slugified version with the param
   const subproceso = proceso?.subprocesos.find(s => s.toLowerCase().replace(/ /g, '-') === subprocesoId);
@@ -28,7 +30,7 @@ export default function SubprocesoPage() {
         <h1 className="text-3xl font-bold font-headline capitalize">{subproceso.replace(/-/g, ' ')} — {proceso.nombre} — {area.titulo}</h1>
       </div>
 
-      <CaracterizacionPanel idEntidad={`${areaId}:${procesoId}:${subprocesoId}`} tipo="subproceso" />
+      <CaracterizacionPanel idEntidad={`${areaId}:${procesoId}:${subprocesoId}`} tipo="subproceso" isAdmin={isAdmin} />
       
       <RepoEmbed areaId={areaId} procesoId={procesoId} subprocesoId={subprocesoId} />
     </div>

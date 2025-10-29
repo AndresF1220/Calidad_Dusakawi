@@ -1,33 +1,38 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useFirestore } from '@/firebase';
 import {
   doc,
-  getDoc,
   setDoc,
   serverTimestamp,
   onSnapshot,
 } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import {
   FileText,
   User,
   Target,
   GitBranch,
   Edit,
-  Save,
-  X,
   Loader,
 } from 'lucide-react';
+import CaracterizacionEditor from './CaracterizacionEditor';
 
 interface CaracterizacionPanelProps {
   idEntidad: string;
   tipo: 'area' | 'proceso' | 'subproceso';
+  isAdmin?: boolean;
 }
 
 interface CaracterizacionData {
@@ -40,37 +45,26 @@ interface CaracterizacionData {
 export default function CaracterizacionPanel({
   idEntidad,
   tipo,
+  isAdmin = false,
 }: CaracterizacionPanelProps) {
   const firestore = useFirestore();
-  const isSuperuser = true; // Mock superuser role
-
   const [caracterizacion, setCaracterizacion] =
     useState<CaracterizacionData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState<CaracterizacionData>({
-    objetivo: '',
-    alcance: '',
-    responsable: '',
-  });
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  
+  const docId = `${tipo}-${idEntidad.replace(/:/g, '_')}`;
 
   useEffect(() => {
-    if (!firestore) {
-      setLoading(true); // Keep loading if firestore is not available
-      return;
-    }
+    if (!firestore) return;
 
-    const docId = `${tipo}-${idEntidad.replace(/:/g, '_')}`;
     const docRef = doc(firestore, 'caracterizaciones', docId);
-
     const unsubscribe = onSnapshot(
       docRef,
       async (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data() as CaracterizacionData;
           setCaracterizacion(data);
-          setFormData(data);
-          setLoading(false);
         } else {
           // Document doesn't exist, create it with default empty values
           const newCaracterizacion = {
@@ -80,21 +74,18 @@ export default function CaracterizacionPanel({
             alcance: '',
             responsable: '',
             fechaCreacion: serverTimestamp(),
-            creadaPor: 'system', // or a superuser id
-            repositorioId: idEntidad,
+            creadaPor: 'system',
             editable: true,
           };
           try {
             await setDoc(docRef, newCaracterizacion);
-            // The listener will pick up the new document, but we can set state here to be faster
+            // Listener will pick up the new document, but we can set state here to be faster
             setCaracterizacion(newCaracterizacion);
-            setFormData(newCaracterizacion);
           } catch (error) {
              console.error("Error creating caracterizacion:", error);
-          } finally {
-            setLoading(false); // Ensure loading is false after creation attempt
           }
         }
+        setLoading(false);
       },
       (error) => {
         console.error('Error fetching caracterizacion:', error);
@@ -103,47 +94,9 @@ export default function CaracterizacionPanel({
     );
 
     return () => unsubscribe();
-  }, [firestore, idEntidad, tipo]);
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSave = async () => {
-    if (!firestore) return;
-    setIsEditing(false);
-    
-    const docId = `${tipo}-${idEntidad.replace(/:/g, '_')}`;
-    const docRef = doc(firestore, 'caracterizaciones', docId);
-
-    try {
-      await setDoc(
-        docRef,
-        {
-          ...formData,
-          fechaModificacion: serverTimestamp(),
-        },
-        { merge: true }
-      );
-      // Optimistic update in UI is handled by onSnapshot
-    } catch (error) {
-      console.error('Error saving characterization: ', error);
-      // Optionally, revert UI changes or show an error toast
-    }
-  };
-
-  const handleCancel = () => {
-    setIsEditing(false);
-    // Reset form data to the original state
-    if (caracterizacion) {
-      setFormData(caracterizacion);
-    }
-  };
+  }, [firestore, idEntidad, tipo, docId]);
   
-  const canEdit = isSuperuser && (caracterizacion ? caracterizacion.editable : true);
+  const canEdit = isAdmin && (caracterizacion ? caracterizacion.editable !== false : true);
 
   return (
     <Card>
@@ -154,16 +107,32 @@ export default function CaracterizacionPanel({
             Caracterización del {tipo.charAt(0).toUpperCase() + tipo.slice(1)}
           </CardTitle>
         </div>
-        {canEdit && !isEditing && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsEditing(true)}
-            disabled={loading}
-          >
-            <Edit className="h-4 w-4 mr-2" />
-            Editar
-          </Button>
+        {canEdit && (
+          <Dialog open={isEditorOpen} onOpenChange={setIsEditorOpen}>
+            <DialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={loading}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Editar
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[625px]">
+                <DialogHeader>
+                    <DialogTitle>Editar Caracterización</DialogTitle>
+                    <DialogDescription>
+                        Ajuste los detalles para el {tipo} &quot;{idEntidad}&quot;.
+                    </DialogDescription>
+                </DialogHeader>
+                <CaracterizacionEditor 
+                    idEntidad={idEntidad}
+                    tipo={tipo}
+                    onSaved={() => setIsEditorOpen(false)}
+                />
+            </DialogContent>
+          </Dialog>
         )}
       </CardHeader>
       <CardContent className="space-y-4">
@@ -171,51 +140,6 @@ export default function CaracterizacionPanel({
            <div className="flex justify-center items-center h-40">
                 <Loader className="h-8 w-8 animate-spin text-primary" />
            </div>
-        ) : isEditing ? (
-          <div className="space-y-6">
-            <div className="grid gap-2">
-              <Label htmlFor="objetivo">Objetivo</Label>
-              <Textarea
-                id="objetivo"
-                name="objetivo"
-                value={formData.objetivo}
-                onChange={handleInputChange}
-                placeholder="Defina el propósito fundamental..."
-                rows={4}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="alcance">Alcance</Label>
-              <Textarea
-                id="alcance"
-                name="alcance"
-                value={formData.alcance}
-                onChange={handleInputChange}
-                placeholder="Describa los límites y el ámbito de aplicación..."
-                rows={4}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="responsable">Responsable</Label>
-              <Input
-                id="responsable"
-                name="responsable"
-                value={formData.responsable}
-                onChange={handleInputChange}
-                placeholder="Cargo o rol responsable"
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={handleCancel}>
-                <X className="h-4 w-4 mr-2" />
-                Cancelar
-              </Button>
-              <Button onClick={handleSave}>
-                <Save className="h-4 w-4 mr-2" />
-                Guardar
-              </Button>
-            </div>
-          </div>
         ) : (
           (caracterizacion?.objetivo || caracterizacion?.alcance || caracterizacion?.responsable) ? (
             <div className="space-y-6 text-sm">
