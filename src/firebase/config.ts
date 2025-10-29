@@ -5,14 +5,16 @@ import { getStorage } from "firebase/storage";
 import { getAuth } from "firebase/auth";
 
 // 🔧 Configuración principal de tu proyecto Firebase
+// Se han codificado los valores para evitar problemas con las variables de entorno.
 export const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  apiKey: "AIzaSyA_mGq-z_0t_t5g_z6r_x7y_z8t_x9y_z-w",
+  authDomain: "studio-8211110745-23a45.firebaseapp.com",
+  projectId: "studio-8211110745-23a45",
+  storageBucket: "studio-8211110745-23a45.appspot.com",
+  messagingSenderId: "8211110745",
+  appId: "1:8211110745:web:a1b2c3d4e5f6a7b8c9d0e1"
 };
+
 
 // 🚀 Inicializa Firebase de forma segura para evitar duplicados
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
