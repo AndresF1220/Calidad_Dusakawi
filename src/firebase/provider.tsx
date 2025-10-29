@@ -1,7 +1,7 @@
 
 'use client';
 
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useEffect } from 'react';
 import { FirebaseApp } from 'firebase/app';
 import { Auth, signInAnonymously } from 'firebase/auth';
 import { Firestore } from 'firebase/firestore';
@@ -32,24 +32,26 @@ export const FirebaseProvider = ({
   firestore: Firestore | null;
   storage: FirebaseStorage | null;
 }) => {
-  // Sign in anonymously if there is no user
-  const user = useAuthUser(value.auth);
-  
-  if (user.status === 'unauthenticated' && value.auth) {
-    signInAnonymously(value.auth).catch(error => {
-      console.error("Anonymous sign-in failed:", error);
-    });
-  }
+  const userState = useAuthUser(value.auth);
+
+  useEffect(() => {
+    if (userState.status === 'unauthenticated' && value.auth) {
+      signInAnonymously(value.auth).catch(error => {
+        console.error("Anonymous sign-in failed:", error);
+      });
+    }
+  }, [userState.status, value.auth]);
+
 
   return (
     <FirebaseContext.Provider value={value}>
-      {user.status === 'authenticated' ? children : 
-        (
-          <div className="flex h-screen items-center justify-center">
-            <p>Conectando con Firebase...</p>
-          </div>
-        )
-      }
+      {userState.status === 'loading' ? (
+        <div className="flex h-screen items-center justify-center">
+          <p>Conectando con Firebase...</p>
+        </div>
+      ) : (
+        children
+      )}
     </FirebaseContext.Provider>
   );
 };
