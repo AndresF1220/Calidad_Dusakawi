@@ -34,13 +34,22 @@ export const FirebaseProvider = ({
 }) => {
   // Sign in anonymously if there is no user
   const user = useAuthUser(value.auth);
-  if (user.status === 'unauthenticated') {
-    value.auth && signInAnonymously(value.auth);
+  
+  if (user.status === 'unauthenticated' && value.auth) {
+    signInAnonymously(value.auth).catch(error => {
+      console.error("Anonymous sign-in failed:", error);
+    });
   }
 
   return (
     <FirebaseContext.Provider value={value}>
-      {user.status === 'authenticated' ? children : null}
+      {user.status === 'authenticated' ? children : 
+        (
+          <div className="flex h-screen items-center justify-center">
+            <p>Conectando con Firebase...</p>
+          </div>
+        )
+      }
     </FirebaseContext.Provider>
   );
 };
