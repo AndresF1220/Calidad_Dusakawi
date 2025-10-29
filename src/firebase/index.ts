@@ -16,15 +16,7 @@ let storage: FirebaseStorage;
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase() {
   if (getApps().length === 0) {
-    // Important! initializeApp() can be called without any arguments if Firebase App Hosting
-    // provides the environment variables needed to populate the FirebaseOptions in production.
-    try {
-      // Attempt to initialize via Firebase App Hosting environment variables
-      firebaseApp = initializeApp();
-    } catch (e) {
-      // Fallback to local config for development
-      firebaseApp = initializeApp(firebaseConfig);
-    }
+    firebaseApp = initializeApp(firebaseConfig);
   } else {
     firebaseApp = getApp();
   }
@@ -54,5 +46,3 @@ export * from './non-blocking-updates';
 export * from './non-blocking-login';
 export * from './errors';
 export * from './error-emitter';
-
-
