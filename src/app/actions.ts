@@ -64,11 +64,13 @@ export async function createEntityAction(
             caracterizacionId = `area-${newEntityRef.id}`;
         } else if (type === 'process' && parentId) {
             newEntityRef = doc(collection(db, `areas/${parentId}/procesos`));
+            entityData.id = newEntityRef.id;
             batch.set(newEntityRef, entityData);
             caracterizacionId = `process-${newEntityRef.id}`;
             revalidationPath = `/inicio/documentos/area/${parentId}`;
         } else if (type === 'subprocess' && parentId && grandParentId) {
             newEntityRef = doc(collection(db, `areas/${grandParentId}/procesos/${parentId}/subprocesos`));
+            entityData.id = newEntityRef.id;
             batch.set(newEntityRef, entityData);
             caracterizacionId = `subprocess-${newEntityRef.id}`;
             revalidationPath = `/inicio/documentos/area/${grandParentId}/proceso/${parentId}`;
@@ -107,6 +109,8 @@ export async function deleteEntityAction(
   prevState: any,
   formData: FormData
 ): Promise<{ message: string; error?: string }> {
+  console.log("Delete action received formData:", Object.fromEntries(formData.entries()));
+  
   const validatedFields = deleteSchema.safeParse({
     entityId: formData.get('entityId'),
     entityType: formData.get('entityType'),
@@ -126,10 +130,12 @@ export async function deleteEntityAction(
 
     if (entityType === 'area') {
       const areaRef = doc(db, 'areas', entityId);
+      // Cascade delete processes and their subprocesses
       const procesosQuery = collection(areaRef, 'procesos');
       const procesosSnap = await getDocs(procesosQuery);
 
       for (const procesoDoc of procesosSnap.docs) {
+        // Cascade delete subprocesses
         const subprocesosQuery = collection(procesoDoc.ref, 'subprocesos');
         const subprocesosSnap = await getDocs(subprocesosQuery);
         subprocesosSnap.forEach(subDoc => {
@@ -137,16 +143,19 @@ export async function deleteEntityAction(
             batch.delete(caracterizacionSubRef);
             batch.delete(subDoc.ref);
         });
+        // Delete process and its caracterizacion
         const caracterizacionProcRef = doc(db, 'caracterizaciones', `process-${procesoDoc.id}`);
         batch.delete(caracterizacionProcRef);
         batch.delete(procesoDoc.ref);
       }
+      // Delete area and its caracterizacion
       const caracterizacionAreaRef = doc(db, 'caracterizaciones', `area-${entityId}`);
       batch.delete(caracterizacionAreaRef);
       batch.delete(areaRef);
       
     } else if (entityType === 'process' && parentId) {
       const processRef = doc(db, `areas/${parentId}/procesos`, entityId);
+      // Cascade delete subprocesses
       const subprocesosQuery = collection(processRef, 'subprocesos');
       const subprocesosSnap = await getDocs(subprocesosQuery);
 
@@ -155,6 +164,7 @@ export async function deleteEntityAction(
           batch.delete(caracterizacionSubRef);
           batch.delete(subDoc.ref);
       });
+      // Delete process and its caracterizacion
       const caracterizacionProcRef = doc(db, 'caracterizaciones', `process-${entityId}`);
       batch.delete(caracterizacionProcRef);
       batch.delete(processRef);
@@ -344,3 +354,5 @@ export async function suggestAdditionalDataAction(prevState: any, formData: Form
         }
     };
 }
+
+    
