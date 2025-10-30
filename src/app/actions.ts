@@ -287,6 +287,7 @@ export async function seedProcessMapAction(): Promise<{ message: string; error?:
     try {
         const batch = writeBatch(db);
         const areasCollection = collection(db, 'areas');
+        const rootFolderCollection = collection(db, 'folders');
 
         for (const area of SEED_AREAS) {
             const newAreaRef = doc(areasCollection);
@@ -354,5 +355,7 @@ export async function suggestAdditionalDataAction(prevState: any, formData: Form
         }
     };
 }
+
+    
 
     
