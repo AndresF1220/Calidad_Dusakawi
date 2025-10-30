@@ -22,15 +22,19 @@ export async function createEntityAction(
   prevState: any,
   formData: FormData
 ): Promise<{ message: string; error?: string }> {
-    const validatedFields = createSchema.safeParse({
-        name: formData.get('name'),
-        objetivo: formData.get('objetivo'),
-        alcance: formData.get('alcance'),
-        responsable: formData.get('responsable'),
+    const s = (v: any) => (typeof v === 'string' ? v.trim() : '');
+    
+    const payload = {
+        name: s(formData.get('name')),
+        objetivo: s(formData.get('objetivo')),
+        alcance: s(formData.get('alcance')),
+        responsable: s(formData.get('responsable')),
         type: formData.get('type'),
         parentId: formData.get('parentId'),
         grandParentId: formData.get('grandParentId'),
-    });
+    };
+    
+    const validatedFields = createSchema.safeParse(payload);
 
     if (!validatedFields.success) {
         const errors = validatedFields.error.flatten().fieldErrors;
@@ -57,6 +61,19 @@ export async function createEntityAction(
             newEntityRef = doc(collection(db, 'areas'));
             batch.set(newEntityRef, entityData);
             caracterizacionId = `area-${newEntityRef.id}`;
+            
+            // Create root folder for the new area
+            const rootFolderKey = `root__${newEntityRef.id}____`;
+            const newFolderRef = doc(db, 'folders', rootFolderKey);
+            batch.set(newFolderRef, {
+              name: "Documentación",
+              parentId: null,
+              areaId: newEntityRef.id,
+              procesoId: null,
+              subprocesoId: null,
+              createdAt: serverTimestamp()
+            });
+
         } else if (type === 'process' && parentId) {
             newEntityRef = doc(collection(db, `areas/${parentId}/procesos`));
             batch.set(newEntityRef, entityData);

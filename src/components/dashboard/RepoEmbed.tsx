@@ -484,7 +484,7 @@ export default function RepoEmbed({
                       colSpan={4}
                       className="h-24 text-center text-muted-foreground"
                     >
-                      No hay archivos en esta carpeta.
+                       {selectedFolder ? "No hay archivos en esta carpeta. Use el botón 'Subir Archivo' para agregar uno." : "Seleccione una carpeta para ver sus archivos."}
                     </TableCell>
                   </TableRow>
                 )}
