@@ -97,84 +97,78 @@ export async function createEntityAction(
 }
 
 
-const deleteSchema = z.object({
-  entityId: z.string().min(1, 'ID de entidad inválido'),
-  entityType: z.enum(['area', 'process', 'subprocess']),
-  parentId: z.string().optional(),
-  grandParentId: z.string().optional(),
-});
-
 export async function deleteEntityAction(
   prevState: any,
   formData: FormData
 ): Promise<{ message: string; error?: string }> {
   
-  const payload = {
-    entityId: formData.get('entityId') as string,
-    entityType: formData.get('entityType') as 'area' | 'process' | 'subprocess',
-    parentId: formData.get('parentId') as string | undefined,
-    grandParentId: formData.get('grandParentId') as string | undefined,
-  };
-  
-  console.log('[DEL] Received payload for validation:', payload);
+  const entityId = formData.get('entityId') as string;
+  const entityType = formData.get('entityType') as 'area' | 'process' | 'subprocess';
+  const parentId = formData.get('parentId') as string | undefined;
+  const grandParentId = formData.get('grandParentId') as string | undefined;
+
+  console.log('[DEL] args', { entityType, entityId, parentId, grandParentId });
   
   try {
-    const validatedFields = deleteSchema.parse(payload);
-    const { entityId, entityType, parentId, grandParentId } = validatedFields;
     const batch = writeBatch(db);
     let revalidationPath = '/inicio/documentos';
 
-    if (entityType === 'area') {
-      console.log('[DEL] Deleting area:', { areaId: entityId });
-      if (!entityId) throw new Error("Parámetros de eliminación inválidos (falta areaId).");
-      
-      const areaRef = doc(db, 'areas', entityId);
-      const procesosQuery = collection(db, 'areas', entityId, 'procesos');
-      const procesosSnap = await getDocs(procesosQuery);
+    switch (entityType) {
+        case 'area':
+            if (!entityId) throw new Error("Parámetros de eliminación inválidos (falta entityId).");
+            
+            const areaRef = doc(db, 'areas', entityId);
+            const procesosQuery = collection(db, 'areas', entityId, 'procesos');
+            const procesosSnap = await getDocs(procesosQuery);
 
-      for (const procesoDoc of procesosSnap.docs) {
-        const subprocesosQuery = collection(procesoDoc.ref, 'subprocesos');
-        const subprocesosSnap = await getDocs(subprocesosQuery);
-        for (const subDoc of subprocesosSnap.docs) {
-            const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${subDoc.id}`);
+            for (const procesoDoc of procesosSnap.docs) {
+                const subprocesosQuery = collection(procesoDoc.ref, 'subprocesos');
+                const subprocesosSnap = await getDocs(subprocesosQuery);
+                for (const subDoc of subprocesosSnap.docs) {
+                    const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${subDoc.id}`);
+                    batch.delete(caracterizacionSubRef);
+                    batch.delete(subDoc.ref);
+                }
+                const caracterizacionProcRef = doc(db, 'caracterizaciones', `process-${procesoDoc.id}`);
+                batch.delete(caracterizacionProcRef);
+                batch.delete(procesoDoc.ref);
+            }
+            const caracterizacionAreaRef = doc(db, 'caracterizaciones', `area-${entityId}`);
+            batch.delete(caracterizacionAreaRef);
+            batch.delete(areaRef);
+            revalidationPath = '/inicio/documentos';
+            break;
+
+        case 'process':
+            if (!entityId || !parentId) throw new Error("Parámetros de eliminación inválidos (falta entityId o parentId).");
+
+            const processRef = doc(db, `areas/${parentId}/procesos`, entityId);
+            const subprocesosQuery = collection(processRef, 'subprocesos');
+            const subprocesosSnap = await getDocs(subprocesosQuery);
+
+            for (const subDoc of subprocesosSnap.docs) {
+                const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${subDoc.id}`);
+                batch.delete(caracterizacionSubRef);
+                batch.delete(subDoc.ref);
+            }
+            const caracterizacionProcRef = doc(db, 'caracterizaciones', `process-${entityId}`);
+            batch.delete(caracterizacionProcRef);
+            batch.delete(processRef);
+            revalidationPath = `/inicio/documentos/area/${parentId}`;
+            break;
+
+        case 'subprocess':
+            if (!entityId || !parentId || !grandParentId) throw new Error("Parámetros de eliminación inválidos (falta entityId, parentId o grandParentId).");
+            
+            const subProcessRef = doc(db, `areas/${grandParentId}/procesos/${parentId}/subprocesos`, entityId);
+            const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${entityId}`);
             batch.delete(caracterizacionSubRef);
-            batch.delete(subDoc.ref);
-        }
-        const caracterizacionProcRef = doc(db, 'caracterizaciones', `process-${procesoDoc.id}`);
-        batch.delete(caracterizacionProcRef);
-        batch.delete(procesoDoc.ref);
-      }
-      const caracterizacionAreaRef = doc(db, 'caracterizaciones', `area-${entityId}`);
-      batch.delete(caracterizacionAreaRef);
-      batch.delete(areaRef);
-      
-    } else if (entityType === 'process') {
-      console.log('[DEL] Deleting process:', { procesoId: entityId, areaId: parentId });
-      if (!entityId || !parentId) throw new Error("Parámetros de eliminación inválidos (falta procesoId o areaId).");
-
-      const processRef = doc(db, `areas/${parentId}/procesos`, entityId);
-      const subprocesosQuery = collection(processRef, 'subprocesos');
-      const subprocesosSnap = await getDocs(subprocesosQuery);
-
-      for (const subDoc of subprocesosSnap.docs) {
-          const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${subDoc.id}`);
-          batch.delete(caracterizacionSubRef);
-          batch.delete(subDoc.ref);
-      }
-      const caracterizacionProcRef = doc(db, 'caracterizaciones', `process-${entityId}`);
-      batch.delete(caracterizacionProcRef);
-      batch.delete(processRef);
-      revalidationPath = `/inicio/documentos/area/${parentId}`;
-
-    } else if (entityType === 'subprocess') {
-      console.log('[DEL] Deleting subprocess:', { subprocesoId: entityId, procesoId: parentId, areaId: grandParentId });
-      if (!entityId || !parentId || !grandParentId) throw new Error("Parámetros de eliminación inválidos (falta subprocesoId, procesoId o areaId).");
-      
-      const subProcessRef = doc(db, `areas/${grandParentId!}/procesos/${parentId!}/subprocesos`, entityId);
-      const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${entityId}`);
-      batch.delete(caracterizacionSubRef);
-      batch.delete(subProcessRef);
-      revalidationPath = `/inicio/documentos/area/${grandParentId}/proceso/${parentId}`;
+            batch.delete(subProcessRef);
+            revalidationPath = `/inicio/documentos/area/${grandParentId}/proceso/${parentId}`;
+            break;
+            
+        default:
+            throw new Error("Tipo de entidad no reconocido.");
     }
 
     await batch.commit();
@@ -182,12 +176,7 @@ export async function deleteEntityAction(
     return { message: 'Elemento eliminado correctamente.' };
   } catch (e: any) {
     let errorMessage = `No se pudo eliminar el elemento: ${e.message}`;
-    if (e instanceof z.ZodError) {
-        errorMessage = 'Parámetros de eliminación inválidos.';
-        console.error("Zod validation errors:", e.flatten().fieldErrors);
-    } else {
-       console.error('Error deleting entity:', e);
-    }
+    console.error('Error deleting entity:', e);
     return { message: 'Error', error: errorMessage };
   }
 }
@@ -357,5 +346,3 @@ export async function suggestAdditionalDataAction(prevState: any, formData: Form
         }
     };
 }
-
-    

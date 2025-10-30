@@ -65,19 +65,16 @@ export function EntityOptionsDropdown({
   
   const handleEditClick = (e: Event) => {
     e.stopPropagation();
-    e.preventDefault();
     setIsEditing(true);
   }
   
   const handleDeleteClick = (e: Event) => {
     e.stopPropagation();
-    e.preventDefault();
     setIsDeleting(true);
   }
 
   const handleDeleteConfirm = async () => {
     startTransition(async () => {
-      console.log(`[DEL] UI preparing to delete:`, { entityId, entityType, parentId, grandParentId });
       
       const formData = new FormData();
       formData.append('entityId', entityId);
@@ -101,8 +98,6 @@ export function EntityOptionsDropdown({
         if (redirectOnDelete) {
           router.push(redirectOnDelete);
         } else {
-          // The revalidation should handle the refresh
-          // but we might want to force a refresh as a fallback
           router.refresh(); 
         }
       }
@@ -114,12 +109,12 @@ export function EntityOptionsDropdown({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); }}>
             <MoreVertical className="h-4 w-4" />
             <span className="sr-only">Abrir menú</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
+        <DropdownMenuContent align="end" onClick={(e) => { e.stopPropagation(); }}>
           <DropdownMenuLabel>Opciones</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={handleEditClick}>
