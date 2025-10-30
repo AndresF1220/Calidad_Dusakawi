@@ -58,17 +58,20 @@ export async function createEntityAction(
         let caracterizacionId = '';
 
         if (type === 'area') {
-            newEntityRef = doc(collection(db, 'areas'));
-            batch.set(newEntityRef, entityData);
-            caracterizacionId = `area-${newEntityRef.id}`;
+            // Generate the area document reference with an ID beforehand
+            const newAreaRef = doc(collection(db, 'areas'));
+            batch.set(newAreaRef, entityData);
             
-            // Create root folder for the new area
-            const rootFolderKey = `root__${newEntityRef.id}____`;
+            newEntityRef = newAreaRef; // Keep reference for later
+            caracterizacionId = `area-${newAreaRef.id}`;
+            
+            // Create root folder for the new area using its now-known ID
+            const rootFolderKey = `root__${newAreaRef.id}____`;
             const newFolderRef = doc(db, 'folders', rootFolderKey);
             batch.set(newFolderRef, {
               name: "Documentación",
               parentId: null,
-              areaId: newEntityRef.id,
+              areaId: newAreaRef.id,
               procesoId: null,
               subprocesoId: null,
               createdAt: serverTimestamp()
@@ -333,5 +336,7 @@ export async function suggestAdditionalDataAction(prevState: any, formData: Form
         }
     };
 }
+
+    
 
     
