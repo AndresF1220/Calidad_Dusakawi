@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useFirestore, useCollection, useStorage, useMemoFirebase } from '@/firebase';
 import {
   collection,
@@ -142,6 +142,7 @@ export default function RepoEmbed({
 }: RepoEmbedProps) {
   const firestore = useFirestore();
   const storage = useStorage();
+  const seededRef = useRef(false);
   
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
   const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({});
@@ -187,6 +188,8 @@ export default function RepoEmbed({
         }
       }
     };
+    if (seededRef.current) return;
+    seededRef.current = true;
     initRepo();
   }, [firestore, areaId, procesoId, subprocesoId, key]);
 

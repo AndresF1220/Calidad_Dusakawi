@@ -58,7 +58,7 @@ export async function getOrCreateRootFolder(firestore: Firestore, { areaId, proc
       const snap = await tx.get(rootRef);
       // Only if the root folder does not exist, we create it and its children.
       if (!snap.exists()){
-        console.log(`Root folder ${rootKey} does not exist. Creating...`);
+        console.debug(`Root folder ${rootKey} does not exist. Creating...`);
         // 1. Create the root folder "Documentación".
         tx.set(rootRef, {
           name: "Documentación",
@@ -79,11 +79,14 @@ export async function getOrCreateRootFolder(firestore: Firestore, { areaId, proc
         });
       }
     });
-  } catch (error) {
-    console.error("Transaction to get or create root folder failed:", error);
-    // Even if the transaction fails (e.g., due to contention), we don't re-throw
-    // because the operation will likely succeed on a retry or was completed by another client.
-    // The goal is to ensure the folder exists, not to guarantee this specific call creates it.
+  } catch (error: any) {
+    // We specifically check for "already-exists" which can happen in some edge cases with transactions,
+    // but we can safely ignore it as it means the goal (folder exists) is met.
+    if (error.code !== "already-exists") {
+      console.error("Transaction to get or create root folder failed:", error);
+    } else {
+      console.debug("Creation transaction failed because folder already exists. Idempotency maintained.");
+    }
   }
 
   return { id: rootKey, name: "Documentación", parentId: null, areaId, procesoId, subprocesoId };
