@@ -97,21 +97,16 @@ export function EntityOptionsDropdown({
     }
   };
 
-  const stopPropagation = (e: React.MouseEvent) => {
-    e.stopPropagation();
-  };
-
-
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={stopPropagation}>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
             <MoreVertical className="h-4 w-4" />
             <span className="sr-only">Abrir menú</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" onClick={stopPropagation}>
+        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
           <DropdownMenuLabel>Opciones</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => setIsEditing(true)}>
@@ -160,5 +155,3 @@ export function EntityOptionsDropdown({
     </>
   );
 }
-
-    
