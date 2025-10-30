@@ -30,7 +30,13 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
       <div className="w-full max-w-sm mx-auto">
         <div className="flex justify-center mb-8">
-           <Image src="/Imagenes/DSK.png" alt="Logo DSK" width={300} height={150} />
+           <Image 
+              src="/Imagenes/DSK.png" 
+              alt="Logo DSK" 
+              width={300} 
+              height={150}
+              priority 
+            />
         </div>
         <Card className="w-full border-0 shadow-lg">
           <CardHeader className="text-center">
@@ -60,7 +66,6 @@ export default function LoginPage() {
           </CardContent>
         </Card>
       </div>
-      <div />
     </div>
   );
 }
