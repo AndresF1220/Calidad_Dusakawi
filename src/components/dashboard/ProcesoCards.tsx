@@ -46,7 +46,7 @@ const ItemCard = ({ item, linkHref, entityType, parentId, grandParentId }: { ite
                     <CardTitle className="font-headline text-lg">{item?.nombre || 'Elemento inválido'}</CardTitle>
                 </CardHeader>
             </Card>
-             {isAdmin && (
+             {isAdmin && item.id && (
                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <EntityOptionsDropdown
                         entityId={item.id}
@@ -64,7 +64,6 @@ const ItemCard = ({ item, linkHref, entityType, parentId, grandParentId }: { ite
 
 
 export default function ProcesoCards({ areaId, procesoId }: ProcesoCardsProps) {
-    const isAdmin = useIsAdmin();
     
     if (procesoId) {
         // Logic to display sub-processes

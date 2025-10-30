@@ -58,7 +58,7 @@ export async function createEntityAction(
         let caracterizacionId = '';
 
         if (type === 'area') {
-            newEntityRef = doc(collection(db, 'areas')); // Generate ID upfront
+            newEntityRef = doc(collection(db, 'areas'));
             entityData.id = newEntityRef.id;
             batch.set(newEntityRef, entityData);
             caracterizacionId = `area-${newEntityRef.id}`;
@@ -97,7 +97,7 @@ export async function createEntityAction(
 
 
 const deleteSchema = z.object({
-  entityId: z.string(),
+  entityId: z.string().min(1, 'ID de entidad inválido'),
   entityType: z.enum(['area', 'process', 'subprocess']),
   parentId: z.string().optional(),
   grandParentId: z.string().optional(),
@@ -126,31 +126,47 @@ export async function deleteEntityAction(
 
     if (entityType === 'area') {
       const areaRef = doc(db, 'areas', entityId);
-      // Delete sub-processes first
-      const procesosQuery = query(collection(areaRef, 'procesos'));
+      const procesosQuery = collection(areaRef, 'procesos');
       const procesosSnap = await getDocs(procesosQuery);
+
       for (const procesoDoc of procesosSnap.docs) {
-        const subprocesosQuery = query(collection(procesoDoc.ref, 'subprocesos'));
+        const subprocesosQuery = collection(procesoDoc.ref, 'subprocesos');
         const subprocesosSnap = await getDocs(subprocesosQuery);
-        subprocesosSnap.forEach(subDoc => batch.delete(subDoc.ref));
-        // Then delete processes
+        subprocesosSnap.forEach(subDoc => {
+            const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${subDoc.id}`);
+            batch.delete(caracterizacionSubRef);
+            batch.delete(subDoc.ref);
+        });
+        const caracterizacionProcRef = doc(db, 'caracterizaciones', `process-${procesoDoc.id}`);
+        batch.delete(caracterizacionProcRef);
         batch.delete(procesoDoc.ref);
       }
-      // Finally, delete the area
+      const caracterizacionAreaRef = doc(db, 'caracterizaciones', `area-${entityId}`);
+      batch.delete(caracterizacionAreaRef);
       batch.delete(areaRef);
       
     } else if (entityType === 'process' && parentId) {
       const processRef = doc(db, `areas/${parentId}/procesos`, entityId);
-      const subprocesosQuery = query(collection(processRef, 'subprocesos'));
+      const subprocesosQuery = collection(processRef, 'subprocesos');
       const subprocesosSnap = await getDocs(subprocesosQuery);
-      subprocesosSnap.forEach(subDoc => batch.delete(subDoc.ref));
+
+      subprocesosSnap.forEach(subDoc => {
+          const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${subDoc.id}`);
+          batch.delete(caracterizacionSubRef);
+          batch.delete(subDoc.ref);
+      });
+      const caracterizacionProcRef = doc(db, 'caracterizaciones', `process-${entityId}`);
+      batch.delete(caracterizacionProcRef);
       batch.delete(processRef);
       revalidationPath = `/inicio/documentos/area/${parentId}`;
 
     } else if (entityType === 'subprocess' && parentId && grandParentId) {
       const subProcessRef = doc(db, `areas/${grandParentId}/procesos/${parentId}/subprocesos`, entityId);
+      const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${entityId}`);
+      batch.delete(caracterizacionSubRef);
       batch.delete(subProcessRef);
       revalidationPath = `/inicio/documentos/area/${grandParentId}/proceso/${parentId}`;
+
     } else {
       return { message: 'Error', error: 'Parámetros inválidos para la eliminación.' };
     }
@@ -244,9 +260,9 @@ export async function updateEntityAction(
         
         revalidatePath(revalidationPath);
         if (entityType !== 'area') {
-          revalidatePath(`/inicio/documentos/area/${grandParentId || parentId}/proceso/${parentId}`);
           revalidatePath(`/inicio/documentos/area/${grandParentId || parentId}`);
         }
+        revalidatePath(`/inicio/documentos`);
         
         return { message: `Cambios guardados correctamente.` };
 
@@ -267,6 +283,7 @@ export async function seedProcessMapAction(): Promise<{ message: string; error?:
             batch.set(newAreaRef, { 
                 nombre: area.titulo, 
                 slug: slugify(area.titulo),
+                id: newAreaRef.id,
                 createdAt: serverTimestamp() 
             });
 
@@ -275,6 +292,7 @@ export async function seedProcessMapAction(): Promise<{ message: string; error?:
                 batch.set(newProcesoRef, { 
                     nombre: proceso.nombre,
                     slug: slugify(proceso.nombre),
+                    id: newProcesoRef.id,
                     createdAt: serverTimestamp() 
                 });
 
@@ -283,6 +301,7 @@ export async function seedProcessMapAction(): Promise<{ message: string; error?:
                     batch.set(newSubprocesoRef, { 
                         nombre: subproceso.nombre,
                         slug: slugify(subproceso.nombre),
+                        id: newSubprocesoRef.id,
                         createdAt: serverTimestamp() 
                     });
                 }
@@ -325,5 +344,3 @@ export async function suggestAdditionalDataAction(prevState: any, formData: Form
         }
     };
 }
-
-    
