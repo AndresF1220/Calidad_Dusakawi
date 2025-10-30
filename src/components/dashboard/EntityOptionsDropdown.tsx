@@ -86,6 +86,7 @@ export function EntityOptionsDropdown({
 
   const stopPropagation = (e: React.MouseEvent | React.TouchEvent | React.FocusEvent) => {
     e.stopPropagation();
+    e.preventDefault();
   };
   
   const getDeleteMessage = () => {
@@ -110,11 +111,11 @@ export function EntityOptionsDropdown({
         <DropdownMenuContent align="end" onClick={stopPropagation}>
           <DropdownMenuLabel>Opciones</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => setIsEditing(true)}>
+          <DropdownMenuItem onSelect={() => setIsEditing(true)} onClick={stopPropagation}>
             <Edit className="mr-2 h-4 w-4" />
             <span>Editar Nombre</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setIsDeleting(true)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+          <DropdownMenuItem onSelect={() => setIsDeleting(true)} className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={stopPropagation}>
             <Trash2 className="mr-2 h-4 w-4" />
             <span>Eliminar</span>
           </DropdownMenuItem>
@@ -156,5 +157,7 @@ export function EntityOptionsDropdown({
     </div>
   );
 }
+
+    
 
     

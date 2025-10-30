@@ -32,6 +32,7 @@ const AreaCard = ({ area }: { area: any }) => {
     const Icon = iconMap[area.slug] || iconMap['default'];
 
     const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        // Stop navigation if the click is on the dropdown menu or its trigger
         if ((e.target as HTMLElement).closest('[data-radix-dropdown-menu-trigger]') || (e.target as HTMLElement).closest('[data-radix-dropdown-menu-content]')) {
              e.preventDefault();
              return;
@@ -61,7 +62,7 @@ const AreaCard = ({ area }: { area: any }) => {
                 </CardDescription>
             </Card>
              {isAdmin && (
-                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute top-2 right-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                     <EntityOptionsDropdown
                         entityId={area.id}
                         entityType="area"
@@ -146,5 +147,7 @@ export default function RepositoryAreasPage() {
     </div>
   );
 }
+
+    
 
     

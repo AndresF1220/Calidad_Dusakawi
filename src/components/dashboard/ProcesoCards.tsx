@@ -21,6 +21,7 @@ const ItemCard = ({ item, linkHref, entityType, parentId, grandParentId }: { ite
     const isAdmin = useIsAdmin();
 
     const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        // Stop navigation if the click is on the dropdown menu or its trigger
         if ((e.target as HTMLElement).closest('[data-radix-dropdown-menu-trigger]') || (e.target as HTMLElement).closest('[data-radix-dropdown-menu-content]')) {
              e.preventDefault();
              return;
@@ -47,7 +48,7 @@ const ItemCard = ({ item, linkHref, entityType, parentId, grandParentId }: { ite
                 </CardHeader>
             </Card>
              {isAdmin && item.id && (
-                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                 <div className="absolute top-2 right-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                     <EntityOptionsDropdown
                         entityId={item.id}
                         entityType={entityType}
@@ -134,6 +135,8 @@ export default function ProcesoCards({ areaId, procesoId }: ProcesoCardsProps) {
         </div>
     );
 }
+
+    
 
     
 

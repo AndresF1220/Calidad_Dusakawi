@@ -130,47 +130,43 @@ export async function deleteEntityAction(
 
     if (entityType === 'area') {
       const areaRef = doc(db, 'areas', entityId);
-      // Cascade delete processes and their subprocesses
       const procesosQuery = collection(areaRef, 'procesos');
       const procesosSnap = await getDocs(procesosQuery);
 
       for (const procesoDoc of procesosSnap.docs) {
-        // Cascade delete subprocesses
         const subprocesosQuery = collection(procesoDoc.ref, 'subprocesos');
         const subprocesosSnap = await getDocs(subprocesosQuery);
-        subprocesosSnap.forEach(subDoc => {
+        for (const subDoc of subprocesosSnap.docs) {
             const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${subDoc.id}`);
             batch.delete(caracterizacionSubRef);
             batch.delete(subDoc.ref);
-        });
-        // Delete process and its caracterizacion
+        }
         const caracterizacionProcRef = doc(db, 'caracterizaciones', `process-${procesoDoc.id}`);
         batch.delete(caracterizacionProcRef);
         batch.delete(procesoDoc.ref);
       }
-      // Delete area and its caracterizacion
       const caracterizacionAreaRef = doc(db, 'caracterizaciones', `area-${entityId}`);
       batch.delete(caracterizacionAreaRef);
       batch.delete(areaRef);
       
     } else if (entityType === 'process' && parentId) {
+      if (!parentId) return { message: 'Error', error: 'Parámetros inválidos para la eliminación.' };
       const processRef = doc(db, `areas/${parentId}/procesos`, entityId);
-      // Cascade delete subprocesses
       const subprocesosQuery = collection(processRef, 'subprocesos');
       const subprocesosSnap = await getDocs(subprocesosQuery);
 
-      subprocesosSnap.forEach(subDoc => {
+      for (const subDoc of subprocesosSnap.docs) {
           const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${subDoc.id}`);
           batch.delete(caracterizacionSubRef);
           batch.delete(subDoc.ref);
-      });
-      // Delete process and its caracterizacion
+      }
       const caracterizacionProcRef = doc(db, 'caracterizaciones', `process-${entityId}`);
       batch.delete(caracterizacionProcRef);
       batch.delete(processRef);
       revalidationPath = `/inicio/documentos/area/${parentId}`;
 
     } else if (entityType === 'subprocess' && parentId && grandParentId) {
+       if (!grandParentId || !parentId) return { message: 'Error', error: 'Parámetros inválidos para la eliminación.' };
       const subProcessRef = doc(db, `areas/${grandParentId}/procesos/${parentId}/subprocesos`, entityId);
       const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${entityId}`);
       batch.delete(caracterizacionSubRef);
@@ -178,7 +174,7 @@ export async function deleteEntityAction(
       revalidationPath = `/inicio/documentos/area/${grandParentId}/proceso/${parentId}`;
 
     } else {
-      return { message: 'Error', error: 'Parámetros inválidos para la eliminación.' };
+      return { message: 'Error', error: 'Tipo de entidad no reconocido o faltan parámetros.' };
     }
 
     await batch.commit();
@@ -355,6 +351,8 @@ export async function suggestAdditionalDataAction(prevState: any, formData: Form
         }
     };
 }
+
+    
 
     
 
