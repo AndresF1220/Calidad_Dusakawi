@@ -35,7 +35,8 @@ export default function LoginPage() {
               alt="Logo DSK" 
               width={300} 
               height={150}
-              priority 
+              priority
+              style={{ width: "auto", height: "auto" }}
             />
         </div>
         <Card className="w-full border-0 shadow-lg">
