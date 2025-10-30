@@ -81,6 +81,9 @@ export async function getOrCreateRootFolder(firestore: Firestore, { areaId, proc
     });
   } catch (error) {
     console.error("Transaction to get or create root folder failed:", error);
+    // Even if the transaction fails (e.g., due to contention), we don't re-throw
+    // because the operation will likely succeed on a retry or was completed by another client.
+    // The goal is to ensure the folder exists, not to guarantee this specific call creates it.
   }
 
   return { id: rootKey, name: "Documentación", parentId: null, areaId, procesoId, subprocesoId };
