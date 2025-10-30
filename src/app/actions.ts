@@ -150,6 +150,7 @@ export async function deleteEntityAction(
       batch.delete(areaRef);
       
     } else if (entityType === 'process' && parentId) {
+      if (!parentId) return { message: 'Error', error: 'Parámetros de eliminación inválidos: falta parentId para proceso.' };
       const processRef = doc(db, `areas/${parentId}/procesos`, entityId);
       const subprocesosQuery = collection(processRef, 'subprocesos');
       const subprocesosSnap = await getDocs(subprocesosQuery);
@@ -165,6 +166,7 @@ export async function deleteEntityAction(
       revalidationPath = `/inicio/documentos/area/${parentId}`;
 
     } else if (entityType === 'subprocess' && parentId && grandParentId) {
+      if (!parentId || !grandParentId) return { message: 'Error', error: 'Parámetros de eliminación inválidos: faltan IDs para subproceso.' };
       const subProcessRef = doc(db, `areas/${grandParentId}/procesos/${parentId}/subprocesos`, entityId);
       const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${entityId}`);
       batch.delete(caracterizacionSubRef);
@@ -349,9 +351,3 @@ export async function suggestAdditionalDataAction(prevState: any, formData: Form
         }
     };
 }
-
-    
-
-    
-
-    
