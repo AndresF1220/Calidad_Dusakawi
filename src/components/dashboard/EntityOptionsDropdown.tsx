@@ -97,20 +97,16 @@ export function EntityOptionsDropdown({
     }
   };
 
-  const handleSelect = (e: Event) => {
-    e.stopPropagation();
-  }
-
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8" data-radix-dropdown-menu-trigger>
+          <Button variant="ghost" size="icon" className="h-8 w-8" data-radix-dropdown-menu-trigger onClick={(e) => e.stopPropagation()}>
             <MoreVertical className="h-4 w-4" />
             <span className="sr-only">Abrir menú</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" onSelect={handleSelect}>
+        <DropdownMenuContent align="end">
           <DropdownMenuLabel>Opciones</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => setIsEditing(true)}>
@@ -159,5 +155,3 @@ export function EntityOptionsDropdown({
     </>
   );
 }
-
-    
