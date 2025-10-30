@@ -96,24 +96,36 @@ export function EntityOptionsDropdown({
         return `Vas a eliminar "${entityName}". Esta acción no se puede deshacer.`;
     }
   };
+  
+  const handleEditClick = (e: Event) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsEditing(true);
+  }
+  
+  const handleDeleteClick = (e: Event) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDeleting(true);
+  }
 
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
             <MoreVertical className="h-4 w-4" />
             <span className="sr-only">Abrir menú</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+        <DropdownMenuContent align="end" onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
           <DropdownMenuLabel>Opciones</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => setIsEditing(true)}>
+          <DropdownMenuItem onSelect={handleEditClick}>
             <Edit className="mr-2 h-4 w-4" />
             <span>Editar Nombre</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setIsDeleting(true)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+          <DropdownMenuItem onSelect={handleDeleteClick} className="text-destructive focus:text-destructive focus:bg-destructive/10">
             <Trash2 className="mr-2 h-4 w-4" />
             <span>Eliminar</span>
           </DropdownMenuItem>

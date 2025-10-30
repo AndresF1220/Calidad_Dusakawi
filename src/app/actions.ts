@@ -108,7 +108,7 @@ export async function deleteEntityAction(
   prevState: any,
   formData: FormData
 ): Promise<{ message: string; error?: string }> {
-  console.log("Delete action received formData:", Object.fromEntries(formData.entries()));
+  console.log("[DEL] Received data:", Object.fromEntries(formData.entries()));
   
   const validatedFields = deleteSchema.safeParse({
     entityId: formData.get('entityId'),
@@ -118,7 +118,7 @@ export async function deleteEntityAction(
   });
 
   if (!validatedFields.success) {
-    console.error("Validation failed:", validatedFields.error.flatten());
+    console.error("[DEL] Validation failed:", validatedFields.error.flatten());
     return { message: 'Error', error: 'Parámetros de eliminación inválidos.' };
   }
 
@@ -129,8 +129,9 @@ export async function deleteEntityAction(
     let revalidationPath = '/inicio/documentos';
 
     if (entityType === 'area') {
+      console.log("[DEL] Deleting area:", { areaId: entityId });
       const areaRef = doc(db, 'areas', entityId);
-      const procesosQuery = collection(areaRef, 'procesos');
+      const procesosQuery = collection(db, 'areas', entityId, 'procesos');
       const procesosSnap = await getDocs(procesosQuery);
 
       for (const procesoDoc of procesosSnap.docs) {
@@ -149,8 +150,9 @@ export async function deleteEntityAction(
       batch.delete(caracterizacionAreaRef);
       batch.delete(areaRef);
       
-    } else if (entityType === 'process' && parentId) {
+    } else if (entityType === 'process') {
       if (!parentId) return { message: 'Error', error: 'Falta ParentID para eliminar el proceso.' };
+      console.log("[DEL] Deleting process:", { procesoId: entityId, areaId: parentId });
       const processRef = doc(db, `areas/${parentId}/procesos`, entityId);
       const subprocesosQuery = collection(processRef, 'subprocesos');
       const subprocesosSnap = await getDocs(subprocesosQuery);
@@ -167,6 +169,7 @@ export async function deleteEntityAction(
 
     } else if (entityType === 'subprocess' && parentId && grandParentId) {
       if (!parentId || !grandParentId) return { message: 'Error', error: 'Falta ParentID o GrandParentID para eliminar el subproceso.' };
+       console.log("[DEL] Deleting subprocess:", { subprocesoId: entityId, procesoId: parentId, areaId: grandParentId });
       const subProcessRef = doc(db, `areas/${grandParentId}/procesos/${parentId}/subprocesos`, entityId);
       const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${entityId}`);
       batch.delete(caracterizacionSubRef);
