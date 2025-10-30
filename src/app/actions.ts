@@ -108,34 +108,26 @@ export async function deleteEntityAction(
   prevState: any,
   formData: FormData
 ): Promise<{ message: string; error?: string }> {
-  console.log("[DEL] Received data:", Object.fromEntries(formData.entries()));
   
-  const entityId = formData.get('entityId') as string;
-  const entityType = formData.get('entityType') as 'area' | 'process' | 'subprocess';
-  const parentId = formData.get('parentId') as string | undefined;
-  const grandParentId = formData.get('grandParentId') as string | undefined;
-
-  // Manual validation based on entityType
-  switch (entityType) {
-    case 'area':
-      if (!entityId) return { message: 'Error', error: 'Parámetros de eliminación inválidos (falta areaId).' };
-      break;
-    case 'process':
-      if (!entityId || !parentId) return { message: 'Error', error: 'Parámetros de eliminación inválidos (falta procesoId o areaId).' };
-      break;
-    case 'subprocess':
-      if (!entityId || !parentId || !grandParentId) return { message: 'Error', error: 'Parámetros de eliminación inválidos (falta subprocesoId, procesoId o areaId).' };
-      break;
-    default:
-      return { message: 'Error', error: 'Tipo de entidad no reconocido.' };
-  }
-
+  const payload = {
+    entityId: formData.get('entityId') as string,
+    entityType: formData.get('entityType') as 'area' | 'process' | 'subprocess',
+    parentId: formData.get('parentId') as string | undefined,
+    grandParentId: formData.get('grandParentId') as string | undefined,
+  };
+  
+  console.log('[DEL] Received payload for validation:', payload);
+  
   try {
+    const validatedFields = deleteSchema.parse(payload);
+    const { entityId, entityType, parentId, grandParentId } = validatedFields;
     const batch = writeBatch(db);
     let revalidationPath = '/inicio/documentos';
 
     if (entityType === 'area') {
-      console.log("[DEL] Deleting area:", { areaId: entityId });
+      console.log('[DEL] Deleting area:', { areaId: entityId });
+      if (!entityId) throw new Error("Parámetros de eliminación inválidos (falta areaId).");
+      
       const areaRef = doc(db, 'areas', entityId);
       const procesosQuery = collection(db, 'areas', entityId, 'procesos');
       const procesosSnap = await getDocs(procesosQuery);
@@ -157,7 +149,9 @@ export async function deleteEntityAction(
       batch.delete(areaRef);
       
     } else if (entityType === 'process') {
-      console.log("[DEL] Deleting process:", { procesoId: entityId, areaId: parentId });
+      console.log('[DEL] Deleting process:', { procesoId: entityId, areaId: parentId });
+      if (!entityId || !parentId) throw new Error("Parámetros de eliminación inválidos (falta procesoId o areaId).");
+
       const processRef = doc(db, `areas/${parentId}/procesos`, entityId);
       const subprocesosQuery = collection(processRef, 'subprocesos');
       const subprocesosSnap = await getDocs(subprocesosQuery);
@@ -173,7 +167,9 @@ export async function deleteEntityAction(
       revalidationPath = `/inicio/documentos/area/${parentId}`;
 
     } else if (entityType === 'subprocess') {
-      console.log("[DEL] Deleting subprocess:", { subprocesoId: entityId, procesoId: parentId, areaId: grandParentId });
+      console.log('[DEL] Deleting subprocess:', { subprocesoId: entityId, procesoId: parentId, areaId: grandParentId });
+      if (!entityId || !parentId || !grandParentId) throw new Error("Parámetros de eliminación inválidos (falta subprocesoId, procesoId o areaId).");
+      
       const subProcessRef = doc(db, `areas/${grandParentId!}/procesos/${parentId!}/subprocesos`, entityId);
       const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${entityId}`);
       batch.delete(caracterizacionSubRef);
@@ -185,8 +181,14 @@ export async function deleteEntityAction(
     revalidatePath(revalidationPath);
     return { message: 'Elemento eliminado correctamente.' };
   } catch (e: any) {
-    console.error('Error deleting entity:', e);
-    return { message: 'Error', error: `No se pudo eliminar el elemento: ${e.message}` };
+    let errorMessage = `No se pudo eliminar el elemento: ${e.message}`;
+    if (e instanceof z.ZodError) {
+        errorMessage = 'Parámetros de eliminación inválidos.';
+        console.error("Zod validation errors:", e.flatten().fieldErrors);
+    } else {
+       console.error('Error deleting entity:', e);
+    }
+    return { message: 'Error', error: errorMessage };
   }
 }
 

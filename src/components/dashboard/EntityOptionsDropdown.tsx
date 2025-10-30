@@ -65,18 +65,20 @@ export function EntityOptionsDropdown({
   
   const handleEditClick = (e: Event) => {
     e.stopPropagation();
+    e.preventDefault();
     setIsEditing(true);
   }
   
   const handleDeleteClick = (e: Event) => {
     e.stopPropagation();
+    e.preventDefault();
     setIsDeleting(true);
   }
 
   const handleDeleteConfirm = async () => {
     startTransition(async () => {
-      console.log(`[DEL] Preparing to delete:`, { entityId, entityType, parentId, grandParentId });
-
+      console.log(`[DEL] UI preparing to delete:`, { entityId, entityType, parentId, grandParentId });
+      
       const formData = new FormData();
       formData.append('entityId', entityId);
       formData.append('entityType', entityType);
@@ -96,13 +98,15 @@ export function EntityOptionsDropdown({
           title: '¡Éxito!',
           description: result.message,
         });
-        setIsDeleting(false);
         if (redirectOnDelete) {
           router.push(redirectOnDelete);
         } else {
-          router.refresh();
+          // The revalidation should handle the refresh
+          // but we might want to force a refresh as a fallback
+          router.refresh(); 
         }
       }
+      setIsDeleting(false);
     });
   };
 
@@ -149,7 +153,7 @@ export function EntityOptionsDropdown({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel asChild>
-                 <Button type="button" variant="ghost" disabled={isPending}>Cancelar</Button>
+                 <Button type="button" variant="ghost" disabled={isPending} onClick={() => setIsDeleting(false)}>Cancelar</Button>
             </AlertDialogCancel>
             <AlertDialogAction asChild>
                 <Button onClick={handleDeleteConfirm} variant="destructive" disabled={isPending}>
