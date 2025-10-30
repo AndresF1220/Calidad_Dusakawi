@@ -47,32 +47,21 @@ export async function getOrCreateRootFolder(firestore: Firestore, { areaId, proc
           areaId, procesoId, subprocesoId,
           createdAt: serverTimestamp()
         });
+
+        // Create standard subfolders inside the transaction for atomicity
+        DEFAULT_FOLDERS.forEach(folderName => {
+            const newSubFolderRef = doc(foldersCol); // Auto-generate ID
+            tx.set(newSubFolderRef, {
+                name: folderName,
+                parentId: rootKey,
+                areaId, procesoId, subprocesoId,
+                createdAt: serverTimestamp()
+            });
+        });
       }
     });
   } catch (error) {
     console.error("Transaction to get or create root folder failed:", error);
-  }
-
-
-  // Crear subcarpetas estándar si faltan (una sola vez por nombre)
-  const subQ = query(foldersCol, where("parentId","==", rootKey));
-  const subSnap = await getDocs(subQ);
-  const existing = new Set(subSnap.docs.map(d => (d.data() as any).name));
-  
-  const foldersToCreate = DEFAULT_FOLDERS.filter(n => !existing.has(n));
-
-  if (foldersToCreate.length > 0) {
-    const batch = writeBatch(firestore);
-    foldersToCreate.forEach(n => {
-      const newSubFolderRef = doc(foldersCol); // Auto-generate ID
-      batch.set(newSubFolderRef, {
-        name: n,
-        parentId: rootKey,
-        areaId, procesoId, subprocesoId,
-        createdAt: serverTimestamp()
-      });
-    });
-    await batch.commit();
   }
 
   return { id: rootKey, name: "Documentación", parentId: null, areaId, procesoId, subprocesoId };

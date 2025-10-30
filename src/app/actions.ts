@@ -58,25 +58,9 @@ export async function createEntityAction(
         let caracterizacionId = '';
 
         if (type === 'area') {
-            // Generate the area document reference with an ID beforehand
-            const newAreaRef = doc(collection(db, 'areas'));
-            batch.set(newAreaRef, entityData);
-            
-            newEntityRef = newAreaRef; // Keep reference for later
-            caracterizacionId = `area-${newAreaRef.id}`;
-            
-            // Create root folder for the new area using its now-known ID
-            const rootFolderKey = `root__${newAreaRef.id}____`;
-            const newFolderRef = doc(db, 'folders', rootFolderKey);
-            batch.set(newFolderRef, {
-              name: "Documentación",
-              parentId: null,
-              areaId: newAreaRef.id,
-              procesoId: null,
-              subprocesoId: null,
-              createdAt: serverTimestamp()
-            });
-
+            newEntityRef = doc(collection(db, 'areas'));
+            batch.set(newEntityRef, entityData);
+            caracterizacionId = `area-${newEntityRef.id}`;
         } else if (type === 'process' && parentId) {
             newEntityRef = doc(collection(db, `areas/${parentId}/procesos`));
             batch.set(newEntityRef, entityData);
