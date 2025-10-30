@@ -54,29 +54,28 @@ export async function createEntityAction(
         };
         
         let revalidationPath = '/inicio/documentos';
-        let newEntityRef;
+        const newEntityRef = doc(collection(db, 'temp')); // Generate ID upfront
+        entityData.id = newEntityRef.id;
+
+        let finalEntityRef;
         let caracterizacionId = '';
 
         if (type === 'area') {
-            newEntityRef = doc(collection(db, 'areas'));
-            entityData.id = newEntityRef.id;
-            batch.set(newEntityRef, entityData);
+            finalEntityRef = doc(db, 'areas', newEntityRef.id);
             caracterizacionId = `area-${newEntityRef.id}`;
         } else if (type === 'process' && parentId) {
-            newEntityRef = doc(collection(db, `areas/${parentId}/procesos`));
-            entityData.id = newEntityRef.id;
-            batch.set(newEntityRef, entityData);
+            finalEntityRef = doc(db, `areas/${parentId}/procesos`, newEntityRef.id);
             caracterizacionId = `process-${newEntityRef.id}`;
             revalidationPath = `/inicio/documentos/area/${parentId}`;
         } else if (type === 'subprocess' && parentId && grandParentId) {
-            newEntityRef = doc(collection(db, `areas/${grandParentId}/procesos/${parentId}/subprocesos`));
-            entityData.id = newEntityRef.id;
-            batch.set(newEntityRef, entityData);
+            finalEntityRef = doc(db, `areas/${grandParentId}/procesos/${parentId}/subprocesos`, newEntityRef.id);
             caracterizacionId = `subprocess-${newEntityRef.id}`;
             revalidationPath = `/inicio/documentos/area/${grandParentId}/proceso/${parentId}`;
         } else {
             return { message: 'Error', error: 'Parámetros inválidos para la creación.' };
         }
+        
+        batch.set(finalEntityRef, entityData);
 
         const caracterizacionRef = doc(db, 'caracterizaciones', caracterizacionId);
         batch.set(caracterizacionRef, {
@@ -150,7 +149,6 @@ export async function deleteEntityAction(
       batch.delete(areaRef);
       
     } else if (entityType === 'process' && parentId) {
-      if (!parentId) return { message: 'Error', error: 'Parámetros de eliminación inválidos: falta parentId para proceso.' };
       const processRef = doc(db, `areas/${parentId}/procesos`, entityId);
       const subprocesosQuery = collection(processRef, 'subprocesos');
       const subprocesosSnap = await getDocs(subprocesosQuery);
@@ -166,7 +164,6 @@ export async function deleteEntityAction(
       revalidationPath = `/inicio/documentos/area/${parentId}`;
 
     } else if (entityType === 'subprocess' && parentId && grandParentId) {
-      if (!parentId || !grandParentId) return { message: 'Error', error: 'Parámetros de eliminación inválidos: faltan IDs para subproceso.' };
       const subProcessRef = doc(db, `areas/${grandParentId}/procesos/${parentId}/subprocesos`, entityId);
       const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${entityId}`);
       batch.delete(caracterizacionSubRef);
@@ -351,3 +348,5 @@ export async function suggestAdditionalDataAction(prevState: any, formData: Form
         }
     };
 }
+
+    

@@ -87,9 +87,9 @@ export function EntityOptionsDropdown({
   const getDeleteMessage = () => {
     switch (entityType) {
       case 'area':
-        return `Vas a eliminar "${entityName}". Esta acción no se puede deshacer. Todos los procesos y subprocesos asociados también serán eliminados.`;
+        return `Vas a eliminar "${entityName}". Esta acción no se puede deshacer. Todos los procesos, subprocesos y documentos asociados también serán eliminados.`;
       case 'process':
-        return `Vas a eliminar "${entityName}". Esta acción no se puede deshacer. Todos los subprocesos asociados también serán eliminados.`;
+        return `Vas a eliminar "${entityName}". Esta acción no se puede deshacer. Todos los subprocesos y documentos asociados también serán eliminados.`;
       case 'subprocess':
         return `Vas a eliminar "${entityName}". Esta acción no se puede deshacer.`;
       default:
@@ -98,7 +98,7 @@ export function EntityOptionsDropdown({
   };
 
   const handleSelect = (e: Event) => {
-    e.preventDefault();
+    // This allows the dialogs to open without being blocked.
   }
 
   return (
@@ -161,6 +161,3 @@ export function EntityOptionsDropdown({
 }
 
     
-
-    
-
