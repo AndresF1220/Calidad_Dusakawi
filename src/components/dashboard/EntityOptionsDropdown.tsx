@@ -1,8 +1,7 @@
 
 'use client';
 
-import { useState, useActionState, useEffect } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useState, useActionState, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   DropdownMenu,
@@ -37,18 +36,6 @@ interface EntityOptionsDropdownProps {
   redirectOnDelete?: string;
 }
 
-function DeleteButton() {
-  const { pending } = useFormStatus();
-  return (
-    <AlertDialogAction asChild>
-        <Button type="submit" variant="destructive" disabled={pending}>
-            {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Continuar
-        </Button>
-    </AlertDialogAction>
-  );
-}
-
 export function EntityOptionsDropdown({
   entityId,
   entityName,
@@ -59,30 +46,9 @@ export function EntityOptionsDropdown({
 }: EntityOptionsDropdownProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const router = useRouter();
-
-  const [deleteState, deleteFormAction] = useActionState(deleteEntityAction, { message: '', error: undefined });
-
-  useEffect(() => {
-    if (deleteState.message && !deleteState.error) {
-      toast({
-        title: '¡Éxito!',
-        description: deleteState.message,
-      });
-      setIsDeleting(false);
-      if (redirectOnDelete) {
-        router.push(redirectOnDelete);
-      }
-    }
-    if (deleteState.error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error al Eliminar',
-        description: deleteState.error,
-      });
-    }
-  }, [deleteState, toast, router, redirectOnDelete]);
   
   const getDeleteMessage = () => {
     switch (entityType) {
@@ -108,6 +74,37 @@ export function EntityOptionsDropdown({
     e.stopPropagation();
     setIsDeleting(true);
   }
+
+  const handleDeleteConfirm = async () => {
+    startTransition(async () => {
+      console.log(`[DEL] Preparing to delete:`, { entityId, entityType, parentId, grandParentId });
+
+      const formData = new FormData();
+      formData.append('entityId', entityId);
+      formData.append('entityType', entityType);
+      if (parentId) formData.append('parentId', parentId);
+      if (grandParentId) formData.append('grandParentId', grandParentId);
+
+      const result = await deleteEntityAction(null, formData);
+
+      if (result.error) {
+        toast({
+          variant: 'destructive',
+          title: 'Error al Eliminar',
+          description: result.error,
+        });
+      } else {
+        toast({
+          title: '¡Éxito!',
+          description: result.message,
+        });
+        setIsDeleting(false);
+        if (redirectOnDelete) {
+          router.push(redirectOnDelete);
+        }
+      }
+    });
+  };
 
   return (
     <>
@@ -151,16 +148,15 @@ export function EntityOptionsDropdown({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <form action={deleteFormAction}>
-                <input type="hidden" name="entityId" value={entityId} />
-                <input type="hidden" name="entityType" value={entityType} />
-                {parentId && <input type="hidden" name="parentId" value={parentId} />}
-                {grandParentId && <input type="hidden" name="grandParentId" value={grandParentId} />}
-                <AlertDialogCancel asChild>
-                     <Button type="button" variant="ghost">Cancelar</Button>
-                </AlertDialogCancel>
-                <DeleteButton />
-            </form>
+            <AlertDialogCancel asChild>
+                 <Button type="button" variant="ghost" disabled={isPending}>Cancelar</Button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild>
+                <Button onClick={handleDeleteConfirm} variant="destructive" disabled={isPending}>
+                    {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Continuar
+                </Button>
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
