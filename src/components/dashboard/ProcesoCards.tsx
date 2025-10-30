@@ -24,6 +24,7 @@ const ItemCard = ({ item, linkHref, entityType, parentId, grandParentId }: { ite
         // Stop navigation if the click is on the dropdown menu or its trigger
         if ((e.target as HTMLElement).closest('[data-radix-dropdown-menu-trigger]')) {
              e.preventDefault();
+             e.stopPropagation();
              return;
         }
 
@@ -50,6 +51,7 @@ const ItemCard = ({ item, linkHref, entityType, parentId, grandParentId }: { ite
              {isAdmin && item.id && (
                  <div 
                     className="absolute top-2 right-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
                  >
                     <EntityOptionsDropdown
                         entityId={item.id}
