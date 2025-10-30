@@ -83,11 +83,6 @@ export function EntityOptionsDropdown({
       });
     }
   }, [deleteState, toast, router, redirectOnDelete]);
-
-  const stopPropagation = (e: React.MouseEvent | React.TouchEvent | React.FocusEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-  };
   
   const getDeleteMessage = () => {
     let message = `Vas a eliminar "${entityName}". Esta acción no se puede deshacer.`;
@@ -100,7 +95,7 @@ export function EntityOptionsDropdown({
   };
 
   return (
-    <div onClick={stopPropagation} onFocus={stopPropagation}>
+    <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="h-8 w-8" data-radix-dropdown-menu-trigger>
@@ -108,14 +103,14 @@ export function EntityOptionsDropdown({
             <span className="sr-only">Abrir menú</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" onClick={stopPropagation}>
+        <DropdownMenuContent align="end">
           <DropdownMenuLabel>Opciones</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => setIsEditing(true)} onClick={stopPropagation}>
+          <DropdownMenuItem onSelect={() => setIsEditing(true)}>
             <Edit className="mr-2 h-4 w-4" />
             <span>Editar Nombre</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setIsDeleting(true)} className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={stopPropagation}>
+          <DropdownMenuItem onSelect={() => setIsDeleting(true)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
             <Trash2 className="mr-2 h-4 w-4" />
             <span>Eliminar</span>
           </DropdownMenuItem>
@@ -154,7 +149,7 @@ export function EntityOptionsDropdown({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 }
 

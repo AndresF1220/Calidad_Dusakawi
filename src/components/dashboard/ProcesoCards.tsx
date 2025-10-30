@@ -48,7 +48,13 @@ const ItemCard = ({ item, linkHref, entityType, parentId, grandParentId }: { ite
                 </CardHeader>
             </Card>
              {isAdmin && item.id && (
-                 <div className="absolute top-2 right-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                 <div 
+                    className="absolute top-2 right-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                    }}
+                 >
                     <EntityOptionsDropdown
                         entityId={item.id}
                         entityType={entityType}
