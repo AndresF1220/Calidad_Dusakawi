@@ -29,9 +29,9 @@ export async function createEntityAction(
         objetivo: s(formData.get('objetivo')),
         alcance: s(formData.get('alcance')),
         responsable: s(formData.get('responsable')),
-        type: formData.get('type'),
-        parentId: formData.get('parentId'),
-        grandParentId: formData.get('grandParentId'),
+        type: s(formData.get('type')) as 'area' | 'process' | 'subprocess',
+        parentId: s(formData.get('parentId')),
+        grandParentId: s(formData.get('grandParentId')),
     };
     
     const validatedFields = createSchema.safeParse(payload);
