@@ -9,6 +9,7 @@ import { Skeleton } from '../ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import React from 'react';
 import { EntityOptionsDropdown } from './EntityOptionsDropdown';
+import { useIsAdmin } from '@/lib/authMock';
 
 interface ProcesoCardsProps {
     areaId: string;
@@ -17,8 +18,15 @@ interface ProcesoCardsProps {
 
 const ItemCard = ({ item, linkHref, entityType, parentId, grandParentId }: { item: any, linkHref: string, entityType: 'process' | 'subprocess', parentId?: string, grandParentId?: string }) => {
     const { toast } = useToast();
+    const isAdmin = useIsAdmin();
 
-    const handleClick = (e: React.MouseEvent) => {
+     const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        // Prevent navigation if the click is on the dropdown trigger or its items
+        if ((e.target as HTMLElement).closest('[data-radix-dropdown-menu-trigger]') || (e.target as HTMLElement).closest('[data-radix-dropdown-menu-content]')) {
+             e.preventDefault();
+             return;
+        }
+
         if (!item || !item.id) {
             e.preventDefault();
             toast({
@@ -26,40 +34,38 @@ const ItemCard = ({ item, linkHref, entityType, parentId, grandParentId }: { ite
                 title: 'Elemento no encontrado',
                 description: 'El elemento que intenta abrir ya no existe o no se pudo cargar.',
             });
+        } else {
+             window.location.href = linkHref;
         }
     };
     
-    const cardContent = (
-         <Card className="h-full flex flex-col items-center justify-center text-center p-6 transition-colors relative group hover:bg-muted/50">
-             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <EntityOptionsDropdown
-                    entityId={item.id}
-                    entityType={entityType}
-                    entityName={item.nombre}
-                    parentId={parentId}
-                    grandParentId={grandParentId}
-                />
-            </div>
-            <Folder className="h-16 w-16 text-primary mb-4" />
-            <CardHeader className="p-0">
-                <CardTitle className="font-headline text-lg">{item?.nombre || 'Elemento inválido'}</CardTitle>
-            </CardHeader>
-        </Card>
-    );
-
-    if (!item || !item.id) {
-        return <div onClick={handleClick}>{cardContent}</div>;
-    }
-
     return (
-        <Link href={linkHref} onClick={handleClick} className="block hover:shadow-lg transition-shadow rounded-lg">
-           {cardContent}
-        </Link>
+        <div className="relative group">
+            <Card className="h-full flex flex-col items-center justify-center text-center p-6 transition-colors hover:bg-muted/50 cursor-pointer" onClick={handleClick}>
+                <Folder className="h-16 w-16 text-primary mb-4" />
+                <CardHeader className="p-0">
+                    <CardTitle className="font-headline text-lg">{item?.nombre || 'Elemento inválido'}</CardTitle>
+                </CardHeader>
+            </Card>
+             {isAdmin && (
+                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <EntityOptionsDropdown
+                        entityId={item.id}
+                        entityType={entityType}
+                        entityName={item.nombre}
+                        parentId={parentId}
+                        grandParentId={grandParentId}
+                        redirectOnDelete={entityType === 'process' ? `/inicio/documentos/area/${parentId}` : `/inicio/documentos/area/${grandParentId}/proceso/${parentId}`}
+                    />
+                </div>
+            )}
+        </div>
     );
 };
 
 
 export default function ProcesoCards({ areaId, procesoId }: ProcesoCardsProps) {
+    const isAdmin = useIsAdmin();
     
     if (procesoId) {
         // Logic to display sub-processes
@@ -130,3 +136,5 @@ export default function ProcesoCards({ areaId, procesoId }: ProcesoCardsProps) {
         </div>
     );
 }
+
+    

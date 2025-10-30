@@ -12,6 +12,7 @@ import { AddEntityForm } from '@/components/dashboard/AddEntityForm';
 import { useToast } from '@/hooks/use-toast';
 import { seedProcessMapAction } from '@/app/actions';
 import { EntityOptionsDropdown } from '@/components/dashboard/EntityOptionsDropdown';
+import { useIsAdmin } from '@/lib/authMock';
 
 const iconMap: { [key: string]: React.ElementType } = {
     'direccion-administrativa-y-financiera': Building,
@@ -28,9 +29,16 @@ const iconMap: { [key: string]: React.ElementType } = {
 
 const AreaCard = ({ area }: { area: any }) => {
     const { toast } = useToast();
+    const isAdmin = useIsAdmin();
     const Icon = iconMap[area.slug] || iconMap['default'];
 
-    const handleClick = (e: React.MouseEvent) => {
+    const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        // Prevent navigation if the click is on the dropdown trigger or its items
+        if ((e.target as HTMLElement).closest('[data-radix-dropdown-menu-trigger]') || (e.target as HTMLElement).closest('[data-radix-dropdown-menu-content]')) {
+             e.preventDefault();
+             return;
+        }
+
         if (!area || !area.id) {
             e.preventDefault();
             toast({
@@ -38,38 +46,35 @@ const AreaCard = ({ area }: { area: any }) => {
                 title: 'Elemento no encontrado',
                 description: 'El área que intenta abrir ya no existe o no se pudo cargar.',
             });
+        } else {
+            // Programmatic navigation for the Link component to handle the click
+            window.location.href = `/inicio/documentos/area/${area.id}`;
         }
     };
-
-    const cardContent = (
-        <Card className="h-full flex flex-col items-center justify-center text-center p-6 transition-colors relative group">
-             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <EntityOptionsDropdown
-                    entityId={area.id}
-                    entityType="area"
-                    entityName={area.nombre}
-                />
-            </div>
-            <Icon className="h-16 w-16 text-primary mb-4" />
-            <CardHeader className="p-0">
-                <CardTitle className="font-headline text-xl">{area.nombre}</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0 mt-2">
-                <CardDescription>
-                    Gestión de {area.nombre.toLowerCase()}
-                </CardDescription>
-            </CardContent>
-        </Card>
-    );
-
-    if (!area || !area.id) {
-        return <div onClick={handleClick}>{cardContent}</div>;
-    }
-
+    
     return (
-        <Link href={`/inicio/documentos/area/${area.id}`} onClick={handleClick} className="block hover:shadow-lg transition-shadow rounded-lg">
-            {cardContent}
-        </Link>
+        <div className="relative group">
+            <Card className="h-full flex flex-col items-center justify-center text-center p-6 transition-colors hover:bg-muted/50 cursor-pointer" onClick={handleClick}>
+                <Icon className="h-16 w-16 text-primary mb-4" />
+                <CardHeader className="p-0">
+                    <CardTitle className="font-headline text-xl">{area.nombre}</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0 mt-2">
+                    <CardDescription>
+                        Gestión de {area.nombre.toLowerCase()}
+                    </CardDescription>
+                </CardContent>
+            </Card>
+             {isAdmin && (
+                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <EntityOptionsDropdown
+                        entityId={area.id}
+                        entityType="area"
+                        entityName={area.nombre}
+                    />
+                </div>
+            )}
+        </div>
     );
 }
 
@@ -78,6 +83,7 @@ export default function RepositoryAreasPage() {
   const [isAdding, setIsAdding] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
   const { toast } = useToast();
+  const isAdmin = useIsAdmin();
 
   useEffect(() => {
     const ensureSeeded = async () => {
@@ -114,16 +120,18 @@ export default function RepositoryAreasPage() {
             <h1 className="text-3xl font-bold font-headline">Mapa de Procesos</h1>
             <p className="text-muted-foreground">Seleccione un área para explorar su información y procesos asociados.</p>
         </div>
-        <AddEntityForm 
-            entityType="area" 
-            isOpen={isAdding} 
-            onOpenChange={setIsAdding}
-        >
-            <Button onClick={() => setIsAdding(true)}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Agregar Área
-            </Button>
-        </AddEntityForm>
+         {isAdmin && (
+            <AddEntityForm 
+                entityType="area" 
+                isOpen={isAdding} 
+                onOpenChange={setIsAdding}
+            >
+                <Button onClick={() => setIsAdding(true)}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Agregar Área
+                </Button>
+            </AddEntityForm>
+        )}
       </div>
 
        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-4">
@@ -143,3 +151,5 @@ export default function RepositoryAreasPage() {
     </div>
   );
 }
+
+    

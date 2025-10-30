@@ -2,7 +2,7 @@
 'use server';
 
 import { z } from 'zod';
-import { collection, addDoc, serverTimestamp, writeBatch, doc, getDocs, deleteDoc, setDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, writeBatch, doc, getDocs, deleteDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { revalidatePath } from 'next/cache';
 import { SEED_AREAS } from '@/data/seed-map';
@@ -160,6 +160,7 @@ const updateSchema = z.object({
   parentId: z.string().optional(),
   grandParentId: z.string().optional(),
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
+  // Caracterización es opcional en la actualización
   objetivo: z.string().optional(),
   alcance: z.string().optional(),
   responsable: z.string().optional(),
@@ -169,16 +170,20 @@ export async function updateEntityAction(
   prevState: any,
   formData: FormData
 ): Promise<{ message: string; error?: string }> {
-    const validatedFields = updateSchema.safeParse({
-        entityId: formData.get('entityId'),
-        entityType: formData.get('entityType'),
-        parentId: formData.get('parentId'),
-        grandParentId: formData.get('grandParentId'),
-        name: formData.get('name'),
-        objetivo: formData.get('objetivo'),
-        alcance: formData.get('alcance'),
-        responsable: formData.get('responsable'),
-    });
+    const s = (v: any) => (v === null || v === undefined ? undefined : String(v));
+
+    const payload = {
+        entityId: s(formData.get('entityId')),
+        entityType: s(formData.get('entityType')),
+        parentId: s(formData.get('parentId')),
+        grandParentId: s(formData.get('grandParentId')),
+        name: s(formData.get('name')),
+        objetivo: s(formData.get('objetivo')),
+        alcance: s(formData.get('alcance')),
+        responsable: s(formData.get('responsable')),
+    };
+
+    const validatedFields = updateSchema.safeParse(payload);
 
     if (!validatedFields.success) {
         const errors = validatedFields.error.flatten().fieldErrors;
@@ -208,20 +213,24 @@ export async function updateEntityAction(
         const entityRef = doc(db, entityPath);
         batch.update(entityRef, { nombre: name, slug: slugify(name) });
 
-        let caracterizacionId = `area-${entityId}`;
-        if (entityType === 'process') {
-            caracterizacionId = `process-${entityId}`;
-        } else if (entityType === 'subprocess') {
-           caracterizacionId = `subprocess-${entityId}`;
+        // Solo actualizar caracterización si los campos vienen en el form
+        if (objetivo !== undefined || alcance !== undefined || responsable !== undefined) {
+            let caracterizacionId = `area-${entityId}`;
+            if (entityType === 'process') {
+                caracterizacionId = `process-${entityId}`;
+            } else if (entityType === 'subprocess') {
+               caracterizacionId = `subprocess-${entityId}`;
+            }
+            
+            const caracterizacionData: any = { fechaActualizacion: serverTimestamp() };
+            if (objetivo !== undefined) caracterizacionData.objetivo = objetivo;
+            if (alcance !== undefined) caracterizacionData.alcance = alcance;
+            if (responsable !== undefined) caracterizacionData.responsable = responsable;
+
+            const caracterizacionRef = doc(db, 'caracterizaciones', caracterizacionId);
+            batch.set(caracterizacionRef, caracterizacionData, { merge: true });
         }
 
-        const caracterizacionRef = doc(db, 'caracterizaciones', caracterizacionId);
-        batch.set(caracterizacionRef, {
-            objetivo,
-            alcance,
-            responsable,
-            fechaActualizacion: serverTimestamp(),
-        }, { merge: true });
 
         await batch.commit();
         
@@ -320,7 +329,5 @@ export async function suggestAdditionalDataAction(prevState: any, formData: Form
         }
     };
 }
-
-    
 
     

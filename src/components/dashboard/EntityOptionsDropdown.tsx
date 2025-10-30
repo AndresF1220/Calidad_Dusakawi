@@ -26,8 +26,7 @@ import { Button } from '@/components/ui/button';
 import { MoreVertical, Edit, Trash2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { deleteEntityAction } from '@/app/actions';
-import { EditEntityForm } from './EditEntityForm';
-import { useCaracterizacion } from '@/hooks/use-areas-data';
+import { RenameEntityForm } from './RenameEntityForm';
 
 interface EntityOptionsDropdownProps {
   entityId: string;
@@ -65,15 +64,6 @@ export function EntityOptionsDropdown({
 
   const [deleteState, deleteFormAction] = useActionState(deleteEntityAction, { message: '', error: undefined });
 
-  let caracterizacionId = `area-${entityId}`;
-  if (entityType === 'process') {
-    caracterizacionId = `process-${entityId}`;
-  } else if (entityType === 'subprocess') {
-    caracterizacionId = `subprocess-${entityId}`;
-  }
-  
-  const { caracterizacion } = useCaracterizacion(caracterizacionId);
-
   useEffect(() => {
     if (deleteState.message && !deleteState.error) {
       toast({
@@ -94,21 +84,25 @@ export function EntityOptionsDropdown({
     }
   }, [deleteState, toast, router, redirectOnDelete]);
 
+  const stopPropagation = (e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation();
+  };
+
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Button variant="ghost" size="icon" className="h-8 w-8" data-radix-dropdown-menu-trigger>
             <MoreVertical className="h-4 w-4" />
             <span className="sr-only">Abrir menú</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="end" onClick={stopPropagation}>
           <DropdownMenuLabel>Opciones</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => setIsEditing(true)}>
             <Edit className="mr-2 h-4 w-4" />
-            <span>Editar</span>
+            <span>Editar Nombre</span>
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => setIsDeleting(true)} className="text-destructive">
             <Trash2 className="mr-2 h-4 w-4" />
@@ -117,22 +111,15 @@ export function EntityOptionsDropdown({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <EditEntityForm
+      <RenameEntityForm
         entityType={entityType}
+        entityId={entityId}
         parentId={parentId}
         grandParentId={grandParentId}
         isOpen={isEditing}
         onOpenChange={setIsEditing}
-        entityId={entityId}
-        initialData={{
-          name: entityName,
-          objetivo: caracterizacion?.objetivo || '',
-          alcance: caracterizacion?.alcance || '',
-          responsable: caracterizacion?.responsable || '',
-        }}
-      >
-        <div />
-      </EditEntityForm>
+        initialName={entityName}
+      />
       
       <AlertDialog open={isDeleting} onOpenChange={setIsDeleting}>
         <AlertDialogContent>
@@ -160,3 +147,5 @@ export function EntityOptionsDropdown({
     </>
   );
 }
+
+    
