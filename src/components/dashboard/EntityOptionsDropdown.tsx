@@ -64,13 +64,11 @@ export function EntityOptionsDropdown({
   };
   
   const handleEditClick = (e: Event) => {
-    e.preventDefault();
     e.stopPropagation();
     setIsEditing(true);
   }
   
   const handleDeleteClick = (e: Event) => {
-    e.preventDefault();
     e.stopPropagation();
     setIsDeleting(true);
   }
@@ -101,6 +99,8 @@ export function EntityOptionsDropdown({
         setIsDeleting(false);
         if (redirectOnDelete) {
           router.push(redirectOnDelete);
+        } else {
+          router.refresh();
         }
       }
     });

@@ -110,19 +110,25 @@ export async function deleteEntityAction(
 ): Promise<{ message: string; error?: string }> {
   console.log("[DEL] Received data:", Object.fromEntries(formData.entries()));
   
-  const validatedFields = deleteSchema.safeParse({
-    entityId: formData.get('entityId'),
-    entityType: formData.get('entityType'),
-    parentId: formData.get('parentId'),
-    grandParentId: formData.get('grandParentId'),
-  });
+  const entityId = formData.get('entityId') as string;
+  const entityType = formData.get('entityType') as 'area' | 'process' | 'subprocess';
+  const parentId = formData.get('parentId') as string | undefined;
+  const grandParentId = formData.get('grandParentId') as string | undefined;
 
-  if (!validatedFields.success) {
-    console.error("[DEL] Validation failed:", validatedFields.error.flatten());
-    return { message: 'Error', error: 'Parámetros de eliminación inválidos.' };
+  // Manual validation based on entityType
+  switch (entityType) {
+    case 'area':
+      if (!entityId) return { message: 'Error', error: 'Parámetros de eliminación inválidos (falta areaId).' };
+      break;
+    case 'process':
+      if (!entityId || !parentId) return { message: 'Error', error: 'Parámetros de eliminación inválidos (falta procesoId o areaId).' };
+      break;
+    case 'subprocess':
+      if (!entityId || !parentId || !grandParentId) return { message: 'Error', error: 'Parámetros de eliminación inválidos (falta subprocesoId, procesoId o areaId).' };
+      break;
+    default:
+      return { message: 'Error', error: 'Tipo de entidad no reconocido.' };
   }
-
-  const { entityId, entityType, parentId, grandParentId } = validatedFields.data;
 
   try {
     const batch = writeBatch(db);
@@ -151,7 +157,6 @@ export async function deleteEntityAction(
       batch.delete(areaRef);
       
     } else if (entityType === 'process') {
-      if (!parentId) return { message: 'Error', error: 'Falta ParentID para eliminar el proceso.' };
       console.log("[DEL] Deleting process:", { procesoId: entityId, areaId: parentId });
       const processRef = doc(db, `areas/${parentId}/procesos`, entityId);
       const subprocesosQuery = collection(processRef, 'subprocesos');
@@ -167,17 +172,13 @@ export async function deleteEntityAction(
       batch.delete(processRef);
       revalidationPath = `/inicio/documentos/area/${parentId}`;
 
-    } else if (entityType === 'subprocess' && parentId && grandParentId) {
-      if (!parentId || !grandParentId) return { message: 'Error', error: 'Falta ParentID o GrandParentID para eliminar el subproceso.' };
-       console.log("[DEL] Deleting subprocess:", { subprocesoId: entityId, procesoId: parentId, areaId: grandParentId });
-      const subProcessRef = doc(db, `areas/${grandParentId}/procesos/${parentId}/subprocesos`, entityId);
+    } else if (entityType === 'subprocess') {
+      console.log("[DEL] Deleting subprocess:", { subprocesoId: entityId, procesoId: parentId, areaId: grandParentId });
+      const subProcessRef = doc(db, `areas/${grandParentId!}/procesos/${parentId!}/subprocesos`, entityId);
       const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${entityId}`);
       batch.delete(caracterizacionSubRef);
       batch.delete(subProcessRef);
       revalidationPath = `/inicio/documentos/area/${grandParentId}/proceso/${parentId}`;
-
-    } else {
-      return { message: 'Error', error: 'Tipo de entidad no reconocido o faltan parámetros.' };
     }
 
     await batch.commit();
