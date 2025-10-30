@@ -2,8 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Building, ShieldCheck, Users, Briefcase, Shield, CheckCircle, Gavel, AlertTriangle, Megaphone, PlusCircle, Loader2 } from "lucide-react";
 import { useAreas } from '@/hooks/use-areas-data';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -33,7 +32,6 @@ const AreaCard = ({ area }: { area: any }) => {
     const Icon = iconMap[area.slug] || iconMap['default'];
 
     const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-        // Prevent navigation if the click is on the dropdown trigger or its items
         if ((e.target as HTMLElement).closest('[data-radix-dropdown-menu-trigger]') || (e.target as HTMLElement).closest('[data-radix-dropdown-menu-content]')) {
              e.preventDefault();
              return;
@@ -47,7 +45,6 @@ const AreaCard = ({ area }: { area: any }) => {
                 description: 'El área que intenta abrir ya no existe o no se pudo cargar.',
             });
         } else {
-            // Programmatic navigation for the Link component to handle the click
             window.location.href = `/inicio/documentos/area/${area.id}`;
         }
     };
@@ -59,11 +56,9 @@ const AreaCard = ({ area }: { area: any }) => {
                 <CardHeader className="p-0">
                     <CardTitle className="font-headline text-xl">{area.nombre}</CardTitle>
                 </CardHeader>
-                <CardContent className="p-0 mt-2">
-                    <CardDescription>
-                        Gestión de {area.nombre.toLowerCase()}
-                    </CardDescription>
-                </CardContent>
+                <CardDescription className="p-0 mt-2">
+                    Gestión de {area.nombre.toLowerCase()}
+                </CardDescription>
             </Card>
              {isAdmin && (
                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">

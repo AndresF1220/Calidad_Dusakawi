@@ -2,7 +2,7 @@
 'use server';
 
 import { z } from 'zod';
-import { collection, addDoc, serverTimestamp, writeBatch, doc, getDocs, deleteDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, writeBatch, doc, getDocs, deleteDoc, setDoc, updateDoc, query } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { revalidatePath } from 'next/cache';
 import { SEED_AREAS } from '@/data/seed-map';
@@ -58,7 +58,8 @@ export async function createEntityAction(
         let caracterizacionId = '';
 
         if (type === 'area') {
-            newEntityRef = doc(collection(db, 'areas'));
+            newEntityRef = doc(collection(db, 'areas')); // Generate ID upfront
+            entityData.id = newEntityRef.id;
             batch.set(newEntityRef, entityData);
             caracterizacionId = `area-${newEntityRef.id}`;
         } else if (type === 'process' && parentId) {
@@ -121,32 +122,41 @@ export async function deleteEntityAction(
 
   try {
     const batch = writeBatch(db);
+    let revalidationPath = '/inicio/documentos';
 
     if (entityType === 'area') {
       const areaRef = doc(db, 'areas', entityId);
-      const procesosSnap = await getDocs(collection(areaRef, 'procesos'));
+      // Delete sub-processes first
+      const procesosQuery = query(collection(areaRef, 'procesos'));
+      const procesosSnap = await getDocs(procesosQuery);
       for (const procesoDoc of procesosSnap.docs) {
-        const subprocesosSnap = await getDocs(collection(procesoDoc.ref, 'subprocesos'));
+        const subprocesosQuery = query(collection(procesoDoc.ref, 'subprocesos'));
+        const subprocesosSnap = await getDocs(subprocesosQuery);
         subprocesosSnap.forEach(subDoc => batch.delete(subDoc.ref));
+        // Then delete processes
         batch.delete(procesoDoc.ref);
       }
+      // Finally, delete the area
       batch.delete(areaRef);
-      revalidatePath('/inicio/documentos');
+      
     } else if (entityType === 'process' && parentId) {
       const processRef = doc(db, `areas/${parentId}/procesos`, entityId);
-      const subprocesosSnap = await getDocs(collection(processRef, 'subprocesos'));
+      const subprocesosQuery = query(collection(processRef, 'subprocesos'));
+      const subprocesosSnap = await getDocs(subprocesosQuery);
       subprocesosSnap.forEach(subDoc => batch.delete(subDoc.ref));
       batch.delete(processRef);
-      revalidatePath(`/inicio/documentos/area/${parentId}`);
+      revalidationPath = `/inicio/documentos/area/${parentId}`;
+
     } else if (entityType === 'subprocess' && parentId && grandParentId) {
       const subProcessRef = doc(db, `areas/${grandParentId}/procesos/${parentId}/subprocesos`, entityId);
       batch.delete(subProcessRef);
-      revalidatePath(`/inicio/documentos/area/${grandParentId}/proceso/${parentId}`);
+      revalidationPath = `/inicio/documentos/area/${grandParentId}/proceso/${parentId}`;
     } else {
       return { message: 'Error', error: 'Parámetros inválidos para la eliminación.' };
     }
 
     await batch.commit();
+    revalidatePath(revalidationPath);
     return { message: 'Elemento eliminado correctamente.' };
   } catch (e: any) {
     console.error('Error deleting entity:', e);
@@ -160,7 +170,6 @@ const updateSchema = z.object({
   parentId: z.string().optional(),
   grandParentId: z.string().optional(),
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
-  // Caracterización es opcional en la actualización
   objetivo: z.string().optional(),
   alcance: z.string().optional(),
   responsable: z.string().optional(),
@@ -213,7 +222,6 @@ export async function updateEntityAction(
         const entityRef = doc(db, entityPath);
         batch.update(entityRef, { nombre: name, slug: slugify(name) });
 
-        // Solo actualizar caracterización si los campos vienen en el form
         if (objetivo !== undefined || alcance !== undefined || responsable !== undefined) {
             let caracterizacionId = `area-${entityId}`;
             if (entityType === 'process') {
@@ -253,7 +261,6 @@ export async function seedProcessMapAction(): Promise<{ message: string; error?:
     try {
         const batch = writeBatch(db);
         const areasCollection = collection(db, 'areas');
-        const foldersCollection = collection(db, 'folders');
 
         for (const area of SEED_AREAS) {
             const newAreaRef = doc(areasCollection);
@@ -261,17 +268,6 @@ export async function seedProcessMapAction(): Promise<{ message: string; error?:
                 nombre: area.titulo, 
                 slug: slugify(area.titulo),
                 createdAt: serverTimestamp() 
-            });
-            
-            const rootFolderKey = `root__${newAreaRef.id}____`;
-            const newFolderRef = doc(foldersCollection, rootFolderKey);
-            batch.set(newFolderRef, {
-              name: "Documentación",
-              parentId: null,
-              areaId: newAreaRef.id,
-              procesoId: null,
-              subprocesoId: null,
-              createdAt: serverTimestamp()
             });
 
             for (const proceso of area.procesos) {

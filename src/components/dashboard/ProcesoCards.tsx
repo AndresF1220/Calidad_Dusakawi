@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Folder } from 'lucide-react';
 import { useProcesos, useSubprocesos } from '@/hooks/use-areas-data';
 import { Skeleton } from '../ui/skeleton';
@@ -20,8 +20,7 @@ const ItemCard = ({ item, linkHref, entityType, parentId, grandParentId }: { ite
     const { toast } = useToast();
     const isAdmin = useIsAdmin();
 
-     const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-        // Prevent navigation if the click is on the dropdown trigger or its items
+    const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
         if ((e.target as HTMLElement).closest('[data-radix-dropdown-menu-trigger]') || (e.target as HTMLElement).closest('[data-radix-dropdown-menu-content]')) {
              e.preventDefault();
              return;
