@@ -138,3 +138,5 @@ export default function ProcesoCards({ areaId, procesoId }: ProcesoCardsProps) {
         </div>
     );
 }
+
+    
