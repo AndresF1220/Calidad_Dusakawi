@@ -60,6 +60,7 @@ export default function LoginPage() {
           </CardContent>
         </Card>
       </div>
+      <div />
     </div>
   );
 }
