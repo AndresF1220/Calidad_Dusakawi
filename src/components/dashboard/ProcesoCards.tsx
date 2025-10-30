@@ -21,7 +21,6 @@ const ItemCard = ({ item, linkHref, entityType, parentId, grandParentId }: { ite
     const isAdmin = useIsAdmin();
 
     const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-        // Stop navigation if the click is on the dropdown menu or its trigger
         if ((e.target as HTMLElement).closest('[data-radix-dropdown-menu-trigger]') || (e.target as HTMLElement).closest('[data-radix-dropdown-menu-content]')) {
              e.preventDefault();
              return;
@@ -147,3 +146,4 @@ export default function ProcesoCards({ areaId, procesoId }: ProcesoCardsProps) {
     
 
     
+

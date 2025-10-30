@@ -85,14 +85,21 @@ export function EntityOptionsDropdown({
   }, [deleteState, toast, router, redirectOnDelete]);
   
   const getDeleteMessage = () => {
-    let message = `Vas a eliminar "${entityName}". Esta acción no se puede deshacer.`;
-    if (entityType === 'area') {
-      message += ' Todos los procesos y subprocesos asociados también serán eliminados.';
-    } else if (entityType === 'process') {
-      message += ' Todos los subprocesos asociados también serán eliminados.';
+    switch (entityType) {
+      case 'area':
+        return `Vas a eliminar "${entityName}". Esta acción no se puede deshacer. Todos los procesos y subprocesos asociados también serán eliminados.`;
+      case 'process':
+        return `Vas a eliminar "${entityName}". Esta acción no se puede deshacer. Todos los subprocesos asociados también serán eliminados.`;
+      case 'subprocess':
+        return `Vas a eliminar "${entityName}". Esta acción no se puede deshacer.`;
+      default:
+        return `Vas a eliminar "${entityName}". Esta acción no se puede deshacer.`;
     }
-    return message;
   };
+
+  const handleSelect = (e: Event) => {
+    e.preventDefault();
+  }
 
   return (
     <>
@@ -103,7 +110,7 @@ export function EntityOptionsDropdown({
             <span className="sr-only">Abrir menú</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="end" onSelect={handleSelect}>
           <DropdownMenuLabel>Opciones</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => setIsEditing(true)}>
@@ -156,3 +163,4 @@ export function EntityOptionsDropdown({
     
 
     
+

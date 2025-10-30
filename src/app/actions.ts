@@ -150,7 +150,6 @@ export async function deleteEntityAction(
       batch.delete(areaRef);
       
     } else if (entityType === 'process' && parentId) {
-      if (!parentId) return { message: 'Error', error: 'Parámetros inválidos para la eliminación.' };
       const processRef = doc(db, `areas/${parentId}/procesos`, entityId);
       const subprocesosQuery = collection(processRef, 'subprocesos');
       const subprocesosSnap = await getDocs(subprocesosQuery);
@@ -166,7 +165,6 @@ export async function deleteEntityAction(
       revalidationPath = `/inicio/documentos/area/${parentId}`;
 
     } else if (entityType === 'subprocess' && parentId && grandParentId) {
-       if (!grandParentId || !parentId) return { message: 'Error', error: 'Parámetros inválidos para la eliminación.' };
       const subProcessRef = doc(db, `areas/${grandParentId}/procesos/${parentId}/subprocesos`, entityId);
       const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${entityId}`);
       batch.delete(caracterizacionSubRef);
