@@ -98,7 +98,7 @@ export function EntityOptionsDropdown({
   };
 
   const handleSelect = (e: Event) => {
-    // This allows the dialogs to open without being blocked.
+    e.stopPropagation();
   }
 
   return (
