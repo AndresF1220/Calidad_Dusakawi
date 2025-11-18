@@ -363,7 +363,8 @@ const createFolderSchema = z.object({
 });
 
 export async function createFolderAction(prevState: any, formData: FormData): Promise<{ message: string, error?: string }> {
-    const s = (v: any) => (v === 'null' || v === null || v === undefined ? null : String(v));
+    const s = (v: any) => (v === '' || v === 'null' || v === null || v === undefined) ? null : String(v);
+
     const payload = {
         name: formData.get('name') as string,
         parentId: s(formData.get('parentId')),
@@ -371,7 +372,7 @@ export async function createFolderAction(prevState: any, formData: FormData): Pr
         procesoId: s(formData.get('procesoId')),
         subprocesoId: s(formData.get('subprocesoId')),
     };
-    
+
     const validatedFields = createFolderSchema.safeParse(payload);
     if (!validatedFields.success) {
         return { message: 'Error', error: 'Datos del formulario inválidos.' };
@@ -381,6 +382,7 @@ export async function createFolderAction(prevState: any, formData: FormData): Pr
         await addDoc(collection(db, 'folders'), {
             ...validatedFields.data,
             createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
         });
         revalidatePath('/inicio/documentos', 'layout');
         return { message: 'Carpeta creada con éxito.' };
