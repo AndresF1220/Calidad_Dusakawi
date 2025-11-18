@@ -3,6 +3,7 @@
 
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useFirestore, useCollection, useStorage, useMemoFirebase } from '@/firebase';
+import { useIsAdmin } from '@/lib/authMock';
 import {
   collection,
   query,
@@ -46,9 +47,12 @@ import {
   Trash2,
   Loader2,
   AlertTriangle,
+  FolderPlus,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Progress } from '../ui/progress';
+import { CreateFolderForm } from './CreateFolderForm';
+
 
 interface RepoEmbedProps {
   areaId: string;
@@ -142,8 +146,10 @@ export default function RepoEmbed({
 }: RepoEmbedProps) {
   const firestore = useFirestore();
   const storage = useStorage();
+  const isAdmin = useIsAdmin();
   const seededRef = useRef(false);
   
+  const [isAddingFolder, setIsAddingFolder] = useState(false);
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
   const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({});
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
@@ -395,26 +401,40 @@ export default function RepoEmbed({
                 Navegue, suba y descargue archivos de gestión documental.
               </CardDescription>
             </div>
-            <div className="flex gap-2">
-              <Input
-                type="file"
-                className="hidden"
-                id="upload-file-input"
-                onChange={handleFileUpload}
-                disabled={!selectedFolder}
-              />
-              <Button asChild variant="outline" disabled={!selectedFolder}>
-                <label
-                  htmlFor="upload-file-input"
-                  className={`cursor-pointer ${
-                    !selectedFolder ? 'cursor-not-allowed opacity-50' : ''
-                  }`}
-                >
-                  <Upload className="mr-2 h-4 w-4" />
-                  Subir Archivo
-                </label>
-              </Button>
-            </div>
+             {isAdmin && (
+                <div className="flex gap-2">
+                    <CreateFolderForm
+                        isOpen={isAddingFolder}
+                        onOpenChange={setIsAddingFolder}
+                        parentId={selectedFolder?.id || null}
+                        scope={{ areaId, procesoId, subprocesoId }}
+                        disabled={!selectedFolder}
+                    >
+                        <Button variant="outline" disabled={!selectedFolder}>
+                            <FolderPlus className="mr-2 h-4 w-4" />
+                            Crear Carpeta
+                        </Button>
+                    </CreateFolderForm>
+                    <Input
+                        type="file"
+                        className="hidden"
+                        id="upload-file-input"
+                        onChange={handleFileUpload}
+                        disabled={!selectedFolder}
+                    />
+                    <Button asChild variant="outline" disabled={!selectedFolder}>
+                        <label
+                        htmlFor="upload-file-input"
+                        className={`cursor-pointer ${
+                            !selectedFolder ? 'cursor-not-allowed opacity-50' : ''
+                        }`}
+                        >
+                        <Upload className="mr-2 h-4 w-4" />
+                        Subir Archivo
+                        </label>
+                    </Button>
+                </div>
+             )}
           </CardHeader>
           <CardContent>
              {uploadProgress !== null && (
@@ -469,15 +489,17 @@ export default function RepoEmbed({
                           <Download className="h-4 w-4" />
                           <span className="sr-only">Descargar</span>
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleFileDelete(file)}
-                          title="Eliminar"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                          <span className="sr-only">Eliminar</span>
-                        </Button>
+                        {isAdmin && (
+                            <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleFileDelete(file)}
+                            title="Eliminar"
+                            >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                            <span className="sr-only">Eliminar</span>
+                            </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))
@@ -499,3 +521,4 @@ export default function RepoEmbed({
     </>
   );
 }
+

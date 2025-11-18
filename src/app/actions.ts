@@ -110,13 +110,26 @@ export async function deleteEntityAction(
   console.log('[DEL] args', { entityType, entityId, parentId, grandParentId });
   
   try {
+    // Validation based on type
+    switch (entityType) {
+        case 'area':
+            if (!entityId) throw new Error("Parámetros de eliminación inválidos (falta entityId).");
+            break;
+        case 'process':
+            if (!entityId || !parentId) throw new Error("Parámetros de eliminación inválidos (falta entityId o parentId).");
+            break;
+        case 'subprocess':
+            if (!entityId || !parentId || !grandParentId) throw new Error("Parámetros de eliminación inválidos (falta entityId, parentId o grandParentId).");
+            break;
+        default:
+            throw new Error("Tipo de entidad no reconocido.");
+    }
+    
     const batch = writeBatch(db);
     let revalidationPath = '/inicio/documentos';
 
     switch (entityType) {
         case 'area':
-            if (!entityId) throw new Error("Parámetros de eliminación inválidos (falta entityId).");
-            
             const areaRef = doc(db, 'areas', entityId);
             const procesosQuery = collection(db, 'areas', entityId, 'procesos');
             const procesosSnap = await getDocs(procesosQuery);
@@ -140,8 +153,6 @@ export async function deleteEntityAction(
             break;
 
         case 'process':
-            if (!entityId || !parentId) throw new Error("Parámetros de eliminación inválidos (falta entityId o parentId).");
-
             const processRef = doc(db, `areas/${parentId}/procesos`, entityId);
             const subprocesosQuery = collection(processRef, 'subprocesos');
             const subprocesosSnap = await getDocs(subprocesosQuery);
@@ -158,17 +169,12 @@ export async function deleteEntityAction(
             break;
 
         case 'subprocess':
-            if (!entityId || !parentId || !grandParentId) throw new Error("Parámetros de eliminación inválidos (falta entityId, parentId o grandParentId).");
-            
             const subProcessRef = doc(db, `areas/${grandParentId}/procesos/${parentId}/subprocesos`, entityId);
             const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${entityId}`);
             batch.delete(caracterizacionSubRef);
             batch.delete(subProcessRef);
             revalidationPath = `/inicio/documentos/area/${grandParentId}/proceso/${parentId}`;
             break;
-            
-        default:
-            throw new Error("Tipo de entidad no reconocido.");
     }
 
     await batch.commit();
@@ -345,4 +351,41 @@ export async function suggestAdditionalDataAction(prevState: any, formData: Form
             reasoning: 'La rotación de personal puede afectar la continuidad de la atención. El costo por estancia es un indicador clave de eficiencia. El cumplimiento de guías clínicas se relaciona directamente con la calidad y seguridad del paciente.'
         }
     };
+}
+
+
+const createFolderSchema = z.object({
+  name: z.string().min(1, 'El nombre de la carpeta no puede estar vacío.'),
+  parentId: z.string().nullable(),
+  areaId: z.string().nullable(),
+  procesoId: z.string().nullable(),
+  subprocesoId: z.string().nullable(),
+});
+
+export async function createFolderAction(prevState: any, formData: FormData): Promise<{ message: string, error?: string }> {
+    const s = (v: any) => (v === 'null' || v === null || v === undefined ? null : String(v));
+    const payload = {
+        name: formData.get('name') as string,
+        parentId: s(formData.get('parentId')),
+        areaId: s(formData.get('areaId')),
+        procesoId: s(formData.get('procesoId')),
+        subprocesoId: s(formData.get('subprocesoId')),
+    };
+    
+    const validatedFields = createFolderSchema.safeParse(payload);
+    if (!validatedFields.success) {
+        return { message: 'Error', error: 'Datos del formulario inválidos.' };
+    }
+
+    try {
+        await addDoc(collection(db, 'folders'), {
+            ...validatedFields.data,
+            createdAt: serverTimestamp(),
+        });
+        revalidatePath('/inicio/documentos', 'layout');
+        return { message: 'Carpeta creada con éxito.' };
+    } catch(e:any) {
+        console.error("Error creating folder:", e);
+        return { message: 'Error', error: 'No se pudo crear la carpeta.' };
+    }
 }
