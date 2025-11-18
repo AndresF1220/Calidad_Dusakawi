@@ -2,11 +2,12 @@
 'use server';
 
 import { z } from 'zod';
-import { collection, addDoc, serverTimestamp, writeBatch, doc, getDocs, deleteDoc, setDoc, updateDoc, query } from 'firebase/firestore';
-import { db } from '@/firebase/config';
+import { collection, addDoc, serverTimestamp, writeBatch, doc, getDocs, deleteDoc, setDoc, updateDoc, query, where } from 'firebase/firestore';
+import { db, storage } from '@/firebase/config';
 import { revalidatePath } from 'next/cache';
 import { SEED_AREAS } from '@/data/seed-map';
 import { slugify } from '@/lib/slug';
+import { deleteObject, ref } from 'firebase/storage';
 
 const createSchema = z.object({
   name: z.string().min(3, 'Debe ingresar un nombre de al menos 3 caracteres.'),
@@ -400,5 +401,51 @@ export async function createFolderAction(prevState: any, formData: FormData): Pr
     } catch(e:any) {
         console.error("Error creating folder:", e);
         return { message: 'Error', error: `No se pudo crear la carpeta: ${e.message}` };
+    }
+}
+
+export async function deleteFolderAction(prevState: any, formData: FormData): Promise<{ message: string, error?: string }> {
+    const folderId = formData.get('folderId') as string;
+
+    if (!folderId) {
+        return { message: 'Error', error: 'ID de carpeta no proporcionado.' };
+    }
+
+    try {
+        const batch = writeBatch(db);
+
+        // 1. Delete all files within the folder from Storage and their documents from Firestore
+        const filesQuery = query(collection(db, 'files'), where('folderId', '==', folderId));
+        const filesSnap = await getDocs(filesQuery);
+
+        for (const fileDoc of filesSnap.docs) {
+            const fileData = fileDoc.data();
+            if (fileData.path) {
+                const fileRef = ref(storage, fileData.path);
+                try {
+                    await deleteObject(fileRef);
+                } catch (storageError: any) {
+                    // Ignore "object not found" errors, as it might have been deleted already
+                    if (storageError.code !== 'storage/object-not-found') {
+                        throw storageError;
+                    }
+                }
+            }
+            batch.delete(fileDoc.ref);
+        }
+        
+        // 2. Delete the folder document itself
+        const folderRef = doc(db, 'folders', folderId);
+        batch.delete(folderRef);
+        
+        // 3. Commit the batch
+        await batch.commit();
+
+        revalidatePath('/inicio/documentos', 'layout');
+        return { message: 'Carpeta eliminada con éxito.' };
+
+    } catch (e: any) {
+        console.error("Error deleting folder:", e);
+        return { message: 'Error', error: `No se pudo eliminar la carpeta: ${e.message}` };
     }
 }

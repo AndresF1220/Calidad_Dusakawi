@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef, useActionState } from 'react';
 import { useFirestore, useCollection, useStorage, useMemoFirebase } from '@/firebase';
 import { useIsAdmin } from '@/lib/authMock';
 import {
@@ -12,6 +12,7 @@ import {
   serverTimestamp,
   deleteDoc,
   doc,
+  getDocs,
 } from 'firebase/firestore';
 import {
   ref,
@@ -49,11 +50,15 @@ import {
   AlertTriangle,
   FolderPlus,
   MoreVertical,
+  Circle,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Progress } from '../ui/progress';
 import { CreateFolderForm } from './CreateFolderForm';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '../ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
+import { deleteFolderAction } from '@/app/actions';
 
 
 interface RepoEmbedProps {
@@ -97,10 +102,10 @@ const FolderTree = ({
   return (
     <div>
       {folders.map(folder => (
-        <div key={folder.id} style={{ marginLeft: `${level * 16}px` }}>
+        <div key={folder.id}>
           <div
             className={`flex items-center gap-2 cursor-pointer py-1 rounded-md px-2 ${
-              selectedFolder?.id === folder.id ? 'bg-muted' : ''
+              selectedFolder?.id === folder.id ? 'bg-muted' : 'hover:bg-muted/50'
             }`}
             onClick={() => onSelectFolder(folder)}
           >
@@ -110,6 +115,7 @@ const FolderTree = ({
                   e.stopPropagation();
                   onToggleFolder(folder.id);
                 }}
+                className="p-0.5 rounded-sm hover:bg-muted"
               >
                 {openFolders[folder.id] ? (
                   <ChevronDown className="h-4 w-4" />
@@ -117,11 +123,16 @@ const FolderTree = ({
                   <ChevronRight className="h-4 w-4" />
                 )}
               </span>
-            ) : <div className="w-4"></div>}
-            <FolderIcon
-              className="h-5 w-5 text-amber-500"
-            />
-            <span className="text-sm font-medium">
+            ) : <div className="w-5"></div>}
+            
+            <div className="relative">
+                 <FolderIcon className="h-5 w-5 text-amber-500" />
+                 {selectedFolder?.id === folder.id && (
+                    <Circle className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 fill-blue-500 text-blue-500" />
+                 )}
+            </div>
+
+            <span className="text-sm font-medium select-none">
               {folder.name}
             </span>
           </div>
@@ -150,8 +161,10 @@ export default function RepoEmbed({
   const storage = useStorage();
   const isAdmin = useIsAdmin();
   const seededRef = useRef(false);
+  const { toast } = useToast();
   
   const [isAddingFolder, setIsAddingFolder] = useState(false);
+  const [isDeletingFolder, setIsDeletingFolder] = useState(false);
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
   const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({});
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
@@ -159,6 +172,9 @@ export default function RepoEmbed({
   const [needsMigration, setNeedsMigration] = useState(false);
   const [isMigrating, setIsMigrating] = useState(false);
   const [key, setKey] = useState(0); // Used to force re-render
+
+  const [deleteState, deleteAction] = useActionState(deleteFolderAction, { message: '', error: undefined });
+
 
   const norm = (v:string|null|undefined) => v === "" || v === undefined ? null : v;
 
@@ -262,6 +278,24 @@ export default function RepoEmbed({
      }
   }, [folderStructure, rootFolderId, selectedFolder]);
 
+    useEffect(() => {
+        if (deleteState.message && !deleteState.error) {
+            toast({
+                title: '¡Éxito!',
+                description: deleteState.message,
+            });
+            setSelectedFolder(null); // Deselect folder
+        }
+        if (deleteState.error) {
+            toast({
+                variant: 'destructive',
+                title: 'Error al Eliminar',
+                description: deleteState.error,
+            });
+        }
+        setIsDeletingFolder(false);
+    }, [deleteState, toast]);
+
   const handleRunMigration = async () => {
     if (!firestore) return;
     setIsMigrating(true);
@@ -275,6 +309,41 @@ export default function RepoEmbed({
         setIsMigrating(false);
     }
   }
+
+  const handleDeleteFolder = () => {
+    if (!selectedFolder) {
+        toast({
+            variant: "destructive",
+            title: "Ninguna carpeta seleccionada",
+            description: "Por favor, seleccione una carpeta del árbol para eliminar.",
+        });
+        return;
+    }
+    if (selectedFolder.children.length > 0) {
+        toast({
+            variant: "destructive",
+            title: "La carpeta no está vacía",
+            description: "No se puede eliminar una carpeta que contiene otras carpetas.",
+        });
+        return;
+    }
+     if (selectedFolder.parentId === null) {
+        toast({
+            variant: "destructive",
+            title: "Acción no permitida",
+            description: "No se puede eliminar la carpeta raíz 'Documentación'.",
+        });
+        return;
+    }
+    setIsDeletingFolder(true);
+  };
+  
+  const handleConfirmDelete = () => {
+    if (!selectedFolder) return;
+    const formData = new FormData();
+    formData.append('folderId', selectedFolder.id);
+    deleteAction(formData);
+  };
 
 
   const handleToggleFolder = (id: string) => {
@@ -370,12 +439,15 @@ export default function RepoEmbed({
                     </CreateFolderForm>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                         <Button variant="ghost" size="icon" className="h-8 w-8" disabled>
+                         <Button variant="ghost" size="icon" className="h-8 w-8">
                             <MoreVertical className="h-4 w-4" />
                          </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                         <DropdownMenuItem disabled>Eliminar Carpeta</DropdownMenuItem>
+                         <DropdownMenuItem onSelect={handleDeleteFolder} className="text-destructive focus:text-destructive">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            <span>Eliminar Carpeta</span>
+                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
@@ -534,8 +606,30 @@ export default function RepoEmbed({
           </CardContent>
         </Card>
       </div>
+
+       <AlertDialog open={isDeletingFolder} onOpenChange={setIsDeletingFolder}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Está seguro de eliminar esta carpeta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Va a eliminar la carpeta "
+              <span className="font-semibold">{selectedFolder?.name}</span>". 
+              Todos los archivos dentro de esta carpeta serán eliminados permanentemente. 
+              Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive hover:bg-destructive/90"
+              disabled={deleteState.error !== undefined && deleteState.error !== null}
+            >
+             {deleteState.error ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Eliminar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
-
-    
