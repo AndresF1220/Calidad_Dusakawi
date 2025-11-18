@@ -363,7 +363,10 @@ const createFolderSchema = z.object({
 });
 
 export async function createFolderAction(prevState: any, formData: FormData): Promise<{ message: string, error?: string }> {
-    const s = (v: any) => (v === '' || v === 'null' || v === null || v === undefined) ? null : String(v);
+    const s = (v: any): string | null => {
+        const str = String(v);
+        return (str === '' || str === 'null' || str === 'undefined' || v === null || v === undefined) ? null : str;
+    };
 
     const payload = {
         name: formData.get('name') as string,
@@ -374,20 +377,28 @@ export async function createFolderAction(prevState: any, formData: FormData): Pr
     };
 
     const validatedFields = createFolderSchema.safeParse(payload);
+
     if (!validatedFields.success) {
+        console.error("Folder validation failed:", validatedFields.error.flatten());
         return { message: 'Error', error: 'Datos del formulario inválidos.' };
     }
-
+    
     try {
-        await addDoc(collection(db, 'folders'), {
+        const docData = {
             ...validatedFields.data,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
-        });
+        };
+
+        const newDocRef = await addDoc(collection(db, 'folders'), docData);
+        
+        console.log('Nueva carpeta creada', newDocRef.id, 'con datos:', docData);
+
         revalidatePath('/inicio/documentos', 'layout');
         return { message: 'Carpeta creada con éxito.' };
+
     } catch(e:any) {
         console.error("Error creating folder:", e);
-        return { message: 'Error', error: 'No se pudo crear la carpeta.' };
+        return { message: 'Error', error: `No se pudo crear la carpeta: ${e.message}` };
     }
 }
