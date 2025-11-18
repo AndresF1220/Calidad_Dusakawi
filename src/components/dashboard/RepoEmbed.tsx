@@ -48,10 +48,12 @@ import {
   Loader2,
   AlertTriangle,
   FolderPlus,
+  MoreVertical,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Progress } from '../ui/progress';
 import { CreateFolderForm } from './CreateFolderForm';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
 
 
 interface RepoEmbedProps {
@@ -350,8 +352,34 @@ export default function RepoEmbed({
       </h2>
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <Card className="lg:col-span-1">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="font-headline text-lg">Carpetas</CardTitle>
+             {isAdmin && (
+                <div className="flex items-center gap-1">
+                    <CreateFolderForm
+                        isOpen={isAddingFolder}
+                        onOpenChange={setIsAddingFolder}
+                        parentId={rootFolderId} 
+                        scope={{ areaId, procesoId, subprocesoId }}
+                        disabled={!rootFolderId}
+                    >
+                        <Button variant="ghost" size="icon" className="h-8 w-8" disabled={!rootFolderId}>
+                            <FolderPlus className="h-4 w-4" />
+                            <span className="sr-only">Crear Carpeta</span>
+                        </Button>
+                    </CreateFolderForm>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                         <Button variant="ghost" size="icon" className="h-8 w-8" disabled>
+                            <MoreVertical className="h-4 w-4" />
+                         </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                         <DropdownMenuItem disabled>Eliminar Carpeta</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+            )}
           </CardHeader>
           <CardContent>
             {needsMigration && (
@@ -403,18 +431,6 @@ export default function RepoEmbed({
             </div>
              {isAdmin && (
                 <div className="flex gap-2">
-                    <CreateFolderForm
-                        isOpen={isAddingFolder}
-                        onOpenChange={setIsAddingFolder}
-                        parentId={selectedFolder?.id || null}
-                        scope={{ areaId, procesoId, subprocesoId }}
-                        disabled={!selectedFolder}
-                    >
-                        <Button variant="outline" disabled={!selectedFolder}>
-                            <FolderPlus className="mr-2 h-4 w-4" />
-                            Crear Carpeta
-                        </Button>
-                    </CreateFolderForm>
                     <Input
                         type="file"
                         className="hidden"
@@ -521,3 +537,5 @@ export default function RepoEmbed({
     </>
   );
 }
+
+    
