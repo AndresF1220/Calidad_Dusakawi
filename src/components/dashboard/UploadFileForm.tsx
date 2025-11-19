@@ -55,28 +55,14 @@ interface UploadFileFormProps {
   };
 }
 
-function SubmitButton() {
+function SubmitButton({ isUploading }: { isUploading: boolean }) {
   const { pending } = useFormStatus();
-  const [isUploading, setIsUploading] = useState(false);
-  const status = useFormStatus();
-
-  useEffect(() => {
-    // This effect is a bit of a hack to show a different loading state
-    // during the file upload vs. the form submission.
-    if (status.pending && !isUploading) {
-        // This is the actual file upload phase
-        setIsUploading(true);
-    } else if (!status.pending && isUploading) {
-        // This is the form submission (metadata save) phase
-        setIsUploading(false);
-    }
-  }, [status.pending, isUploading]);
-
+  const isDisabled = isUploading || pending;
 
   return (
-    <Button type="submit" disabled={status.pending}>
-      {status.pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-      {isUploading ? "Subiendo..." : "Guardar Documento"}
+    <Button type="submit" disabled={isDisabled}>
+      {(isUploading || pending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+      {isUploading ? "Subiendo..." : (pending ? "Guardando..." : "Subir y Guardar")}
     </Button>
   );
 }
@@ -149,9 +135,12 @@ export function UploadFileForm({
       }
   }
 
-  const handleFormSubmit = async (formData: FormData) => {
-      if (!selectedFile || !folderId || !scope.areaId) {
-          toast({ variant: 'destructive', title: 'Error', description: 'Faltan datos para la subida.'});
+  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      const formData = new FormData(e.currentTarget);
+      
+      if (!selectedFile || !folderId || !scope.areaId || !storage) {
+          toast({ variant: 'destructive', title: 'Error', description: 'Faltan datos o la conexión a Firebase no está lista.'});
           return;
       }
       
@@ -173,9 +162,9 @@ export function UploadFileForm({
               
               toast({ title: 'Archivo subido', description: 'Guardando información del documento.'});
 
-              formData.append('url', url);
-              formData.append('path', fullPath);
-              formData.append('size', selectedFile.size.toString());
+              formData.set('url', url);
+              formData.set('path', fullPath);
+              formData.set('size', selectedFile.size.toString());
 
               // Now call the server action with all the data
               formAction(formData);
@@ -203,7 +192,7 @@ export function UploadFileForm({
             Complete la información del documento y seleccione el archivo para subir.
           </DialogDescription>
         </DialogHeader>
-        <form action={handleFormSubmit} ref={formRef} className="grid gap-4 py-4">
+        <form onSubmit={handleFormSubmit} ref={formRef} className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="code">Código del documento</Label>
             <Input id="code" name="code" required />
@@ -294,14 +283,10 @@ export function UploadFileForm({
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={isUploading}>
               Cancelar
             </Button>
-             <Button type="submit" disabled={isUploading}>
-              {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Subir y Guardar
-            </Button>
+             <SubmitButton isUploading={isUploading} />
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
   );
 }
-

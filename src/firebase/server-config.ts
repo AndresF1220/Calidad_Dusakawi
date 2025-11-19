@@ -7,6 +7,7 @@ function initializeServerApp(): App {
   if (getApps().length) {
     return getApp();
   }
+  // This will use the GOOGLE_APPLICATION_CREDENTIALS env var
   return initializeApp();
 }
 
