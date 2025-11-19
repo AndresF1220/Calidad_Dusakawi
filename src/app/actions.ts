@@ -1,12 +1,14 @@
 
-'use server';
+'use client';
 
 import { z } from 'zod';
-import { FieldValue, getFirestore } from 'firebase-admin/firestore';
-import { db, storage } from '@/firebase/server-config';
 import { revalidatePath } from 'next/cache';
-import { SEED_AREAS } from '@/data/seed-map';
+import { db, storage } from '@/firebase/client-config';
+import { collection, addDoc, doc, updateDoc, writeBatch, query, where, getDocs, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { ref, deleteObject } from 'firebase/storage';
 import { slugify } from '@/lib/slug';
+import { SEED_AREAS } from '@/data/seed-map';
+
 
 const createSchema = z.object({
   name: z.string().min(3, 'Debe ingresar un nombre de al menos 3 caracteres.'),
@@ -22,6 +24,8 @@ export async function createEntityAction(
   prevState: any,
   formData: FormData
 ): Promise<{ message: string; error?: string }> {
+    if (!db) return { message: 'Error', error: 'Firestore no está inicializado.' };
+
     const s = (v: any) => (typeof v === 'string' ? v.trim() : '');
     
     const payload = {
@@ -45,30 +49,30 @@ export async function createEntityAction(
     const { name, objetivo, alcance, responsable, type, parentId, grandParentId } = validatedFields.data;
 
     try {
-        const batch = db.batch();
+        const batch = writeBatch(db);
 
         const entityData: any = {
             nombre: name,
             slug: slugify(name),
-            createdAt: FieldValue.serverTimestamp(),
+            createdAt: serverTimestamp(),
         };
         
         let revalidationPath = '/inicio/documentos';
-        const newEntityRef = db.collection('temp').doc(); // Generate ID upfront
+        const newEntityRef = doc(collection(db, 'temp')); // Generate ID upfront
         entityData.id = newEntityRef.id;
 
         let finalEntityRef;
         let caracterizacionId = '';
 
         if (type === 'area') {
-            finalEntityRef = db.collection('areas').doc(newEntityRef.id);
+            finalEntityRef = doc(db, 'areas', newEntityRef.id);
             caracterizacionId = `area-${newEntityRef.id}`;
         } else if (type === 'process' && parentId) {
-            finalEntityRef = db.collection('areas').doc(parentId).collection('procesos').doc(newEntityRef.id);
+            finalEntityRef = doc(db, 'areas', parentId, 'procesos', newEntityRef.id);
             caracterizacionId = `process-${newEntityRef.id}`;
             revalidationPath = `/inicio/documentos/area/${parentId}`;
         } else if (type === 'subprocess' && parentId && grandParentId) {
-            finalEntityRef = db.collection('areas').doc(grandParentId).collection('procesos').doc(parentId).collection('subprocesos').doc(newEntityRef.id);
+            finalEntityRef = doc(db, 'areas', grandParentId, 'procesos', parentId, 'subprocesos', newEntityRef.id);
             caracterizacionId = `subprocess-${newEntityRef.id}`;
             revalidationPath = `/inicio/documentos/area/${grandParentId}/proceso/${parentId}`;
         } else {
@@ -77,12 +81,12 @@ export async function createEntityAction(
         
         batch.set(finalEntityRef, entityData);
 
-        const caracterizacionRef = db.collection('caracterizaciones').doc(caracterizacionId);
+        const caracterizacionRef = doc(db, 'caracterizaciones', caracterizacionId);
         batch.set(caracterizacionRef, {
             objetivo,
             alcance,
             responsable,
-            fechaActualizacion: FieldValue.serverTimestamp(),
+            fechaActualizacion: serverTimestamp(),
         });
         
         await batch.commit();
@@ -101,39 +105,38 @@ export async function deleteEntityAction(
   prevState: any,
   formData: FormData
 ): Promise<{ message: string; error?: string }> {
-  
+    if (!db) return { message: 'Error', error: 'Firestore no está inicializado.' };
+
   const entityId = formData.get('entityId') as string;
   const entityType = formData.get('entityType') as 'area' | 'process' | 'subprocess';
   const parentId = formData.get('parentId') as string | undefined;
   const grandParentId = formData.get('grandParentId') as string | undefined;
 
-  console.log('[DEL] args', { entityType, entityId, parentId, grandParentId });
-  
   try {
-    const batch = db.batch();
+    const batch = writeBatch(db);
     let revalidationPath = '/inicio/documentos';
 
     switch (entityType) {
         case 'area':
             if (!entityId) throw new Error("Parámetros de eliminación inválidos (falta entityId).");
             
-            const areaRef = db.collection('areas').doc(entityId);
-            const procesosQuery = db.collection('areas').doc(entityId).collection('procesos');
-            const procesosSnap = await procesosQuery.get();
+            const areaRef = doc(db, 'areas', entityId);
+            const procesosQuery = collection(db, 'areas', entityId, 'procesos');
+            const procesosSnap = await getDocs(procesosQuery);
 
             for (const procesoDoc of procesosSnap.docs) {
-                const subprocesosQuery = procesoDoc.ref.collection('subprocesos');
-                const subprocesosSnap = await subprocesosQuery.get();
+                const subprocesosQuery = collection(procesoDoc.ref, 'subprocesos');
+                const subprocesosSnap = await getDocs(subprocesosQuery);
                 for (const subDoc of subprocesosSnap.docs) {
-                    const caracterizacionSubRef = db.collection('caracterizaciones').doc(`subprocess-${subDoc.id}`);
+                    const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${subDoc.id}`);
                     batch.delete(caracterizacionSubRef);
                     batch.delete(subDoc.ref);
                 }
-                const caracterizacionProcRef = db.collection('caracterizaciones').doc(`process-${procesoDoc.id}`);
+                const caracterizacionProcRef = doc(db, 'caracterizaciones', `process-${procesoDoc.id}`);
                 batch.delete(caracterizacionProcRef);
                 batch.delete(procesoDoc.ref);
             }
-            const caracterizacionAreaRef = db.collection('caracterizaciones').doc(`area-${entityId}`);
+            const caracterizacionAreaRef = doc(db, 'caracterizaciones', `area-${entityId}`);
             batch.delete(caracterizacionAreaRef);
             batch.delete(areaRef);
             revalidationPath = '/inicio/documentos';
@@ -142,16 +145,16 @@ export async function deleteEntityAction(
         case 'process':
             if (!entityId || !parentId) throw new Error("Parámetros de eliminación inválidos (falta entityId o parentId).");
 
-            const processRef = db.collection('areas').doc(parentId).collection('procesos').doc(entityId);
-            const subprocesosProcQuery = processRef.collection('subprocesos');
-            const subprocesosProcSnap = await subprocesosProcQuery.get();
+            const processRef = doc(db, 'areas', parentId, 'procesos', entityId);
+            const subprocesosProcQuery = collection(processRef, 'subprocesos');
+            const subprocesosProcSnap = await getDocs(subprocesosProcQuery);
 
             for (const subDoc of subprocesosProcSnap.docs) {
-                const caracterizacionSubRef = db.collection('caracterizaciones').doc(`subprocess-${subDoc.id}`);
+                const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${subDoc.id}`);
                 batch.delete(caracterizacionSubRef);
                 batch.delete(subDoc.ref);
             }
-            const caracterizacionProcRef = db.collection('caracterizaciones').doc(`process-${entityId}`);
+            const caracterizacionProcRef = doc(db, 'caracterizaciones', `process-${entityId}`);
             batch.delete(caracterizacionProcRef);
             batch.delete(processRef);
             revalidationPath = `/inicio/documentos/area/${parentId}`;
@@ -160,8 +163,8 @@ export async function deleteEntityAction(
         case 'subprocess':
             if (!entityId || !parentId || !grandParentId) throw new Error("Parámetros de eliminación inválidos (falta entityId, parentId o grandParentId).");
             
-            const subProcessRef = db.collection('areas').doc(grandParentId).collection('procesos').doc(parentId).collection('subprocesos').doc(entityId);
-            const caracterizacionSubRef = db.collection('caracterizaciones').doc(`subprocess-${entityId}`);
+            const subProcessRef = doc(db, 'areas', grandParentId, 'procesos', parentId, 'subprocesos', entityId);
+            const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${entityId}`);
             batch.delete(caracterizacionSubRef);
             batch.delete(subProcessRef);
             revalidationPath = `/inicio/documentos/area/${grandParentId}/proceso/${parentId}`;
@@ -197,6 +200,8 @@ export async function updateEntityAction(
   prevState: any,
   formData: FormData
 ): Promise<{ message: string; error?: string }> {
+    if (!db) return { message: 'Error', error: 'Firestore no está inicializado.' };
+
     const s = (v: any) => (v === null || v === undefined ? undefined : String(v));
 
     const payload = {
@@ -220,16 +225,16 @@ export async function updateEntityAction(
     const { entityId, entityType, parentId, grandParentId, name, objetivo, alcance, responsable } = validatedFields.data;
 
     try {
-        const batch = db.batch();
+        const batch = writeBatch(db);
 
         let entityRef;
 
         if (entityType === 'area') {
-            entityRef = db.collection('areas').doc(entityId);
+            entityRef = doc(db, 'areas', entityId);
         } else if (entityType === 'process' && parentId) {
-            entityRef = db.collection('areas').doc(parentId).collection('procesos').doc(entityId);
+            entityRef = doc(db, 'areas', parentId, 'procesos', entityId);
         } else if (entityType === 'subprocess' && parentId && grandParentId) {
-            entityRef = db.collection('areas').doc(grandParentId).collection('procesos').doc(parentId).collection('subprocesos').doc(entityId);
+            entityRef = doc(db, 'areas', grandParentId, 'procesos', parentId, 'subprocesos', entityId);
         } else {
             return { message: 'Error', error: 'Parámetros inválidos para la actualización.' };
         }
@@ -244,15 +249,16 @@ export async function updateEntityAction(
                caracterizacionId = `subprocess-${entityId}`;
             }
             
-            const caracterizacionData: any = { fechaActualizacion: FieldValue.serverTimestamp() };
+            const caracterizacionData: any = { fechaActualizacion: serverTimestamp() };
             if (objetivo !== undefined) caracterizacionData.objetivo = objetivo;
             if (alcance !== undefined) caracterizacionData.alcance = alcance;
             if (responsable !== undefined) caracterizacionData.responsable = responsable;
 
-            const caracterizacionRef = db.collection('caracterizaciones').doc(caracterizacionId);
-            const caracterizacionSnap = await caracterizacionRef.get();
+            const caracterizacionRef = doc(db, 'caracterizaciones', caracterizacionId);
+            const caracterizacionSnap = await getDocs(query(collection(db, 'caracterizaciones'), where('__name__', '==', caracterizacionId)));
 
-            if (caracterizacionSnap.exists) {
+
+            if (!caracterizacionSnap.empty) {
                 batch.update(caracterizacionRef, caracterizacionData);
             } else {
                 batch.set(caracterizacionRef, caracterizacionData);
@@ -281,6 +287,8 @@ export async function renameFolderAction(
   prevState: any,
   formData: FormData
 ): Promise<{ message: string; error?: string }> {
+  if (!db) return { message: 'Error', error: 'Firestore no está inicializado.' };
+  
   const newName = formData.get('newName') as string;
   const folderId = formData.get('folderId') as string;
 
@@ -292,8 +300,8 @@ export async function renameFolderAction(
   }
 
   try {
-    const folderRef = db.collection('folders').doc(folderId);
-    await folderRef.update({ name: newName });
+    const folderRef = doc(db, 'folders', folderId);
+    await updateDoc(folderRef, { name: newName });
     revalidatePath('/inicio/documentos', 'layout'); // Revalidate the whole documents layout
     return { message: 'Carpeta renombrada con éxito.' };
   } catch (e: any) {
@@ -303,35 +311,39 @@ export async function renameFolderAction(
 }
 
 export async function seedProcessMapAction(): Promise<{ message: string; error?: string }> {
+    if (!db) return { message: 'Error', error: 'Firestore no está inicializado.' };
+
     try {
-        const batch = db.batch();
-        const areasCollection = db.collection('areas');
+        const batch = writeBatch(db);
+        const areasCollection = collection(db, 'areas');
 
         for (const area of SEED_AREAS) {
-            const newAreaRef = areasCollection.doc();
+            const newAreaRef = doc(areasCollection);
             batch.set(newAreaRef, { 
                 nombre: area.titulo, 
                 slug: slugify(area.titulo),
                 id: newAreaRef.id,
-                createdAt: FieldValue.serverTimestamp() 
+                createdAt: serverTimestamp() 
             });
 
+            const procesosCollection = collection(newAreaRef, 'procesos');
             for (const proceso of area.procesos) {
-                const newProcesoRef = newAreaRef.collection('procesos').doc();
+                const newProcesoRef = doc(procesosCollection);
                 batch.set(newProcesoRef, { 
                     nombre: proceso.nombre,
                     slug: slugify(proceso.nombre),
                     id: newProcesoRef.id,
-                    createdAt: FieldValue.serverTimestamp() 
+                    createdAt: serverTimestamp() 
                 });
 
+                const subprocesosCollection = collection(newProcesoRef, 'subprocesos');
                 for (const subproceso of proceso.subprocesos) {
-                    const newSubprocesoRef = newProcesoRef.collection('subprocesos').doc();
+                    const newSubprocesoRef = doc(subprocesosCollection);
                     batch.set(newSubprocesoRef, { 
                         nombre: subproceso.nombre,
                         slug: slugify(subproceso.nombre),
                         id: newSubprocesoRef.id,
-                        createdAt: FieldValue.serverTimestamp() 
+                        createdAt: serverTimestamp() 
                     });
                 }
             }
@@ -375,6 +387,8 @@ export async function suggestAdditionalDataAction(prevState: any, formData: Form
 }
 
 export async function createFolderAction(prevState: any, formData: FormData): Promise<{ message: string; error?: string }> {
+  if (!db) return { message: 'Error', error: 'Firestore no está inicializado.' };
+  
   const name = formData.get('name') as string;
   const parentId = formData.get('parentId') as string | null;
   const areaId = formData.get('areaId') as string | null;
@@ -395,10 +409,10 @@ export async function createFolderAction(prevState: any, formData: FormData): Pr
       areaId,
       procesoId,
       subprocesoId,
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     };
-    await db.collection('folders').add(docData);
+    await addDoc(collection(db, 'folders'), docData);
     revalidatePath('/inicio/documentos', 'layout');
     return { message: 'Carpeta creada con éxito.' };
   } catch (e: any) {
