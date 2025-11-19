@@ -62,6 +62,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from '@/hooks/use-toast';
 import { deleteFolderAction } from '@/app/actions';
 import { RenameFolderForm } from './RenameFolderForm';
+import { UploadFileForm } from './UploadFileForm';
 
 
 interface RepoEmbedProps {
@@ -102,7 +103,7 @@ const FolderTree = ({
   selectedFolder: Folder | null;
   openFolders: Record<string, boolean>;
   onToggleFolder: (id: string) => void;
-  onAction: (action: 'rename' | 'delete', folder: Folder, event: Event) => void;
+  onAction: (action: 'rename' | 'delete', folder: Folder, event: React.MouseEvent) => void;
 }) => {
   const isAdmin = useIsAdmin();
   if (!folders || folders.length === 0) return null;
@@ -151,11 +152,11 @@ const FolderTree = ({
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                        <DropdownMenuItem onSelect={(e) => onAction('rename', folder, e)}>
+                        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); onAction('rename', folder, e as any); }}>
                             <Edit className="mr-2 h-4 w-4" />
                             <span>Renombrar</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={(e) => onAction('delete', folder, e)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); onAction('delete', folder, e as any); }} className="text-destructive focus:text-destructive focus:bg-destructive/10">
                             <Trash2 className="mr-2 h-4 w-4" />
                             <span>Eliminar</span>
                         </DropdownMenuItem>
@@ -194,6 +195,7 @@ export default function RepoEmbed({
   const [isAddingFolder, setIsAddingFolder] = useState(false);
   const [isRenamingFolder, setIsRenamingFolder] = useState(false);
   const [isDeletingFolder, setIsDeletingFolder] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [folderToEdit, setFolderToEdit] = useState<Folder | null>(null);
 
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
@@ -254,30 +256,21 @@ export default function RepoEmbed({
     const folderMap = new Map<string, Folder>();
     const rootLevelFolders: Folder[] = [];
     
-    // First pass: create a map of all folders that are not root-level folders
+    // First pass: create a map of all folders
     allFolders.forEach((doc: any) => {
-      if (doc.parentId && doc.parentId !== rootFolderId) {
         folderMap.set(doc.id, { ...doc, children: [] });
-      } else if (doc.parentId === rootFolderId) {
-         rootLevelFolders.push({ ...doc, children: [] });
-      }
     });
     
-    // Second pass: build the tree structure for non-root folders
     folderMap.forEach(folder => {
-      if (folder.parentId) {
-        const parentInMap = folderMap.get(folder.parentId);
-        if (parentInMap) {
-           parentInMap.children.push(folder);
+        if (folder.parentId && folderMap.has(folder.parentId)) {
+            folderMap.get(folder.parentId)!.children.push(folder);
         } else {
-            // This means the parent is a root-level folder
-            const parentInRoot = rootLevelFolders.find(f => f.id === folder.parentId);
-            if (parentInRoot) {
-                parentInRoot.children.push(folder);
-            }
+             // This is a root-level folder (or its parent is missing, treat as root)
+             rootLevelFolders.push(folder);
         }
-      }
     });
+
+    const filteredRoots = rootLevelFolders.filter(f => f.id !== rootFolderId);
     
     // Sort children alphabetically at every level
     const sortRecursive = (folders: Folder[]) => {
@@ -288,9 +281,9 @@ export default function RepoEmbed({
             }
         });
     }
-    sortRecursive(rootLevelFolders);
+    sortRecursive(filteredRoots);
     
-    return rootLevelFolders;
+    return filteredRoots;
 
   }, [allFolders, rootFolderId]);
 
@@ -322,7 +315,7 @@ export default function RepoEmbed({
     }
   }
 
-  const handleFolderAction = (action: 'rename' | 'delete', folder: Folder, event: Event) => {
+  const handleFolderAction = (action: 'rename' | 'delete', folder: Folder, event: React.MouseEvent) => {
     event.preventDefault();
     setFolderToEdit(folder);
     if (action === 'rename') {
@@ -371,55 +364,6 @@ export default function RepoEmbed({
 
   const handleToggleFolder = (id: string) => {
     setOpenFolders(prev => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files.length > 0 && selectedFolder && firestore && storage) {
-      const file = event.target.files[0];
-      const filePath = `repositorio/${norm(areaId)}/${norm(procesoId) || 'global'}/${norm(subprocesoId) || 'global'}/${selectedFolder.id}/${file.name}`;
-      const storageRef = ref(storage, filePath);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-
-      uploadTask.on('state_changed', 
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setUploadProgress(progress);
-        }, 
-        (error) => {
-          console.error("Upload failed:", error);
-          toast({
-            variant: "destructive",
-            title: "Error al Subir",
-            description: "No se pudo subir el archivo. " + error.message,
-          });
-          setUploadProgress(null);
-        }, 
-        () => {
-          getDownloadURL(uploadTask.snapshot.ref).then(async (downloadURL) => {
-            await addDoc(collection(firestore, 'files'), {
-              name: file.name,
-              folderId: selectedFolder.id,
-              areaId: norm(areaId),
-              procesoId: norm(procesoId),
-              subprocesoId: norm(subprocesoId),
-              size: file.size,
-              type: file.type,
-              url: downloadURL,
-              path: filePath, 
-              createdAt: serverTimestamp(),
-              modifiedAt: serverTimestamp(),
-              ownerId: 'superuser_id', // TODO: Replace with actual user ID
-            });
-            setUploadProgress(null);
-            toast({
-                title: "Archivo Subido",
-                description: `${file.name} se ha subido correctamente.`,
-            });
-          });
-        }
-      );
-      event.target.value = '';
-    }
   };
 
   const handleFileDelete = async (fileToDelete: File) => {
@@ -535,26 +479,16 @@ export default function RepoEmbed({
               </CardDescription>
             </div>
              {isAdmin && (
-                <div className="flex gap-2">
-                    <Input
-                        type="file"
-                        className="hidden"
-                        id="upload-file-input"
-                        onChange={handleFileUpload}
-                        disabled={!selectedFolder}
-                    />
-                    <Button asChild variant="outline" disabled={!selectedFolder}>
-                        <label
-                        htmlFor="upload-file-input"
-                        className={`cursor-pointer ${
-                            !selectedFolder ? 'cursor-not-allowed opacity-50' : ''
-                        }`}
-                        >
+                 <UploadFileForm 
+                    isOpen={isUploading} 
+                    onOpenChange={setIsUploading} 
+                    disabled={!selectedFolder}
+                 >
+                    <Button variant="outline" disabled={!selectedFolder}>
                         <Upload className="mr-2 h-4 w-4" />
                         Subir Archivo
-                        </label>
                     </Button>
-                </div>
+                </UploadFileForm>
              )}
           </CardHeader>
           <CardContent>
@@ -678,5 +612,3 @@ export default function RepoEmbed({
     </>
   );
 }
-
-    
