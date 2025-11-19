@@ -485,81 +485,65 @@ export async function renameFolderAction(prevState: any, formData: FormData): Pr
     }
 }
 
-const uploadFileSchema = z.object({
+const createDocumentSchema = z.object({
   code: z.string().min(1, 'El código es requerido.'),
   name: z.string().min(3, 'El nombre es requerido.'),
   version: z.string().min(1, 'La versión es requerida.'),
-  validityDate: z.string(),
+  validityDate: z.string().optional(),
   folderId: z.string().min(1),
   areaId: z.string().nullable(),
   procesoId: z.string().nullable(),
   subprocesoId: z.string().nullable(),
-  file: z.instanceof(File),
+  path: z.string().min(1),
+  url: z.string().url(),
+  size: z.number().min(1),
 });
 
-export async function uploadFileAction(prevState: any, formData: FormData): Promise<{ message: string, error?: string }> {
-    const s = (v: any): string | null => {
-        const str = String(v);
-        return (str === '' || str === 'null' || str === 'undefined' || v === null || v === undefined) ? null : str;
+export async function createDocumentAction(
+  prevState: any,
+  formData: FormData
+): Promise<{ message: string; error?: string }> {
+  const s = (v: any): string | null => {
+    const str = String(v);
+    return str === '' || str === 'null' || str === 'undefined' || v === null || v === undefined ? null : str;
+  };
+
+  const payload = {
+    code: s(formData.get('code')),
+    name: s(formData.get('name')),
+    version: s(formData.get('version')),
+    validityDate: s(formData.get('validityDate')),
+    folderId: s(formData.get('folderId')),
+    areaId: s(formData.get('areaId')),
+    procesoId: s(formData.get('procesoId')),
+    subprocesoId: s(formData.get('subprocesoId')),
+    path: s(formData.get('path')),
+    url: s(formData.get('url')),
+    size: Number(formData.get('size')),
+  };
+
+  const validatedFields = createDocumentSchema.safeParse(payload);
+
+  if (!validatedFields.success) {
+    console.error('Validation errors:', validatedFields.error.flatten());
+    const fieldErrors = validatedFields.error.flatten().fieldErrors;
+    const firstError = Object.values(fieldErrors)[0]?.[0];
+    return { message: 'Error de validación', error: firstError ?? 'Datos de formulario inválidos.' };
+  }
+
+  try {
+    const dataToSave = {
+      ...validatedFields.data,
+      validityDate: validatedFields.data.validityDate ? new Date(validatedFields.data.validityDate) : null,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     };
     
-    const validatedFields = uploadFileSchema.safeParse({
-        code: formData.get('code'),
-        name: formData.get('name'),
-        version: formData.get('version'),
-        validityDate: formData.get('validityDate'),
-        folderId: formData.get('folderId'),
-        areaId: s(formData.get('areaId')),
-        procesoId: s(formData.get('procesoId')),
-        subprocesoId: s(formData.get('subprocesoId')),
-        file: formData.get('file'),
-    });
-
-    if (!validatedFields.success) {
-        console.error('Validation errors:', validatedFields.error.flatten());
-        const fieldErrors = validatedFields.error.flatten().fieldErrors;
-        const firstError = Object.values(fieldErrors)[0]?.[0];
-        return { message: "Error de validación", error: firstError ?? "Datos de formulario inválidos." };
-    }
-
-    const { file, ...docData } = validatedFields.data;
-
-    try {
-        const bucket = storage.bucket();
-        const pathParts = ['documentos', docData.areaId];
-        if (docData.procesoId) pathParts.push(docData.procesoId);
-        if (docData.subprocesoId) pathParts.push(docData.subprocesoId);
-        pathParts.push(docData.folderId);
-        pathParts.push(file.name);
-        const fullPath = pathParts.filter(Boolean).join('/');
-
-        const fileBuffer = Buffer.from(await file.arrayBuffer());
-
-        const storageFile = bucket.file(fullPath);
-        await storageFile.save(fileBuffer, {
-            metadata: { contentType: file.type },
-        });
-
-        const [url] = await storageFile.getSignedUrl({
-            action: 'read',
-            expires: '03-09-2491', // Far future expiration
-        });
-        
-        await addDoc(collection(db, 'documents'), {
-            ...docData,
-            path: fullPath,
-            url: url,
-            size: file.size,
-            validityDate: new Date(docData.validityDate),
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-        });
-        
-        revalidatePath('/inicio/documentos');
-        return { message: 'Documento guardado con éxito.' };
-        
-    } catch(e: any) {
-        console.error("Error creating document:", e);
-        return { message: 'Error', error: `No se pudo guardar el documento: ${e.message}` };
-    }
+    await addDoc(collection(db, 'documents'), dataToSave);
+    revalidatePath('/inicio/documentos');
+    return { message: 'Documento guardado con éxito.' };
+  } catch (e: any) {
+    console.error('Error creating document:', e);
+    return { message: 'Error', error: `No se pudo guardar el documento: ${e.message}` };
+  }
 }

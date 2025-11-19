@@ -2,9 +2,12 @@
 
 'use client';
 
-import { useActionState, useEffect, useRef, useState } from 'react';
+import { useActionState, useEffect, useRef, useState, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
-import { uploadFileAction } from '@/app/actions';
+import { createDocumentAction } from '@/app/actions';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useFirebase } from '@/firebase';
+
 
 import { Button } from '@/components/ui/button';
 import {
@@ -53,14 +56,15 @@ interface UploadFileFormProps {
   };
 }
 
+
 function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending}>
-      {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-      {pending ? "Subiendo..." : "Subir y Guardar"}
-    </Button>
-  );
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" disabled={pending}>
+        {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        {pending ? 'Guardando...' : 'Subir y Guardar'}
+        </Button>
+    );
 }
 
 export function UploadFileForm({
@@ -72,14 +76,29 @@ export function UploadFileForm({
   scope,
 }: UploadFileFormProps) {
   const { toast } = useToast();
-  const [state, formAction] = useActionState(uploadFileAction, { message: '', error: undefined });
+  const { storage } = useFirebase();
+  const [state, formAction] = useActionState(createDocumentAction, { message: '', error: undefined });
   
   const formRef = useRef<HTMLFormElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedFileName, setSelectedFileName] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      formRef.current?.reset();
+      setSelectedFile(null);
+      setSelectedFileName('');
+      setSelectedDate(undefined);
+      if(fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (state.message && !state.error) {
@@ -98,17 +117,6 @@ export function UploadFileForm({
     }
   }, [state, toast, onOpenChange]);
 
-  useEffect(() => {
-    if (!isOpen) {
-      formRef.current?.reset();
-      setSelectedFileName('');
-      setSelectedDate(undefined);
-      if(fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  }, [isOpen]);
-  
   const handleSelectDate = (date: Date | undefined) => {
     if (date) {
       setSelectedDate(date);
@@ -116,17 +124,65 @@ export function UploadFileForm({
     }
   }
 
-  const handleOpenChange = (open: boolean) => {
-    setIsCalendarOpen(open);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setSelectedFileName(file.name);
+    } else {
+      setSelectedFile(null);
+      setSelectedFileName('');
+    }
+  }
+
+  const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!selectedFile || !folderId || !scope.areaId || !storage) {
+        toast({
+            variant: 'destructive',
+            title: 'Error de validación',
+            description: 'Faltan datos o la conexión a Firebase no está lista. Asegúrese de seleccionar un archivo y una carpeta.',
+        });
+        return;
+    }
+
+    setIsUploading(true);
+
+    try {
+        const pathParts = ['documentos', scope.areaId];
+        if (scope.procesoId) pathParts.push(scope.procesoId);
+        if (scope.subprocesoId) pathParts.push(scope.subprocesoId);
+        pathParts.push(folderId);
+        pathParts.push(selectedFile.name);
+        const fullPath = pathParts.filter(Boolean).join('/');
+        
+        const fileStorageRef = storageRef(storage, fullPath);
+        
+        await uploadBytes(fileStorageRef, selectedFile);
+        const url = await getDownloadURL(fileStorageRef);
+
+        const formData = new FormData(event.currentTarget);
+        formData.set('path', fullPath);
+        formData.set('url', url);
+        formData.set('size', String(selectedFile.size));
+
+        // Now, call the server action with all the data
+        formAction(formData);
+
+    } catch (error: any) {
+        console.error("Error during upload:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Error de Subida',
+            description: `No se pudo subir el archivo: ${error.message}`,
+        });
+    } finally {
+        setIsUploading(false);
+    }
   };
   
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (e.target.files && e.target.files[0]) {
-          setSelectedFileName(e.target.files[0].name);
-      } else {
-          setSelectedFileName('');
-      }
-  }
+  const isSubmitDisabled = isUploading || !selectedFile;
 
 
   return (
@@ -141,7 +197,7 @@ export function UploadFileForm({
             Complete la información del documento y seleccione el archivo para subir.
           </DialogDescription>
         </DialogHeader>
-        <form action={formAction} ref={formRef} className="grid gap-4 py-4">
+        <form onSubmit={handleFormSubmit} ref={formRef} className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="code">Código del documento</Label>
             <Input id="code" name="code" required />
@@ -159,7 +215,7 @@ export function UploadFileForm({
             </div>
              <div className="grid gap-2">
                 <Label htmlFor="validityDate">Fecha de vigencia</Label>
-                <Popover open={isCalendarOpen} onOpenChange={handleOpenChange}>
+                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                     <PopoverTrigger asChild>
                     <Button
                         type="button"
@@ -218,7 +274,6 @@ export function UploadFileForm({
                     className="hidden"
                     ref={fileInputRef}
                     onChange={handleFileChange}
-                    required
                 />
             </div>
           </div>
@@ -232,7 +287,10 @@ export function UploadFileForm({
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-             <SubmitButton />
+             <Button type="submit" disabled={isSubmitDisabled}>
+                {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isUploading ? 'Subiendo...' : 'Subir y Guardar'}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
