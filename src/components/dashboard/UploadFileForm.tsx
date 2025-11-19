@@ -87,6 +87,7 @@ export function UploadFileForm({
   const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const form = useForm<UploadFormValues>({
     resolver: zodResolver(formSchema),
@@ -108,7 +109,6 @@ export function UploadFileForm({
     formState: { errors },
   } = form;
   
-  const fileInputRef = register('file');
   const selectedFile = watch('file');
   const fileName = selectedFile?.[0]?.name;
 
@@ -143,9 +143,9 @@ export function UploadFileForm({
         pathParts.push(file.name);
         const storagePath = pathParts.join('/');
         
-        const storageRef = ref(storage, storagePath);
+        const fileStorageRef = ref(storage, storagePath);
 
-        const uploadResult = await uploadBytes(storageRef, file);
+        const uploadResult = await uploadBytes(fileStorageRef, file);
         const downloadURL = await getDownloadURL(uploadResult.ref);
 
         const docData = {
@@ -195,7 +195,6 @@ export function UploadFileForm({
   const handleOpenChange = (open: boolean) => {
     setIsCalendarOpen(open);
     if (!open) {
-      // Blur the trigger element to prevent focus issues
       const trigger = document.querySelector('[aria-haspopup="dialog"]');
       if (trigger instanceof HTMLElement) {
         trigger.blur();
@@ -274,7 +273,7 @@ export function UploadFileForm({
                 <Button 
                     id="file-upload-button"
                     type="button" 
-                    onClick={() => document.getElementById('file-upload')?.click()}
+                    onClick={() => fileInputRef.current?.click()}
                     variant="outline"
                 >
                     <Upload className="mr-2 h-4 w-4" />
@@ -288,7 +287,10 @@ export function UploadFileForm({
                     type="file" 
                     accept={ACCEPTED_FILE_TYPES.join(',')}
                     className="hidden"
-                    {...fileInputRef}
+                    ref={fileInputRef}
+                    onChange={(e) => {
+                      setValue('file', e.target.files, { shouldValidate: true });
+                    }}
                 />
             </div>
             {errors.file && <p className="text-xs text-destructive">{errors.file.message as string}</p>}
@@ -308,5 +310,3 @@ export function UploadFileForm({
     </Dialog>
   );
 }
-
-    
