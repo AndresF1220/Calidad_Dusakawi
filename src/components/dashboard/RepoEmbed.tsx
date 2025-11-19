@@ -28,9 +28,8 @@ import {
 import { Button } from '@/components/ui/button';
 import {
   Upload,
-  Download,
   Folder as FolderIcon,
-  File as FileIcon,
+  FileText,
   ChevronRight,
   ChevronDown,
   Trash2,
@@ -64,6 +63,9 @@ type File = {
   size: number;
   url: string;
   path: string; // Storage path
+  code: string;
+  version: string;
+  validityDate: any;
 };
 
 type Folder = {
@@ -73,6 +75,13 @@ type Folder = {
   parentId: string | null;
   createdAt: any; // Keep timestamp for sorting
 };
+
+const mockFiles: File[] = [
+    { id: '1', code: 'FIN-001', name: 'Presupuesto Anual 2024', version: '2.1', validityDate: { seconds: 1732057200 }, url: '#', path: '', modifiedAt: null, size: 0 },
+    { id: '2', code: 'RH-015', name: 'Política de Teletrabajo', version: '1.3', validityDate: { seconds: 1729388400 }, url: '#', path: '', modifiedAt: null, size: 0 },
+    { id: '3', code: 'CAL-007', name: 'Manual de Calidad', version: '4.0', validityDate: { seconds: 1714518000 }, url: '', path: '', modifiedAt: null, size: 0 },
+];
+
 
 const FolderTree = ({
   folders,
@@ -211,52 +220,44 @@ export default function RepoEmbed({
     );
   }, [firestore, selectedFolder]);
 
-  const { data: filesData, isLoading: isLoadingFiles } = useCollection(filesQuery);
-  const files = filesData as File[] | null;
+  // Using mock data for now
+  const files = mockFiles;
+  const isLoadingFiles = false;
 
 
   const folderStructure = useMemo(() => {
     if (!allFolders) return [];
-
+    
     const folderMap = new Map<string, Folder>();
-    
-    // First pass: create a map of all folders, ensuring each has a 'children' array.
     allFolders.forEach((doc: any) => {
-        if (!folderMap.has(doc.id)) {
-            folderMap.set(doc.id, { ...doc, children: [] });
-        }
+      folderMap.set(doc.id, { ...doc, children: [] });
     });
-    
-    // Second pass: build the tree structure.
+
+    const rootFolders: Folder[] = [];
     folderMap.forEach(folder => {
         if (folder.parentId && folderMap.has(folder.parentId)) {
             folderMap.get(folder.parentId)!.children.push(folder);
+        } else {
+            rootFolders.push(folder);
         }
     });
 
-    // Filter for root-level folders (those without a parent in the current map).
-    const rootFolders = Array.from(folderMap.values()).filter(f => !f.parentId);
-    
-    // Sort children alphabetically at every level.
     const sortRecursive = (folders: Folder[]) => {
-        if (!folders) return; // Guard clause
-        folders.sort((a, b) => a.name.localeCompare(b.name));
-        folders.forEach(f => {
-            // The check f.children is now safe because we initialized it for all folders.
-            if (f.children && f.children.length > 0) {
-                sortRecursive(f.children);
-            }
-        });
-    }
+      folders.sort((a, b) => a.name.localeCompare(b.name));
+      folders.forEach(f => {
+        if (f.children && f.children.length > 0) {
+          sortRecursive(f.children);
+        }
+      });
+    };
+
     sortRecursive(rootFolders);
-    
     return rootFolders;
 
   }, [allFolders]);
 
   useEffect(() => {
      if (selectedFolder && !allFolders?.find(f => f.id === selectedFolder.id)) {
-        // If the selected folder was deleted, select its parent or null
         const parentId = selectedFolder.parentId;
         if (parentId) {
             const parentFolder = allFolders?.find(f => f.id === parentId) as Folder | null;
@@ -328,11 +329,6 @@ export default function RepoEmbed({
     }
 
     try {
-        // await deleteDoc(doc(firestore, 'files', fileToDelete.id));
-
-        // const fileRef = ref(storage, fileToDelete.path);
-        // await deleteObject(fileRef);
-        
         toast({
             title: "Archivo Eliminado",
             description: `Se eliminó "${fileToDelete.name}".`
@@ -349,9 +345,24 @@ export default function RepoEmbed({
   };
 
 
-  const handleFileDownload = (file: File) => {
-    window.open(file.url, '_blank');
-  };
+  const ViewFileButton = ({ url }: { url: string }) => {
+    if (!url || url === '#') {
+        return (
+            <Button variant="ghost" size="icon" disabled title="Ver Documento">
+                <FileText className="h-4 w-4" />
+                <span className="sr-only">Ver Documento</span>
+            </Button>
+        )
+    }
+    return (
+        <Button asChild variant="ghost" size="icon" title="Ver Documento">
+            <a href={url} target="_blank" rel="noopener noreferrer">
+                <FileText className="h-4 w-4" />
+                <span className="sr-only">Ver Documento</span>
+            </a>
+        </Button>
+    )
+  }
 
   return (
     <>
@@ -367,7 +378,7 @@ export default function RepoEmbed({
                     <CreateFolderForm
                         isOpen={isAddingFolder}
                         onOpenChange={setIsAddingFolder}
-                        parentId={null} 
+                        parentId={selectedFolder?.id || null} 
                         scope={{ areaId, procesoId, subprocesoId }}
                     >
                         <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -436,67 +447,50 @@ export default function RepoEmbed({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead>Última modificación</TableHead>
-                  <TableHead>Tamaño</TableHead>
+                  <TableHead>Código</TableHead>
+                  <TableHead>Nombre del documento</TableHead>
+                  <TableHead>Versión</TableHead>
+                  <TableHead>Vigencia</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoadingFiles ? (
                     <TableRow>
-                        <TableCell colSpan={4} className="h-24 text-center">
+                        <TableCell colSpan={5} className="h-24 text-center">
                             <div className="flex justify-center items-center gap-2 text-muted-foreground">
                                 <Loader2 className="h-4 w-4 animate-spin" />
-                                <span>Cargando archivos...</span>
+                                <span>Cargando documentos...</span>
                             </div>
                         </TableCell>
                     </TableRow>
                 ) : files && files.length > 0 ? (
                   files.map((file: File) => (
                     <TableRow key={file.id}>
-                      <TableCell className="font-medium flex items-center gap-2">
-                        <FileIcon className="h-5 w-5 text-gray-400" />
-                        <a
-                          href={file.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:underline cursor-pointer"
-                        >
-                          {file.name}
-                        </a>
-
-                      </TableCell>
-                      <TableCell>{file.modifiedAt ? new Date(file.modifiedAt.seconds * 1000).toLocaleDateString() : 'N/A'}</TableCell>
-                      <TableCell>{(file.size / (1024)).toFixed(2)} KB</TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleFileDownload(file)}
-                          title="Descargar"
-                        >
-                          <Download className="h-4 w-4" />
-                          <span className="sr-only">Descargar</span>
-                        </Button>
-                        {isAdmin && (
-                            <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleFileDelete(file)}
-                            title="Eliminar"
-                            >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                            <span className="sr-only">Eliminar</span>
-                            </Button>
-                        )}
+                        <TableCell className="font-mono text-xs">{file.code}</TableCell>
+                        <TableCell className="font-medium">{file.name}</TableCell>
+                        <TableCell className="text-center">{file.version}</TableCell>
+                        <TableCell>{file.validityDate ? new Date(file.validityDate.seconds * 1000).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric'}) : 'N/A'}</TableCell>
+                        <TableCell className="text-right">
+                             <ViewFileButton url={file.url} />
+                             {isAdmin && (
+                                <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleFileDelete(file)}
+                                title="Eliminar"
+                                >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                                <span className="sr-only">Eliminar</span>
+                                </Button>
+                            )}
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
                     <TableCell
-                      colSpan={4}
+                      colSpan={5}
                       className="h-24 text-center text-muted-foreground"
                     >
                        {selectedFolder ? "Esta carpeta está vacía. Use ‘Subir Archivo’ para agregar documentos." : "Seleccione una carpeta para ver sus archivos."}
