@@ -121,72 +121,70 @@ export function UploadFileForm({
 
   const onSubmit = async (data: UploadFormValues) => {
     if (!folderId || !scope.areaId || !storage || !firestore) {
-        toast({
-            variant: "destructive",
-            title: 'Error de Configuración',
-            description: 'Falta información de la carpeta, área o conexión para subir el archivo.',
-        });
-        return;
+      toast({
+        variant: 'destructive',
+        title: 'Error de Configuración',
+        description: 'Falta información de la carpeta, área o conexión para subir el archivo.',
+      });
+      return;
     }
-    
+
     setIsSubmitting(true);
-    console.log("Paso 1: Iniciando subida de archivo...");
-    
+    console.log('Paso 1: Iniciando subida de archivo...');
+
     try {
-        const file = data.file[0] as File;
-        
-        const pathParts = ['documentos', scope.areaId];
-        if (scope.procesoId) pathParts.push(scope.procesoId);
-        if (scope.subprocesoId) pathParts.push(scope.subprocesoId);
-        pathParts.push(folderId);
-        pathParts.push(file.name);
-        const storagePath = pathParts.join('/');
-        
-        const fileStorageRef = ref(storage, storagePath);
+      const file = data.file[0] as File;
 
-        const uploadResult = await uploadBytes(fileStorageRef, file);
-        const downloadURL = await getDownloadURL(uploadResult.ref);
-        
-        console.log("Paso 2: Archivo subido. URL obtenida:", downloadURL);
+      const pathParts = ['documentos', scope.areaId];
+      if (scope.procesoId) pathParts.push(scope.procesoId);
+      if (scope.subprocesoId) pathParts.push(scope.subprocesoId);
+      pathParts.push(folderId);
+      pathParts.push(file.name);
+      const storagePath = pathParts.join('/');
 
+      const fileStorageRef = ref(storage, storagePath);
 
-        const docData = {
-          code: data.code,
-          name: data.name,
-          version: data.version,
-          validityDate: data.validityDate,
-          folderId: folderId,
-          areaId: scope.areaId,
-          procesoId: scope.procesoId || null,
-          subprocesoId: scope.subprocesoId || null,
-          url: downloadURL,
-          path: storagePath,
-          size: file.size,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        };
+      const uploadResult = await uploadBytes(fileStorageRef, file);
+      const downloadURL = await getDownloadURL(uploadResult.ref);
 
-        await addDoc(collection(firestore, 'documents'), docData);
-        
-        console.log("Paso 3: Documento guardado en Firestore.");
+      console.log('Paso 2: Archivo subido. URL obtenida:', downloadURL);
 
-        toast({
-          title: '¡Éxito!',
-          description: `El archivo "${file.name}" se ha subido y guardado correctamente.`,
-        });
+      const docData = {
+        code: data.code,
+        name: data.name,
+        version: data.version,
+        validityDate: data.validityDate,
+        folderId: folderId,
+        areaId: scope.areaId,
+        procesoId: scope.procesoId || null,
+        subprocesoId: scope.subprocesoId || null,
+        url: downloadURL,
+        path: storagePath,
+        size: file.size,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
 
-        onOpenChange(false);
+      await addDoc(collection(firestore, 'documents'), docData);
 
-    } catch(error: any) {
-        console.error("Error detallado al subir archivo:", error);
-        toast({
-            variant: "destructive",
-            title: 'Error al Subir',
-            description: `No se pudo subir el archivo: ${error.message}`,
-        });
+      console.log('Paso 3: Documento guardado en Firestore.');
+
+      toast({
+        title: '¡Éxito!',
+        description: `El archivo "${file.name}" se ha subido y guardado correctamente.`,
+      });
+
+      onOpenChange(false);
+    } catch (error: any) {
+      console.error('Error detallado al subir archivo:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error al Subir',
+        description: `No se pudo subir el archivo: ${error.message}`,
+      });
     } finally {
-        setIsSubmitting(false);
-        console.log("Paso 4: Proceso finalizado. Estado de carga reseteado.");
+      setIsSubmitting(false);
+      console.log('Paso 4: Proceso finalizado. Estado de carga reseteado.');
     }
   };
 
@@ -270,7 +268,7 @@ export function UploadFileForm({
           </div>
           
           <div className="grid gap-2">
-            <Label htmlFor="file-upload">Archivo (PDF, Word, Excel, JPG, PNG)</Label>
+            <Label htmlFor="file-upload-button">Archivo (PDF, Word, Excel, JPG, PNG)</Label>
             <div className="flex items-center gap-4">
                 <Button 
                     type="button" 
@@ -284,7 +282,7 @@ export function UploadFileForm({
                     {fileName || 'No hay archivo seleccionado'}
                 </span>
                 <Input 
-                    id="file-upload" 
+                    id="file-upload-button" 
                     type="file" 
                     accept={ACCEPTED_FILE_TYPES.join(',')}
                     className="hidden"
