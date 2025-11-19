@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef } from 'react';
@@ -16,7 +17,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Calendar } from '@/components/ui/calendar';
 import {
   Popover,
   PopoverContent,
@@ -27,6 +27,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { CustomCalendar } from './CustomCalendar';
 
 const formSchema = z.object({
   code: z.string().min(1, 'El código es requerido.'),
@@ -72,6 +73,7 @@ export function UploadFileForm({
     handleSubmit,
     control,
     watch,
+    setValue,
     formState: { errors },
   } = form;
   
@@ -135,27 +137,24 @@ export function UploadFileForm({
                         variant={'outline'}
                         className={cn(
                         'w-full justify-start text-left font-normal',
-                        !form.watch('validityDate') && 'text-muted-foreground'
+                        !watch('validityDate') && 'text-muted-foreground'
                         )}
                     >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {form.watch('validityDate') ? (
-                          format(form.watch('validityDate'), 'PPP', { locale: es })
+                        {watch('validityDate') ? (
+                          format(watch('validityDate'), 'PPP', { locale: es })
                         ) : (
                           <span>Elija una fecha</span>
                         )}
                     </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0">
-                    <Calendar
+                    <CustomCalendar
                         mode="single"
-                        selected={form.watch('validityDate')}
-                        onSelect={(date) => form.setValue('validityDate', date as Date, { shouldValidate: true })}
+                        selected={watch('validityDate')}
+                        onSelect={(date) => setValue('validityDate', date as Date, { shouldValidate: true })}
                         initialFocus
                         locale={es}
-                        captionLayout="dropdown-buttons"
-                        fromYear={new Date().getFullYear() - 10}
-                        toYear={new Date().getFullYear() + 10}
                     />
                     </PopoverContent>
                 </Popover>
@@ -178,7 +177,7 @@ export function UploadFileForm({
                     {fileName || 'No hay archivo seleccionado'}
                 </span>
                 <Input 
-                    id="file" 
+                    id="file-upload" 
                     type="file" 
                     accept=".pdf" 
                     {...register('file')}
