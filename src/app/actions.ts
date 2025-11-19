@@ -2,7 +2,7 @@
 'use server';
 
 import { z } from 'zod';
-import { collection, addDoc, serverTimestamp, writeBatch, doc, getDocs, deleteDoc, setDoc, updateDoc, query, where, getDoc } from 'firebase/firestore';
+import { FieldValue } from 'firebase-admin/firestore';
 import { db, storage } from '@/firebase/server-config';
 import { revalidatePath } from 'next/cache';
 import { SEED_AREAS } from '@/data/seed-map';
@@ -50,7 +50,7 @@ export async function createEntityAction(
         const entityData: any = {
             nombre: name,
             slug: slugify(name),
-            createdAt: serverTimestamp(),
+            createdAt: FieldValue.serverTimestamp(),
         };
         
         let revalidationPath = '/inicio/documentos';
@@ -82,7 +82,7 @@ export async function createEntityAction(
             objetivo,
             alcance,
             responsable,
-            fechaActualizacion: serverTimestamp(),
+            fechaActualizacion: FieldValue.serverTimestamp(),
         });
         
         await batch.commit();
@@ -244,7 +244,7 @@ export async function updateEntityAction(
                caracterizacionId = `subprocess-${entityId}`;
             }
             
-            const caracterizacionData: any = { fechaActualizacion: serverTimestamp() };
+            const caracterizacionData: any = { fechaActualizacion: FieldValue.serverTimestamp() };
             if (objetivo !== undefined) caracterizacionData.objetivo = objetivo;
             if (alcance !== undefined) caracterizacionData.alcance = alcance;
             if (responsable !== undefined) caracterizacionData.responsable = responsable;
@@ -289,7 +289,7 @@ export async function seedProcessMapAction(): Promise<{ message: string; error?:
                 nombre: area.titulo, 
                 slug: slugify(area.titulo),
                 id: newAreaRef.id,
-                createdAt: serverTimestamp() 
+                createdAt: FieldValue.serverTimestamp() 
             });
 
             for (const proceso of area.procesos) {
@@ -298,7 +298,7 @@ export async function seedProcessMapAction(): Promise<{ message: string; error?:
                     nombre: proceso.nombre,
                     slug: slugify(proceso.nombre),
                     id: newProcesoRef.id,
-                    createdAt: serverTimestamp() 
+                    createdAt: FieldValue.serverTimestamp() 
                 });
 
                 for (const subproceso of proceso.subprocesos) {
@@ -307,7 +307,7 @@ export async function seedProcessMapAction(): Promise<{ message: string; error?:
                         nombre: subproceso.nombre,
                         slug: slugify(subproceso.nombre),
                         id: newSubprocesoRef.id,
-                        createdAt: serverTimestamp() 
+                        createdAt: FieldValue.serverTimestamp() 
                     });
                 }
             }
@@ -383,8 +383,8 @@ export async function createFolderAction(prevState: any, formData: FormData): Pr
     try {
         const docData = {
             ...validatedFields.data,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
+            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
         };
 
         const newDocRef = await db.collection('folders').add(docData);
@@ -466,7 +466,7 @@ export async function renameFolderAction(prevState: any, formData: FormData): Pr
         
         await folderRef.update({
             name: newName,
-            updatedAt: serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
         });
         
         revalidatePath('/inicio/documentos');
@@ -551,8 +551,8 @@ export async function uploadFileAction(
       url: url,
       size: validFile.size,
       validityDate: docData.validityDate ? new Date(docData.validityDate) : null,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     };
 
     await db.collection('documents').add(dataToSave);
