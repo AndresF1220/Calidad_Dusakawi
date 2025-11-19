@@ -2,10 +2,9 @@
 'use client';
 
 import { z } from 'zod';
-import { revalidatePath } from 'next/cache';
 import { db, storage } from '@/firebase/client-config';
 import { collection, addDoc, doc, updateDoc, writeBatch, query, where, getDocs, deleteDoc, serverTimestamp } from 'firebase/firestore';
-import { ref, deleteObject } from 'firebase/storage';
+import { ref, deleteObject, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { slugify } from '@/lib/slug';
 import { SEED_AREAS } from '@/data/seed-map';
 
@@ -57,7 +56,6 @@ export async function createEntityAction(
             createdAt: serverTimestamp(),
         };
         
-        let revalidationPath = '/inicio/documentos';
         const newEntityRef = doc(collection(db, 'temp')); // Generate ID upfront
         entityData.id = newEntityRef.id;
 
@@ -70,11 +68,9 @@ export async function createEntityAction(
         } else if (type === 'process' && parentId) {
             finalEntityRef = doc(db, 'areas', parentId, 'procesos', newEntityRef.id);
             caracterizacionId = `process-${newEntityRef.id}`;
-            revalidationPath = `/inicio/documentos/area/${parentId}`;
         } else if (type === 'subprocess' && parentId && grandParentId) {
             finalEntityRef = doc(db, 'areas', grandParentId, 'procesos', parentId, 'subprocesos', newEntityRef.id);
             caracterizacionId = `subprocess-${newEntityRef.id}`;
-            revalidationPath = `/inicio/documentos/area/${grandParentId}/proceso/${parentId}`;
         } else {
             return { message: 'Error', error: 'Parámetros inválidos para la creación.' };
         }
@@ -91,7 +87,6 @@ export async function createEntityAction(
         
         await batch.commit();
         
-        revalidatePath(revalidationPath);
         return { message: `Creado correctamente.` };
 
     } catch (e: any) {
@@ -114,7 +109,6 @@ export async function deleteEntityAction(
 
   try {
     const batch = writeBatch(db);
-    let revalidationPath = '/inicio/documentos';
 
     switch (entityType) {
         case 'area':
@@ -139,7 +133,6 @@ export async function deleteEntityAction(
             const caracterizacionAreaRef = doc(db, 'caracterizaciones', `area-${entityId}`);
             batch.delete(caracterizacionAreaRef);
             batch.delete(areaRef);
-            revalidationPath = '/inicio/documentos';
             break;
 
         case 'process':
@@ -157,7 +150,6 @@ export async function deleteEntityAction(
             const caracterizacionProcRef = doc(db, 'caracterizaciones', `process-${entityId}`);
             batch.delete(caracterizacionProcRef);
             batch.delete(processRef);
-            revalidationPath = `/inicio/documentos/area/${parentId}`;
             break;
 
         case 'subprocess':
@@ -167,7 +159,6 @@ export async function deleteEntityAction(
             const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${entityId}`);
             batch.delete(caracterizacionSubRef);
             batch.delete(subProcessRef);
-            revalidationPath = `/inicio/documentos/area/${grandParentId}/proceso/${parentId}`;
             break;
         
         default:
@@ -175,7 +166,6 @@ export async function deleteEntityAction(
     }
 
     await batch.commit();
-    revalidatePath(revalidationPath);
     return { message: 'Elemento eliminado correctamente.' };
 
   } catch (e: any) {
@@ -268,13 +258,6 @@ export async function updateEntityAction(
 
         await batch.commit();
         
-        if (entityType === 'process') {
-          revalidatePath(`/inicio/documentos/area/${parentId}`);
-        } else if (entityType === 'subprocess') {
-            revalidatePath(`/inicio/documentos/area/${grandParentId}/proceso/${parentId}`);
-        }
-        revalidatePath(`/inicio/documentos`);
-        
         return { message: `Cambios guardados correctamente.` };
 
     } catch (e: any) {
@@ -302,7 +285,6 @@ export async function renameFolderAction(
   try {
     const folderRef = doc(db, 'folders', folderId);
     await updateDoc(folderRef, { name: newName });
-    revalidatePath('/inicio/documentos', 'layout'); // Revalidate the whole documents layout
     return { message: 'Carpeta renombrada con éxito.' };
   } catch (e: any) {
     console.error("Error renaming folder:", e);
@@ -350,7 +332,6 @@ export async function seedProcessMapAction(): Promise<{ message: string; error?:
         }
 
         await batch.commit();
-        revalidatePath('/inicio/documentos');
         return { message: 'Mapa de procesos restaurado con éxito.' };
     } catch (e: any) {
         console.error("Error seeding process map:", e);
@@ -413,13 +394,98 @@ export async function createFolderAction(prevState: any, formData: FormData): Pr
       updatedAt: serverTimestamp(),
     };
     await addDoc(collection(db, 'folders'), docData);
-    revalidatePath('/inicio/documentos', 'layout');
     return { message: 'Carpeta creada con éxito.' };
   } catch (e: any) {
     console.error("Error creating folder:", e);
     return { message: 'Error', error: `No se pudo crear la carpeta: ${e.message}` };
   }
 }
-    
 
+export async function deleteFolderAction(folderId: string): Promise<{ success: boolean, error?: string }> {
+  if (!db || !storage) {
+    return { success: false, error: 'Firebase no está inicializado.' };
+  }
+
+  try {
+    const batch = writeBatch(db);
+
+    const filesQuery = query(collection(db, 'documents'), where('folderId', '==', folderId));
+    const filesSnap = await getDocs(filesQuery);
+    
+    for (const fileDoc of filesSnap.docs) {
+      const fileData = fileDoc.data();
+      if (fileData.path) {
+        const fileStorageRef = ref(storage, fileData.path);
+        try {
+          await deleteObject(fileStorageRef);
+        } catch (storageError: any) {
+          if (storageError.code !== 'storage/object-not-found') {
+            throw storageError; 
+          }
+        }
+      }
+      batch.delete(fileDoc.ref);
+    }
+    
+    const folderRef = doc(db, 'folders', folderId);
+    batch.delete(folderRef);
+    
+    await batch.commit();
+
+    return { success: true };
+  } catch (e: any) {
+    console.error("Error deleting folder and its contents:", e);
+    return { success: false, error: e.message };
+  }
+}
+
+export async function uploadFileAndCreateDocument(formData: FormData): Promise<{ success: boolean; error?: string }> {
+  if (!db || !storage) {
+    return { success: false, error: 'Firebase no está inicializado.' };
+  }
+
+  const selectedFile = formData.get('file') as File;
+  const folderId = formData.get('folderId') as string;
+  const areaId = formData.get('areaId') as string;
+  const procesoId = formData.get('procesoId') as string | null;
+  const subprocesoId = formData.get('subprocesoId') as string | null;
+
+  if (!selectedFile || !folderId || !areaId) {
+      return { success: false, error: "Faltan datos requeridos (archivo, folderId, areaId)." };
+  }
+
+  try {
+    const pathParts = ['documentos', areaId, procesoId, subprocesoId, folderId, selectedFile.name].filter(Boolean);
+    const fullPath = pathParts.join('/');
+    const fileStorageRef = ref(storage, fullPath);
+
+    const uploadResult = await uploadBytes(fileStorageRef, selectedFile);
+    const url = await getDownloadURL(uploadResult.ref);
+
+    const validityDateStr = formData.get('validityDate') as string;
+
+    const docData = {
+      code: formData.get('code') as string,
+      name: formData.get('name') as string,
+      version: formData.get('version') as string,
+      validityDate: validityDateStr ? new Date(validityDateStr) : null,
+      folderId: folderId,
+      areaId: areaId,
+      procesoId: procesoId || null,
+      subprocesoId: subprocesoId || null,
+      path: fullPath,
+      url: url,
+      size: selectedFile.size,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    await addDoc(collection(db, 'documents'), docData);
+
+    return { success: true };
+  } catch (e: any) {
+    console.error('Error uploading file and creating document:', e);
+    return { success: false, error: e.message };
+  }
+}
     
