@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect, useRef, useTransition } from 'react';
+import { useState, useMemo, useEffect, useTransition } from 'react';
 import { useFirestore, useCollection, useStorage, useMemoFirebase } from '@/firebase';
 import { useIsAdmin } from '@/lib/authMock';
 import {
@@ -30,17 +30,13 @@ import {
   Upload,
   Folder as FolderIcon,
   FileText,
-  ChevronRight,
-  ChevronDown,
   Trash2,
   Loader2,
-  AlertTriangle,
   FolderPlus,
   MoreVertical,
-  Circle,
   Edit,
+  Circle,
 } from 'lucide-react';
-import { Progress } from '../ui/progress';
 import { CreateFolderForm } from './CreateFolderForm';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
@@ -71,7 +67,6 @@ type File = {
 type Folder = {
   id: string;
   name: string;
-  children: Folder[];
   parentId: string | null;
   createdAt: any; // Keep timestamp for sorting
 };
@@ -82,53 +77,30 @@ const mockFiles: File[] = [
     { id: '3', code: 'CAL-007', name: 'Manual de Calidad', version: '4.0', validityDate: { seconds: 1714518000 }, url: '', path: '', modifiedAt: null, size: 0 },
 ];
 
-
-const FolderTree = ({
+const FolderList = ({
   folders,
-  level = 0,
   onSelectFolder,
   selectedFolder,
-  openFolders,
-  onToggleFolder,
   onAction,
 }: {
   folders: Folder[];
-  level?: number;
   onSelectFolder: (folder: Folder) => void;
   selectedFolder: Folder | null;
-  openFolders: Record<string, boolean>;
-  onToggleFolder: (id: string) => void;
   onAction: (action: 'rename' | 'delete', folder: Folder, event: React.MouseEvent) => void;
 }) => {
   const isAdmin = useIsAdmin();
   if (!folders || folders.length === 0) return null;
 
   return (
-    <div style={{ marginLeft: level > 0 ? '1rem' : '0' }}>
+    <div>
       {folders.map(folder => (
         <div key={folder.id} className="group/folder-item">
           <div
-            className={`flex items-center gap-2 cursor-pointer py-1 rounded-md px-2 ${
+            className={`flex items-center gap-2 cursor-pointer py-1.5 rounded-md px-2 ${
               selectedFolder?.id === folder.id ? 'bg-muted' : 'hover:bg-muted/50'
             }`}
             onClick={() => onSelectFolder(folder)}
           >
-            {folder.children.length > 0 ? (
-              <span
-                onClick={e => {
-                  e.stopPropagation();
-                  onToggleFolder(folder.id);
-                }}
-                className="p-0.5 rounded-sm hover:bg-muted"
-              >
-                {openFolders[folder.id] ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronRight className="h-4 w-4" />
-                )}
-              </span>
-            ) : <div className="w-5"></div>}
-            
             <div className="relative">
                  <FolderIcon className="h-5 w-5 text-amber-500" />
                  {selectedFolder?.id === folder.id && (
@@ -159,22 +131,12 @@ const FolderTree = ({
                 </DropdownMenu>
             )}
           </div>
-          {openFolders[folder.id] && folder.children.length > 0 && (
-            <FolderTree
-              folders={folder.children}
-              level={level + 1}
-              onSelectFolder={onSelectFolder}
-              selectedFolder={selectedFolder}
-              openFolders={openFolders}
-              onToggleFolder={onToggleFolder}
-              onAction={onAction}
-            />
-          )}
         </div>
       ))}
     </div>
   );
 };
+
 
 export default function RepoEmbed({
   areaId,
@@ -193,8 +155,6 @@ export default function RepoEmbed({
   const [folderToEdit, setFolderToEdit] = useState<Folder | null>(null);
 
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
-  const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({});
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   
   const [isDeletePending, startDeleteTransition] = useTransition();
 
@@ -210,7 +170,7 @@ export default function RepoEmbed({
     );
   }, [firestore, areaId, procesoId, subprocesoId]);
 
-  const { data: allFolders, isLoading: isLoadingFolders } = useCollection(foldersQuery);
+  const { data: allFolders, isLoading: isLoadingFolders } = useCollection<Folder>(foldersQuery);
 
   const filesQuery = useMemoFirebase(() => {
     if (!firestore || !selectedFolder) return null;
@@ -225,46 +185,16 @@ export default function RepoEmbed({
   const isLoadingFiles = false;
 
 
-  const folderStructure = useMemo(() => {
+  const rootFolders = useMemo(() => {
     if (!allFolders) return [];
-    
-    const folderMap = new Map<string, Folder>();
-    allFolders.forEach((doc: any) => {
-      folderMap.set(doc.id, { ...doc, children: [] });
-    });
-
-    const rootFolders: Folder[] = [];
-    folderMap.forEach(folder => {
-        if (folder.parentId && folderMap.has(folder.parentId)) {
-            folderMap.get(folder.parentId)!.children.push(folder);
-        } else {
-            rootFolders.push(folder);
-        }
-    });
-
-    const sortRecursive = (folders: Folder[]) => {
-      folders.sort((a, b) => a.name.localeCompare(b.name));
-      folders.forEach(f => {
-        if (f.children && f.children.length > 0) {
-          sortRecursive(f.children);
-        }
-      });
-    };
-
-    sortRecursive(rootFolders);
-    return rootFolders;
-
+    return allFolders
+      .filter(folder => folder.parentId === null)
+      .sort((a, b) => a.name.localeCompare(b.name));
   }, [allFolders]);
 
   useEffect(() => {
      if (selectedFolder && !allFolders?.find(f => f.id === selectedFolder.id)) {
-        const parentId = selectedFolder.parentId;
-        if (parentId) {
-            const parentFolder = allFolders?.find(f => f.id === parentId) as Folder | null;
-            setSelectedFolder(parentFolder);
-        } else {
-            setSelectedFolder(null);
-        }
+        setSelectedFolder(null);
      }
   }, [allFolders, selectedFolder]);
 
@@ -276,14 +206,6 @@ export default function RepoEmbed({
     if (action === 'rename') {
         setIsRenamingFolder(true);
     } else if (action === 'delete') {
-        if (folder.children.length > 0) {
-            toast({
-                variant: "destructive",
-                title: "La carpeta no está vacía",
-                description: "No se puede eliminar una carpeta que contiene otras carpetas.",
-            });
-            return;
-        }
         setIsDeletingFolder(true);
     }
   }
@@ -314,11 +236,6 @@ export default function RepoEmbed({
       setIsDeletingFolder(false);
       setFolderToEdit(null);
     });
-  };
-
-
-  const handleToggleFolder = (id: string) => {
-    setOpenFolders(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
   const handleFileDelete = async (fileToDelete: File) => {
@@ -378,7 +295,7 @@ export default function RepoEmbed({
                     <CreateFolderForm
                         isOpen={isAddingFolder}
                         onOpenChange={setIsAddingFolder}
-                        parentId={selectedFolder?.id || null} 
+                        parentId={null} 
                         scope={{ areaId, procesoId, subprocesoId }}
                     >
                         <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -395,13 +312,11 @@ export default function RepoEmbed({
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span>Cargando carpetas...</span>
                 </div>
-            ) : folderStructure.length > 0 ? (
-              <FolderTree
-                folders={folderStructure}
+            ) : rootFolders.length > 0 ? (
+              <FolderList
+                folders={rootFolders}
                 onSelectFolder={setSelectedFolder}
                 selectedFolder={selectedFolder}
-                openFolders={openFolders}
-                onToggleFolder={handleToggleFolder}
                 onAction={handleFolderAction}
               />
             ) : (
@@ -438,12 +353,6 @@ export default function RepoEmbed({
              )}
           </CardHeader>
           <CardContent>
-             {uploadProgress !== null && (
-                <div className="mb-4">
-                    <Progress value={uploadProgress} className="w-full" />
-                    <p className="text-sm text-center mt-1">{Math.round(uploadProgress)}%</p>
-                </div>
-            )}
             <Table>
               <TableHeader>
                 <TableRow>
