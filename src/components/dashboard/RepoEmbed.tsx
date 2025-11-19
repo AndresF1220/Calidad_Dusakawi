@@ -150,11 +150,11 @@ const FolderTree = ({
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                        <DropdownMenuItem onSelect={() => onAction('rename', folder)}>
+                        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); onAction('rename', folder); }}>
                             <Edit className="mr-2 h-4 w-4" />
                             <span>Renombrar</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => onAction('delete', folder)} className="text-destructive">
+                        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); onAction('delete', folder); }} className="text-destructive">
                             <Trash2 className="mr-2 h-4 w-4" />
                             <span>Eliminar</span>
                         </DropdownMenuItem>
@@ -455,7 +455,7 @@ export default function RepoEmbed({
                         scope={{ areaId, procesoId, subprocesoId }}
                         disabled={!rootFolderId}
                     >
-                        <Button variant="ghost" size="icon" className="h-8 w-8" disabled={!rootFolderId}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
                             <FolderPlus className="h-4 w-4" />
                             <span className="sr-only">Crear Carpeta</span>
                         </Button>

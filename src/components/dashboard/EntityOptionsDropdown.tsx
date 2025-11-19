@@ -77,12 +77,12 @@ export function EntityOptionsDropdown({
   };
   
   const handleEditClick = (e: Event) => {
-    e.stopPropagation();
+    e.preventDefault();
     setIsEditing(true);
   }
   
   const handleDeleteClick = (e: Event) => {
-    e.stopPropagation();
+    e.preventDefault();
     setIsDeleting(true);
   }
 
