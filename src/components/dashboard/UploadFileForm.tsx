@@ -2,9 +2,12 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useStorage } from '@/firebase';
+
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -51,7 +54,7 @@ const formSchema = z.object({
     .refine((files) => files?.length == 1, 'El archivo es requerido.')
     .refine(
       (files) => ACCEPTED_FILE_TYPES.includes(files?.[0]?.type),
-      'Formato de archivo no válido. Solo se aceptan PDF, Word, Excel o imágenes.'
+      'Formato no válido. Solo PDF, Word, Excel, JPG o PNG.'
     ),
 });
 
@@ -62,6 +65,12 @@ interface UploadFileFormProps {
   onOpenChange: (open: boolean) => void;
   children: React.ReactNode;
   disabled?: boolean;
+  folderId: string | null;
+  scope: {
+    areaId: string | null;
+    procesoId?: string | null;
+    subprocesoId?: string | null;
+  };
 }
 
 export function UploadFileForm({
@@ -69,12 +78,14 @@ export function UploadFileForm({
   onOpenChange,
   children,
   disabled = false,
+  folderId,
+  scope,
 }: UploadFileFormProps) {
   const { toast } = useToast();
+  const storage = useStorage();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   
-
   const form = useForm<UploadFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -95,7 +106,7 @@ export function UploadFileForm({
     formState: { errors },
   } = form;
   
-  const fileRef = register('file');
+  const { ref: fileInputRef, onChange: onFileChange, ...fileInputProps } = register('file');
   const selectedFile = watch('file');
   const fileName = selectedFile?.[0]?.name;
 
@@ -109,18 +120,58 @@ export function UploadFileForm({
 
 
   const onSubmit = async (data: UploadFormValues) => {
+    if (!folderId || !scope.areaId || !storage) {
+        toast({
+            variant: "destructive",
+            title: 'Error de Configuración',
+            description: 'Falta información de la carpeta o área para subir el archivo.',
+        });
+        return;
+    }
+    
     setIsSubmitting(true);
-    console.log('Form data submitted:', data);
+    
+    try {
+        const file = data.file[0] as File;
+        
+        // Construct the storage path
+        const pathParts = ['documentos', scope.areaId];
+        if (scope.procesoId) pathParts.push(scope.procesoId);
+        if (scope.subprocesoId) pathParts.push(scope.subprocesoId);
+        pathParts.push(folderId);
+        pathParts.push(file.name);
+        const storagePath = pathParts.join('/');
+        
+        const storageRef = ref(storage, storagePath);
 
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+        // Upload the file
+        const uploadResult = await uploadBytes(storageRef, file);
+        console.log('File uploaded successfully!', uploadResult);
 
-    toast({
-      title: 'Datos recibidos correctamente',
-      description: 'El formulario de subida de archivos funciona.',
-    });
+        // Get the download URL
+        const downloadURL = await getDownloadURL(uploadResult.ref);
+        console.log('File available at', downloadURL);
 
-    setIsSubmitting(false);
-    onOpenChange(false);
+        // Here you would typically save the document metadata and the URL to Firestore
+        // For now, we just show a success toast.
+        
+        toast({
+          title: '¡Documento Subido!',
+          description: `El archivo "${file.name}" se ha subido correctamente.`,
+        });
+
+        onOpenChange(false);
+
+    } catch(error: any) {
+        console.error("Error uploading file:", error);
+        toast({
+            variant: "destructive",
+            title: 'Error al Subir',
+            description: `No se pudo subir el archivo: ${error.message}`,
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
   const handleSelectDate = (date: Date | undefined) => {
@@ -210,7 +261,7 @@ export function UploadFileForm({
                     <Upload className="mr-2 h-4 w-4" />
                     Seleccionar archivo
                 </Button>
-                <span className="text-sm text-muted-foreground truncate">
+                 <span className="text-sm text-muted-foreground truncate">
                     {fileName || 'No hay archivo seleccionado'}
                 </span>
                 <Input 
@@ -218,7 +269,9 @@ export function UploadFileForm({
                     type="file" 
                     accept={ACCEPTED_FILE_TYPES.join(',')}
                     className="hidden"
-                    {...fileRef}
+                    ref={fileInputRef}
+                    onChange={(e) => onFileChange(e)}
+                    {...fileInputProps}
                 />
             </div>
             {errors.file && <p className="text-xs text-destructive">{errors.file.message as string}</p>}

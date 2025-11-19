@@ -187,10 +187,10 @@ export default function RepoEmbed({
 
   const rootFolders = useMemo(() => {
     if (!allFolders) return [];
-    return allFolders
-      .filter(folder => folder.parentId === null)
-      .sort((a, b) => a.name.localeCompare(b.name));
+    // A flat list of folders since we removed subfolder logic.
+    return allFolders.sort((a, b) => a.name.localeCompare(b.name));
   }, [allFolders]);
+
 
   useEffect(() => {
      if (selectedFolder && !allFolders?.find(f => f.id === selectedFolder.id)) {
@@ -344,6 +344,8 @@ export default function RepoEmbed({
                     isOpen={isUploading} 
                     onOpenChange={setIsUploading}
                     disabled={!selectedFolder}
+                    folderId={selectedFolder?.id || null}
+                    scope={{ areaId, procesoId, subprocesoId }}
                  >
                     <Button variant="outline" disabled={!selectedFolder}>
                         <Upload className="mr-2 h-4 w-4" />
