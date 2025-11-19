@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   DropdownMenu,
@@ -25,7 +25,9 @@ import { Button } from '@/components/ui/button';
 import { MoreVertical, Edit, Trash2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { deleteEntityAction } from '@/app/actions';
-import { RenameEntityForm } from './RenameEntityForm';
+import { EditEntityForm } from './EditEntityForm';
+import { useCaracterizacion } from '@/hooks/use-areas-data';
+
 
 interface EntityOptionsDropdownProps {
   entityId: string;
@@ -49,6 +51,17 @@ export function EntityOptionsDropdown({
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const router = useRouter();
+
+  const caracterizacionId = useMemo(() => {
+    switch (entityType) {
+      case 'area': return `area-${entityId}`;
+      case 'process': return `process-${entityId}`;
+      case 'subprocess': return `subprocess-${entityId}`;
+      default: return null;
+    }
+  }, [entityType, entityId]);
+
+  const { caracterizacion, isLoading: isLoadingCaracterizacion } = useCaracterizacion(caracterizacionId);
   
   const getDeleteMessage = () => {
     switch (entityType) {
@@ -119,7 +132,7 @@ export function EntityOptionsDropdown({
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={handleEditClick}>
             <Edit className="mr-2 h-4 w-4" />
-            <span>Editar Nombre</span>
+            <span>Editar</span>
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={handleDeleteClick} className="text-destructive focus:text-destructive focus:bg-destructive/10">
             <Trash2 className="mr-2 h-4 w-4" />
@@ -128,15 +141,23 @@ export function EntityOptionsDropdown({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <RenameEntityForm
+      <EditEntityForm
         entityType={entityType}
         entityId={entityId}
         parentId={parentId}
         grandParentId={grandParentId}
         isOpen={isEditing}
         onOpenChange={setIsEditing}
-        initialName={entityName}
-      />
+        initialData={{
+          name: entityName,
+          objetivo: caracterizacion?.objetivo || '',
+          alcance: caracterizacion?.alcance || '',
+          responsable: caracterizacion?.responsable || '',
+        }}
+      >
+        {/* The trigger is inside the DropdownMenuItem */}
+        <div />
+      </EditEntityForm>
       
       <AlertDialog open={isDeleting} onOpenChange={setIsDeleting}>
         <AlertDialogContent>

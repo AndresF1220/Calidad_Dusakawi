@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect, useCallback, useRef, useActionState } from 'react';
+import { useState, useMemo, useEffect, useRef, useActionState, useTransition } from 'react';
 import { useFirestore, useCollection, useStorage, useMemoFirebase } from '@/firebase';
 import { useIsAdmin } from '@/lib/authMock';
 import {
@@ -99,8 +99,10 @@ const FolderTree = ({
   openFolders: Record<string, boolean>;
   onToggleFolder: (id: string) => void;
 }) => {
+  if (!folders || folders.length === 0) return null;
+
   return (
-    <div>
+    <div style={{ marginLeft: level > 0 ? '1rem' : '0' }}>
       {folders.map(folder => (
         <div key={folder.id}>
           <div
@@ -174,7 +176,7 @@ export default function RepoEmbed({
   const [key, setKey] = useState(0); // Used to force re-render
 
   const [deleteState, deleteAction] = useActionState(deleteFolderAction, { message: '', error: undefined });
-
+  const [isDeletePending, startDeleteTransition] = useTransition();
 
   const norm = (v:string|null|undefined) => v === "" || v === undefined ? null : v;
 
@@ -221,43 +223,28 @@ export default function RepoEmbed({
   const folderStructure = useMemo(() => {
     if (!allFolders) return [];
 
-    const rootFolders: Folder[] = [];
-    if(allFolders.filter(f => f.parentId === null).length > 1) {
-        setNeedsMigration(true);
-    } else {
-        setNeedsMigration(false);
-    }
-    
     const folderMap = new Map<string, Folder>();
+    const rootFolders: Folder[] = [];
     
-    // Deduplicate folders by name at the same level
-    const uniqueFolders = new Map<string, Folder>();
+    // First pass: create a map of all folders
     allFolders.forEach((doc: any) => {
-      const key = `${doc.parentId || 'root'}-${doc.name}`;
-      if (!uniqueFolders.has(key)) {
-        uniqueFolders.set(key, { ...doc, children: [] });
-      } else {
-        // Keep the oldest one if duplicated
-        const existing = uniqueFolders.get(key)!;
-        if (doc.createdAt?.seconds < existing.createdAt?.seconds) {
-           uniqueFolders.set(key, { ...doc, children: [] });
-        }
-      }
+      folderMap.set(doc.id, { ...doc, children: [] });
     });
-
-    uniqueFolders.forEach(folder => {
-      folderMap.set(folder.id, folder);
-    });
-
+    
+    // Second pass: build the tree structure
     folderMap.forEach(folder => {
       if (folder.parentId) {
         const parent = folderMap.get(folder.parentId);
-        if (parent) { // Only add if parent exists in the deduplicated map
+        if (parent) {
           parent.children.push(folder);
+        } else {
+            // This might be a top-level folder if its parent is the logical root
+            if(folder.parentId === rootFolderId) {
+                rootFolders.push(folder);
+            }
         }
-      } else {
-        rootFolders.push(folder);
-      }
+      } 
+      // Note: We don't add the logical root folder itself to the displayable list
     });
     
     // Sort children alphabetically
@@ -267,16 +254,17 @@ export default function RepoEmbed({
 
     return rootFolders;
 
-  }, [allFolders]);
+  }, [allFolders, rootFolderId]);
 
   useEffect(() => {
-     if (!selectedFolder && rootFolderId && folderStructure.length > 0) {
-        const root = folderStructure.find(f => f.id === rootFolderId);
-        if (root) {
-            setSelectedFolder(root);
-        }
+     // Auto-select first folder if nothing is selected and structure is available
+     if (!selectedFolder && folderStructure.length > 0) {
+        setSelectedFolder(folderStructure[0]);
+     } else if (!selectedFolder && rootFolderId && allFolders && allFolders.length <=1) {
+        // If there are no user-created folders, keep selection null
+        setSelectedFolder(null);
      }
-  }, [folderStructure, rootFolderId, selectedFolder]);
+  }, [folderStructure, rootFolderId, selectedFolder, allFolders]);
 
     useEffect(() => {
         if (deleteState.message && !deleteState.error) {
@@ -284,7 +272,16 @@ export default function RepoEmbed({
                 title: '¡Éxito!',
                 description: deleteState.message,
             });
-            setSelectedFolder(null); // Deselect folder
+            // If the deleted folder was selected, select its parent or null
+            if (selectedFolder && selectedFolder.id === (deleteState as any).deletedFolderId) {
+                const parentId = selectedFolder.parentId;
+                if (parentId) {
+                    const parentFolder = allFolders?.find(f => f.id === parentId) as Folder | null;
+                     setSelectedFolder(parentFolder);
+                } else {
+                     setSelectedFolder(null);
+                }
+            }
         }
         if (deleteState.error) {
             toast({
@@ -294,7 +291,7 @@ export default function RepoEmbed({
             });
         }
         setIsDeletingFolder(false);
-    }, [deleteState, toast]);
+    }, [deleteState, toast, selectedFolder, allFolders]);
 
   const handleRunMigration = async () => {
     if (!firestore) return;
@@ -323,15 +320,15 @@ export default function RepoEmbed({
         toast({
             variant: "destructive",
             title: "La carpeta no está vacía",
-            description: "No se puede eliminar una carpeta que contiene otras carpetas.",
+            description: "No se puede eliminar una carpeta que contiene otras carpetas. Primero debe eliminar las subcarpetas.",
         });
         return;
     }
-     if (selectedFolder.parentId === null) {
+     if (selectedFolder.parentId === null || selectedFolder.id === rootFolderId) {
         toast({
             variant: "destructive",
             title: "Acción no permitida",
-            description: "No se puede eliminar la carpeta raíz 'Documentación'.",
+            description: "No se puede eliminar la carpeta raíz.",
         });
         return;
     }
@@ -340,9 +337,11 @@ export default function RepoEmbed({
   
   const handleConfirmDelete = () => {
     if (!selectedFolder) return;
-    const formData = new FormData();
-    formData.append('folderId', selectedFolder.id);
-    deleteAction(formData);
+    startDeleteTransition(() => {
+      const formData = new FormData();
+      formData.append('folderId', selectedFolder.id);
+      deleteAction(formData);
+    });
   };
 
 
@@ -422,7 +421,7 @@ export default function RepoEmbed({
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <Card className="lg:col-span-1">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="font-headline text-lg">Carpetas</CardTitle>
+            <CardTitle className="font-headline text-lg">Documentos</CardTitle>
              {isAdmin && (
                 <div className="flex items-center gap-1">
                     <CreateFolderForm
@@ -477,7 +476,7 @@ export default function RepoEmbed({
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span>Cargando carpetas...</span>
                 </div>
-            ) : (
+            ) : folderStructure.length > 0 ? (
               <FolderTree
                 folders={folderStructure}
                 onSelectFolder={setSelectedFolder}
@@ -485,6 +484,10 @@ export default function RepoEmbed({
                 openFolders={openFolders}
                 onToggleFolder={handleToggleFolder}
               />
+            ) : (
+              <div className="text-center text-sm text-muted-foreground p-4">
+                  No hay carpetas. Cree una para comenzar.
+              </div>
             )}
           </CardContent>
         </Card>
@@ -619,13 +622,13 @@ export default function RepoEmbed({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeletePending}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
               className="bg-destructive hover:bg-destructive/90"
-              disabled={deleteState.error !== undefined && deleteState.error !== null}
+              disabled={isDeletePending}
             >
-             {deleteState.error ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Eliminar'}
+             {isDeletePending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Eliminar'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

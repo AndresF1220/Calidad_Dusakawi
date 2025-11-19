@@ -2,7 +2,7 @@
 'use server';
 
 import { z } from 'zod';
-import { collection, addDoc, serverTimestamp, writeBatch, doc, getDocs, deleteDoc, setDoc, updateDoc, query, where } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, writeBatch, doc, getDocs, deleteDoc, setDoc, updateDoc, query, where, getDoc } from 'firebase/firestore';
 import { db, storage } from '@/firebase/config';
 import { revalidatePath } from 'next/cache';
 import { SEED_AREAS } from '@/data/seed-map';
@@ -111,26 +111,13 @@ export async function deleteEntityAction(
   console.log('[DEL] args', { entityType, entityId, parentId, grandParentId });
   
   try {
-    // Validation based on type
-    switch (entityType) {
-        case 'area':
-            if (!entityId) throw new Error("Parámetros de eliminación inválidos (falta entityId).");
-            break;
-        case 'process':
-            if (!entityId || !parentId) throw new Error("Parámetros de eliminación inválidos (falta entityId o parentId).");
-            break;
-        case 'subprocess':
-            if (!entityId || !parentId || !grandParentId) throw new Error("Parámetros de eliminación inválidos (falta entityId, parentId o grandParentId).");
-            break;
-        default:
-            throw new Error("Tipo de entidad no reconocido.");
-    }
-    
     const batch = writeBatch(db);
     let revalidationPath = '/inicio/documentos';
 
     switch (entityType) {
         case 'area':
+            if (!entityId) throw new Error("Parámetros de eliminación inválidos (falta entityId).");
+            
             const areaRef = doc(db, 'areas', entityId);
             const procesosQuery = collection(db, 'areas', entityId, 'procesos');
             const procesosSnap = await getDocs(procesosQuery);
@@ -154,11 +141,13 @@ export async function deleteEntityAction(
             break;
 
         case 'process':
-            const processRef = doc(db, `areas/${parentId}/procesos`, entityId);
-            const subprocesosQuery = collection(processRef, 'subprocesos');
-            const subprocesosSnap = await getDocs(subprocesosQuery);
+            if (!entityId || !parentId) throw new Error("Parámetros de eliminación inválidos (falta entityId o parentId).");
 
-            for (const subDoc of subprocesosSnap.docs) {
+            const processRef = doc(db, `areas/${parentId}/procesos`, entityId);
+            const subprocesosProcQuery = collection(processRef, 'subprocesos');
+            const subprocesosProcSnap = await getDocs(subprocesosProcQuery);
+
+            for (const subDoc of subprocesosProcSnap.docs) {
                 const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${subDoc.id}`);
                 batch.delete(caracterizacionSubRef);
                 batch.delete(subDoc.ref);
@@ -170,17 +159,23 @@ export async function deleteEntityAction(
             break;
 
         case 'subprocess':
+            if (!entityId || !parentId || !grandParentId) throw new Error("Parámetros de eliminación inválidos (falta entityId, parentId o grandParentId).");
+            
             const subProcessRef = doc(db, `areas/${grandParentId}/procesos/${parentId}/subprocesos`, entityId);
             const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${entityId}`);
             batch.delete(caracterizacionSubRef);
             batch.delete(subProcessRef);
             revalidationPath = `/inicio/documentos/area/${grandParentId}/proceso/${parentId}`;
             break;
+        
+        default:
+            throw new Error("Tipo de entidad no reconocido.");
     }
 
     await batch.commit();
     revalidatePath(revalidationPath);
     return { message: 'Elemento eliminado correctamente.' };
+
   } catch (e: any) {
     let errorMessage = `No se pudo eliminar el elemento: ${e.message}`;
     console.error('Error deleting entity:', e);
@@ -260,7 +255,13 @@ export async function updateEntityAction(
             if (responsable !== undefined) caracterizacionData.responsable = responsable;
 
             const caracterizacionRef = doc(db, 'caracterizaciones', caracterizacionId);
-            batch.set(caracterizacionRef, caracterizacionData, { merge: true });
+            const caracterizacionSnap = await getDoc(caracterizacionRef);
+
+            if (caracterizacionSnap.exists()) {
+                batch.update(caracterizacionRef, caracterizacionData);
+            } else {
+                batch.set(caracterizacionRef, caracterizacionData);
+            }
         }
 
 
@@ -404,7 +405,7 @@ export async function createFolderAction(prevState: any, formData: FormData): Pr
     }
 }
 
-export async function deleteFolderAction(prevState: any, formData: FormData): Promise<{ message: string, error?: string }> {
+export async function deleteFolderAction(prevState: any, formData: FormData): Promise<{ message: string, error?: string, deletedFolderId?: string }> {
     const folderId = formData.get('folderId') as string;
 
     if (!folderId) {
@@ -442,7 +443,7 @@ export async function deleteFolderAction(prevState: any, formData: FormData): Pr
         await batch.commit();
 
         revalidatePath('/inicio/documentos', 'layout');
-        return { message: 'Carpeta eliminada con éxito.' };
+        return { message: 'Carpeta eliminada con éxito.', deletedFolderId: folderId };
 
     } catch (e: any) {
         console.error("Error deleting folder:", e);

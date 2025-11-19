@@ -30,9 +30,9 @@ interface EditEntityFormProps {
   children: React.ReactNode;
   initialData: {
     name: string;
-    objetivo: string;
-    alcance: string;
-    responsable: string;
+    objetivo?: string;
+    alcance?: string;
+    responsable?: string;
   };
 }
 
@@ -77,7 +77,6 @@ export function EditEntityForm({
             description: state.message,
         });
         onOpenChange(false); 
-        formRef.current?.reset();
     }
     if (state.error) {
         toast({
@@ -102,7 +101,7 @@ export function EditEntityForm({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        <form action={formAction} ref={formRef}>
+        <form action={formAction} ref={formRef} key={`${entityId}-${isOpen}`}>
             <div className="grid gap-6 py-4">
                  <div className="grid gap-2">
                     <Label htmlFor="name">Nombre</Label>

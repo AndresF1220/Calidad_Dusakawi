@@ -23,10 +23,10 @@ function scopeKey(areaId:string|null, procesoId:string|null, subprocesoId:string
 }
 
 /**
- * Creates a root folder for a given scope (area, process, subprocess) if it doesn't exist.
+ * Ensures a root folder for a given scope (area, process, subprocess) exists, creating it if necessary.
  * This function is idempotent and safe to call multiple times. It uses a Firestore transaction
  * to ensure that the root folder is created atomically, preventing race conditions.
- * 
+ *
  * This is the single source of truth for repository structure initialization.
  * 
  * @param firestore - The Firestore instance.
@@ -40,21 +40,16 @@ export async function getOrCreateRootFolder(firestore: Firestore, { areaId, proc
   areaId:string|null; procesoId?:string|null; subprocesoId?:string|null;
 }){
   areaId = norm(areaId); procesoId = norm(procesoId); subprocesoId = norm(subprocesoId);
-  // The rootKey is deterministic, ensuring we always operate on the same document for a given scope.
   const rootKey = `root__${scopeKey(areaId, procesoId, subprocesoId)}`; 
   const rootRef = doc(firestore, "folders", rootKey);
 
-  // A transaction ensures this entire block is atomic. It will either all succeed or all fail.
-  // This prevents race conditions where multiple clients might try to create the folder at once.
   try {
     await runTransaction(firestore, async (tx)=>{
       const snap = await tx.get(rootRef);
-      // Only if the root folder does not exist, we create it.
       if (!snap.exists()){
         console.debug(`Root folder ${rootKey} does not exist. Creating...`);
-        // 1. Create the root folder "Documentación".
         tx.set(rootRef, {
-          name: "Documentación",
+          name: "Root", // This name is internal and not typically displayed
           parentId: null,
           areaId, procesoId, subprocesoId,
           createdAt: serverTimestamp()
@@ -62,8 +57,6 @@ export async function getOrCreateRootFolder(firestore: Firestore, { areaId, proc
       }
     });
   } catch (error: any) {
-    // We specifically check for "already-exists" which can happen in some edge cases with transactions,
-    // but we can safely ignore it as it means the goal (folder exists) is met.
     if (error.code !== "already-exists") {
       console.error("Transaction to get or create root folder failed:", error);
     } else {
@@ -71,6 +64,5 @@ export async function getOrCreateRootFolder(firestore: Firestore, { areaId, proc
     }
   }
 
-  return { id: rootKey, name: "Documentación", parentId: null, areaId, procesoId, subprocesoId };
+  return { id: rootKey, name: "Root", parentId: null, areaId, procesoId, subprocesoId };
 }
-
