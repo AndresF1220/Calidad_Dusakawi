@@ -4,7 +4,7 @@
 import { z } from 'zod';
 import { db, storage } from '@/firebase/client-config';
 import { collection, addDoc, doc, updateDoc, writeBatch, query, where, getDocs, deleteDoc, serverTimestamp } from 'firebase/firestore';
-import { ref, deleteObject } from 'firebase/storage';
+import { ref, deleteObject, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { slugify } from '@/lib/slug';
 import { SEED_AREAS } from '@/data/seed-map';
 
@@ -371,10 +371,9 @@ export async function createFolderAction(prevState: any, formData: FormData): Pr
   if (!db) return { message: 'Error', error: 'Firestore no está inicializado.' };
   
   const name = formData.get('name') as string;
-  const parentId = formData.get('parentId') as string | null;
+  const parentId = formData.get('parentId') || null;
   const areaId = formData.get('areaId') as string | null;
   
-  // Use a function to ensure empty strings from FormData become null
   const getOrNull = (key: string) => {
     const value = formData.get(key);
     return value === '' ? null : value as string | null;
@@ -393,7 +392,7 @@ export async function createFolderAction(prevState: any, formData: FormData): Pr
   try {
     const docData = {
       name,
-      parentId,
+      parentId: parentId,
       areaId,
       procesoId: procesoId,
       subprocesoId: subprocesoId,
@@ -495,4 +494,3 @@ export async function uploadFileAndCreateDocument(formData: FormData): Promise<{
     return { success: false, error: e.message };
   }
 }
-    

@@ -95,7 +95,7 @@ export function CreateFolderForm({
               <Label htmlFor="name">Nombre de la Carpeta</Label>
               <Input id="name" name="name" placeholder="Ej: Formatos Generales" required />
             </div>
-            <input type="hidden" name="parentId" value={s(parentId)} />
+            <input type="hidden" name="parentId" value={parentId ?? ''} />
             <input type="hidden" name="areaId" value={s(scope.areaId)} />
             <input type="hidden" name="procesoId" value={s(scope.procesoId)} />
             <input type="hidden" name="subprocesoId" value={s(scope.subprocesoId)} />
@@ -111,5 +111,3 @@ export function CreateFolderForm({
     </Dialog>
   );
 }
-
-    
