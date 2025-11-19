@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -62,6 +62,7 @@ export function UploadFileForm({
 }: UploadFileFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<UploadFormValues>({
@@ -131,7 +132,7 @@ export function UploadFileForm({
             </div>
              <div className="grid gap-2">
                 <Label htmlFor="validityDate">Fecha de vigencia</Label>
-                <Popover>
+                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                     <PopoverTrigger asChild>
                     <Button
                         variant={'outline'}
@@ -152,7 +153,10 @@ export function UploadFileForm({
                     <CustomCalendar
                         mode="single"
                         selected={watch('validityDate')}
-                        onSelect={(date) => setValue('validityDate', date as Date, { shouldValidate: true })}
+                        onSelect={(date) => {
+                            setValue('validityDate', date as Date, { shouldValidate: true });
+                            setIsCalendarOpen(false);
+                        }}
                         initialFocus
                         locale={es}
                     />
@@ -163,7 +167,7 @@ export function UploadFileForm({
           </div>
           
           <div className="grid gap-2">
-            <Label htmlFor="file-upload">Archivo (PDF)</Label>
+            <Label>Archivo (PDF)</Label>
              <div className="flex items-center gap-4">
                 <Button 
                     type="button" 
