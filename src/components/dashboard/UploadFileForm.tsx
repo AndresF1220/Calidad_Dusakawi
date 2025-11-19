@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -77,6 +77,13 @@ export function UploadFileForm({
 
   const form = useForm<UploadFormValues>({
     resolver: zodResolver(formSchema),
+    defaultValues: {
+      code: '',
+      name: '',
+      version: '',
+      validityDate: undefined,
+      file: undefined,
+    }
   });
 
   const {
@@ -84,11 +91,23 @@ export function UploadFileForm({
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors },
   } = form;
   
   const selectedFile = watch('file');
   const fileName = selectedFile?.[0]?.name;
+
+  // Reset form state when the dialog is opened or closed
+  useEffect(() => {
+    if (!isOpen) {
+        setTimeout(() => {
+            reset();
+        }, 150); // Delay reset to allow closing animation
+    } else {
+        reset();
+    }
+  }, [isOpen, reset]);
 
 
   const onSubmit = async (data: UploadFormValues) => {
@@ -105,7 +124,6 @@ export function UploadFileForm({
 
     setIsSubmitting(false);
     onOpenChange(false);
-    form.reset();
   };
 
   const handleSelectDate = (date: Date | undefined) => {
@@ -115,8 +133,12 @@ export function UploadFileForm({
     }
   }
 
+  const handleOpenChange = (open: boolean) => {
+    onOpenChange(open);
+  };
+  
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild disabled={disabled}>
         {children}
       </DialogTrigger>
