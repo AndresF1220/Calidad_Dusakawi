@@ -85,7 +85,7 @@ export function CreateFolderForm({
         <DialogHeader>
           <DialogTitle>Crear Nueva Carpeta</DialogTitle>
           <DialogDescription>
-            Escriba un nombre para la nueva carpeta. Se creará en el nivel superior.
+            Escriba un nombre para la nueva carpeta. Se creará en el nivel actual.
           </DialogDescription>
         </DialogHeader>
         <form action={formAction} ref={formRef}>

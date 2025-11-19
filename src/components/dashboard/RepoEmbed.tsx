@@ -11,10 +11,6 @@ import {
   where,
 } from 'firebase/firestore';
 import {
-  getOrCreateRootFolder,
-} from '@/lib/repoUtils';
-import { migrateDedupRoots } from '@/lib/migrateRepo';
-import {
   Card,
   CardContent,
   CardDescription,
@@ -179,7 +175,6 @@ export default function RepoEmbed({
   const firestore = useFirestore();
   const storage = useStorage();
   const isAdmin = useIsAdmin();
-  const seededRef = useRef(false);
   const { toast } = useToast();
   
   const [isAddingFolder, setIsAddingFolder] = useState(false);
@@ -191,11 +186,7 @@ export default function RepoEmbed({
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
   const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({});
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
-  const [rootFolderId, setRootFolderId] = useState<string | null>(null);
-  const [needsMigration, setNeedsMigration] = useState(false);
-  const [isMigrating, setIsMigrating] = useState(false);
-  const [key, setKey] = useState(0); // Used to force re-render
-
+  
   const [isDeletePending, startDeleteTransition] = useTransition();
 
   const norm = (v:string|null|undefined) => v === "" || v === undefined || v === "null" ? null : v;
@@ -208,7 +199,7 @@ export default function RepoEmbed({
       where('procesoId', '==', norm(procesoId)),
       where('subprocesoId', '==', norm(subprocesoId))
     );
-  }, [firestore, areaId, procesoId, subprocesoId, key]);
+  }, [firestore, areaId, procesoId, subprocesoId]);
 
   const { data: allFolders, isLoading: isLoadingFolders } = useCollection(foldersQuery);
 
@@ -218,26 +209,10 @@ export default function RepoEmbed({
         collection(firestore, 'files'),
         where('folderId', '==', selectedFolder.id)
     );
-  }, [firestore, selectedFolder, key]);
+  }, [firestore, selectedFolder]);
 
   const { data: filesData, isLoading: isLoadingFiles } = useCollection(filesQuery);
   const files = filesData as File[] | null;
-
-
-  useEffect(() => {
-    const initRepo = async () => {
-      if (firestore) {
-        const root = await getOrCreateRootFolder(firestore, { areaId, procesoId, subprocesoId });
-        setRootFolderId(root.id);
-        if (root.id) {
-          setOpenFolders(prev => ({ ...prev, [root.id]: true }));
-        }
-      }
-    };
-    if (seededRef.current) return;
-    seededRef.current = true;
-    initRepo();
-  }, [firestore, areaId, procesoId, subprocesoId, key]);
 
 
   const folderStructure = useMemo(() => {
@@ -259,8 +234,8 @@ export default function RepoEmbed({
         }
     });
 
-    // Filter for root-level folders.
-    const filteredRoots = Array.from(folderMap.values()).filter(f => f.parentId === null || f.parentId === rootFolderId);
+    // Filter for root-level folders (those without a parent in the current map).
+    const rootFolders = Array.from(folderMap.values()).filter(f => !f.parentId);
     
     // Sort children alphabetically at every level.
     const sortRecursive = (folders: Folder[]) => {
@@ -273,39 +248,25 @@ export default function RepoEmbed({
             }
         });
     }
-    sortRecursive(filteredRoots);
+    sortRecursive(rootFolders);
     
-    return filteredRoots;
+    return rootFolders;
 
-  }, [allFolders, rootFolderId]);
+  }, [allFolders]);
 
   useEffect(() => {
      if (selectedFolder && !allFolders?.find(f => f.id === selectedFolder.id)) {
         // If the selected folder was deleted, select its parent or null
         const parentId = selectedFolder.parentId;
-        if (parentId && parentId !== rootFolderId) {
+        if (parentId) {
             const parentFolder = allFolders?.find(f => f.id === parentId) as Folder | null;
             setSelectedFolder(parentFolder);
         } else {
             setSelectedFolder(null);
         }
      }
-  }, [allFolders, selectedFolder, rootFolderId]);
+  }, [allFolders, selectedFolder]);
 
-
-  const handleRunMigration = async () => {
-    if (!firestore) return;
-    setIsMigrating(true);
-    try {
-        await migrateDedupRoots(firestore);
-        setKey(k => k + 1); // Force a re-fetch of all data
-    } catch(e) {
-        console.error("Migration failed", e);
-        alert("La migración falló. Revise la consola para más detalles.");
-    } finally {
-        setIsMigrating(false);
-    }
-  }
 
   const handleFolderAction = (action: 'rename' | 'delete', folder: Folder, event: React.MouseEvent) => {
     event.preventDefault();
@@ -406,9 +367,8 @@ export default function RepoEmbed({
                     <CreateFolderForm
                         isOpen={isAddingFolder}
                         onOpenChange={setIsAddingFolder}
-                        parentId={rootFolderId} 
+                        parentId={null} 
                         scope={{ areaId, procesoId, subprocesoId }}
-                        disabled={!rootFolderId}
                     >
                         <Button variant="ghost" size="icon" className="h-8 w-8">
                             <FolderPlus className="h-4 w-4" />
@@ -419,25 +379,7 @@ export default function RepoEmbed({
             )}
           </CardHeader>
           <CardContent>
-            {needsMigration && (
-                <div className="mb-4 p-3 rounded-md bg-yellow-100 border border-yellow-300 text-yellow-800">
-                    <div className='flex items-center gap-2'>
-                        <AlertTriangle className='h-5 w-5'/>
-                        <h4 className='font-bold'>Datos Inconsistentes</h4>
-                    </div>
-                    <p className="text-sm mt-1">Se han detectado carpetas raíz duplicadas. Ejecute la corrección para consolidarlas.</p>
-                    <Button
-                        size="sm"
-                        className="mt-2 w-full"
-                        onClick={handleRunMigration}
-                        disabled={isMigrating}
-                    >
-                        {isMigrating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                        Corregir Duplicados
-                    </Button>
-                </div>
-            )}
-            {isLoadingFolders || isMigrating ? (
+            {isLoadingFolders ? (
                 <div className="flex items-center gap-2 text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span>Cargando carpetas...</span>
