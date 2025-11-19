@@ -154,7 +154,7 @@ const FolderTree = ({
                             <Edit className="mr-2 h-4 w-4" />
                             <span>Renombrar</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={(e) => onAction('delete', folder, e)} className="text-destructive">
+                        <DropdownMenuItem onSelect={(e) => onAction('delete', folder, e)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
                             <Trash2 className="mr-2 h-4 w-4" />
                             <span>Eliminar</span>
                         </DropdownMenuItem>
