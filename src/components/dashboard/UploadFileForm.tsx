@@ -200,7 +200,7 @@ export function UploadFileForm({
                     <Upload className="mr-2 h-4 w-4" />
                     Seleccionar archivo
                 </Button>
-                <span className="text-sm text-muted-foreground truncate">
+                <span className="text-sm text-muted-foreground truncate min-w-0">
                     {selectedFileName || 'No hay archivo seleccionado'}
                 </span>
                 <Input 
