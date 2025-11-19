@@ -270,7 +270,7 @@ export default function RepoEmbed({
         }
     });
 
-    const filteredRoots = rootLevelFolders.filter(f => f.id !== rootFolderId);
+    const filteredRoots = rootLevelFolders.filter(f => f.parentId === rootFolderId);
     
     // Sort children alphabetically at every level
     const sortRecursive = (folders: Folder[]) => {
@@ -481,7 +481,7 @@ export default function RepoEmbed({
              {isAdmin && (
                  <UploadFileForm 
                     isOpen={isUploading} 
-                    onOpenChange={setIsUploading} 
+                    onOpenChange={setIsUploading}
                     disabled={!selectedFolder}
                  >
                     <Button variant="outline" disabled={!selectedFolder}>
