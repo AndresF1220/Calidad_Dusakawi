@@ -101,7 +101,7 @@ const FolderTree = ({
   selectedFolder: Folder | null;
   openFolders: Record<string, boolean>;
   onToggleFolder: (id: string) => void;
-  onAction: (action: 'rename' | 'delete', folder: Folder) => void;
+  onAction: (action: 'rename' | 'delete', folder: Folder, event: Event) => void;
 }) => {
   const isAdmin = useIsAdmin();
   if (!folders || folders.length === 0) return null;
@@ -150,11 +150,11 @@ const FolderTree = ({
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); onAction('rename', folder); }}>
+                        <DropdownMenuItem onSelect={(e) => onAction('rename', folder, e)}>
                             <Edit className="mr-2 h-4 w-4" />
                             <span>Renombrar</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); onAction('delete', folder); }} className="text-destructive">
+                        <DropdownMenuItem onSelect={(e) => onAction('delete', folder, e)} className="text-destructive">
                             <Trash2 className="mr-2 h-4 w-4" />
                             <span>Eliminar</span>
                         </DropdownMenuItem>
@@ -334,7 +334,8 @@ export default function RepoEmbed({
     }
   }
 
-  const handleFolderAction = (action: 'rename' | 'delete', folder: Folder) => {
+  const handleFolderAction = (action: 'rename' | 'delete', folder: Folder, event: Event) => {
+    event.preventDefault();
     setFolderToEdit(folder);
     if (action === 'rename') {
         setIsRenamingFolder(true);
