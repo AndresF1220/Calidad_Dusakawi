@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -101,7 +100,6 @@ export function UploadFileForm({
   });
 
   const {
-    register,
     handleSubmit,
     watch,
     setValue,
@@ -202,10 +200,7 @@ export function UploadFileForm({
   const handleOpenChange = (open: boolean) => {
     setIsCalendarOpen(open);
     if (!open) {
-      const trigger = document.querySelector('[aria-haspopup="dialog"]');
-      if (trigger instanceof HTMLElement) {
-        trigger.blur();
-      }
+      form.trigger('validityDate');
     }
   };
   
@@ -224,20 +219,20 @@ export function UploadFileForm({
         <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="code">Código del documento</Label>
-            <Input id="code" {...register('code')} />
+            <Input id="code" {...form.register('code')} />
             {errors.code && <p className="text-xs text-destructive">{errors.code.message}</p>}
           </div>
 
           <div className="grid gap-2">
             <Label htmlFor="name">Nombre del documento</Label>
-            <Input id="name" {...register('name')} />
+            <Input id="name" {...form.register('name')} />
             {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
                 <Label htmlFor="version">Versión</Label>
-                <Input id="version" {...register('version')} />
+                <Input id="version" {...form.register('version')} />
                 {errors.version && <p className="text-xs text-destructive">{errors.version.message}</p>}
             </div>
              <div className="grid gap-2">
