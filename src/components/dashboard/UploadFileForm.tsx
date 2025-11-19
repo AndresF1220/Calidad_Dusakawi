@@ -273,7 +273,6 @@ export function UploadFileForm({
             <Label htmlFor="file-upload">Archivo (PDF, Word, Excel, JPG, PNG)</Label>
             <div className="flex items-center gap-4">
                 <Button 
-                    id="file-upload-button"
                     type="button" 
                     onClick={() => fileInputRef.current?.click()}
                     variant="outline"
