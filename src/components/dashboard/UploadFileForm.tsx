@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,16 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { CustomCalendar } from './CustomCalendar';
 
+const ACCEPTED_FILE_TYPES = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'image/jpeg',
+  'image/png',
+];
+
 const formSchema = z.object({
   code: z.string().min(1, 'El código es requerido.'),
   name: z.string().min(3, 'El nombre es requerido.'),
@@ -40,8 +50,8 @@ const formSchema = z.object({
     .any()
     .refine((files) => files?.length == 1, 'El archivo es requerido.')
     .refine(
-      (files) => files?.[0]?.type === 'application/pdf',
-      'Solo se aceptan archivos PDF.'
+      (files) => ACCEPTED_FILE_TYPES.includes(files?.[0]?.type),
+      'Formato de archivo no válido. Solo se aceptan PDF, Word, Excel o imágenes.'
     ),
 });
 
@@ -72,7 +82,6 @@ export function UploadFileForm({
   const {
     register,
     handleSubmit,
-    control,
     watch,
     setValue,
     formState: { errors },
@@ -99,6 +108,13 @@ export function UploadFileForm({
     form.reset();
   };
 
+  const handleSelectDate = (date: Date | undefined) => {
+    if (date) {
+      setValue('validityDate', date, { shouldValidate: true });
+      setIsCalendarOpen(false);
+    }
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild disabled={disabled}>
@@ -108,7 +124,7 @@ export function UploadFileForm({
         <DialogHeader>
           <DialogTitle>Subir Nuevo Documento</DialogTitle>
           <DialogDescription>
-            Complete la información del documento y seleccione el archivo PDF para subir.
+            Complete la información del documento y seleccione el archivo para subir.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4">
@@ -153,10 +169,7 @@ export function UploadFileForm({
                     <CustomCalendar
                         mode="single"
                         selected={watch('validityDate')}
-                        onSelect={(date) => {
-                            setValue('validityDate', date as Date, { shouldValidate: true });
-                            setIsCalendarOpen(false);
-                        }}
+                        onSelect={handleSelectDate}
                         initialFocus
                         locale={es}
                     />
@@ -167,7 +180,7 @@ export function UploadFileForm({
           </div>
           
           <div className="grid gap-2">
-            <Label>Archivo (PDF)</Label>
+            <Label>Archivo</Label>
              <div className="flex items-center gap-4">
                 <Button 
                     type="button" 
@@ -183,7 +196,7 @@ export function UploadFileForm({
                 <Input 
                     id="file-upload" 
                     type="file" 
-                    accept=".pdf" 
+                    accept={ACCEPTED_FILE_TYPES.join(',')}
                     {...register('file')}
                     ref={fileInputRef} 
                     className="hidden"
@@ -196,7 +209,7 @@ export function UploadFileForm({
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || Object.keys(errors).length > 0}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Subir Documento
             </Button>
