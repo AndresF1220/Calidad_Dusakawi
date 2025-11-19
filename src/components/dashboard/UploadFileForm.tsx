@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { useFirestore, useStorage } from '@/firebase';
+import { useFirebase } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
@@ -82,8 +82,7 @@ export function UploadFileForm({
   scope,
 }: UploadFileFormProps) {
   const { toast } = useToast();
-  const storage = useStorage();
-  const firestore = useFirestore();
+  const { storage, firestore } = useFirebase();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);

@@ -3,7 +3,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useTransition } from 'react';
-import { useFirestore, useCollection, useStorage, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, useFirebase } from '@/firebase';
 import { useIsAdmin } from '@/lib/authMock';
 import {
   collection,
@@ -142,8 +142,7 @@ export default function RepoEmbed({
   procesoId,
   subprocesoId,
 }: RepoEmbedProps) {
-  const firestore = useFirestore();
-  const storage = useStorage();
+  const { firestore, storage } = useFirebase();
   const isAdmin = useIsAdmin();
   const { toast } = useToast();
   
@@ -461,5 +460,3 @@ export default function RepoEmbed({
     </>
   );
 }
-
-    
