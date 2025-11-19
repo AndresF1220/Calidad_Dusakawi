@@ -1,8 +1,147 @@
+/**
+ * @fileoverview Firestore Security Rules for Dusakawi Quality Central.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model for all data. Each user has a dedicated data tree under `/users/{userId}`, and only the authenticated user matching that ID can read or write to that data.
+ *
+ * Data Structure:
+ * All user-specific data (dashboards, reports, alerts, feedback, files) is nested under the `/users/{userId}` path.  This structure ensures clear ownership and simplifies security rules.
+ *
+ * Key Security Decisions:
+ * - User listing is disallowed.
+ * - All write operations are validated against the authenticated user's ID.
+ * - Data validation is minimized to allow for rapid prototyping and flexible schemas.  However, the rules DO enforce that the `userId` in the path matches the `userId` field within the documents to prevent data inconsistencies and privilege escalation.
+ * - Denormalization is used so a userId field is on each document to improve authorization performance.
+ */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    /**
+     * @description Root-level access restrictions.  No direct read or write access is allowed at the root.
+     * @path /
+     * @allow (get, list) if false
+     * @allow (create, update, delete) if false
+     * @deny (get, list) always
+     * @deny (create, update, delete) always
+     * @principle Prevents accidental open access at the root level.
+     */
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * @description Rules for the /users/{userId} collection. Allows a user to create their own profile, and only they can read/write it.
+     * @path /users/{userId}
+     * @allow (create) User with matching ID can create their profile.
+     * @allow (get, update, delete) User with matching ID can access their profile.
+     * @deny (create) User tries to create a profile with a mismatched ID.
+     * @deny (get, update, delete) Another user tries to access this profile.
+     * @principle Enforces user-ownership for user profiles.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Rules for the /users/{userId}/dashboards/{dashboardId} collection. Allows a user to manage their own dashboards.
+     * @path /users/{userId}/dashboards/{dashboardId}
+     * @allow (create) User can create a dashboard under their profile.
+     * @allow (get, list, update, delete) User can manage their own dashboards.
+     * @deny (create) Another user tries to create a dashboard under this profile.
+     * @deny (get, list, update, delete) Another user tries to access/modify this dashboard.
+     * @principle Enforces user-ownership for dashboards.
+     */
+    match /users/{userId}/dashboards/{dashboardId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Rules for the /users/{userId}/reports/{reportId} collection. Allows a user to manage their own reports.
+     * @path /users/{userId}/reports/{reportId}
+     * @allow (create) User can create a report under their profile.
+     * @allow (get, list, update, delete) User can manage their own reports.
+     * @deny (create) Another user tries to create a report under this profile.
+     * @deny (get, list, update, delete) Another user tries to access/modify this report.
+     * @principle Enforces user-ownership for reports.
+     */
+    match /users/{userId}/reports/{reportId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Rules for the /users/{userId}/alerts/{alertId} collection. Allows a user to manage their own alerts.
+     * @path /users/{userId}/alerts/{alertId}
+     * @allow (create) User can create an alert under their profile.
+     * @allow (get, list, update, delete) User can manage their own alerts.
+     * @deny (create) Another user tries to create an alert under this profile.
+     * @deny (get, list, update, delete) Another user tries to access/modify this alert.
+     * @principle Enforces user-ownership for alerts.
+     */
+    match /users/{userId}/alerts/{alertId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Rules for the /users/{userId}/feedback/{feedbackId} collection. Allows a user to manage their own feedback.
+     * @path /users/{userId}/feedback/{feedbackId}
+     * @allow (create) User can create feedback under their profile.
+     * @allow (get, list, update, delete) User can manage their own feedback.
+     * @deny (create) Another user tries to create feedback under this profile.
+     * @deny (get, list, update, delete) Another user tries to access/modify this feedback.
+     * @principle Enforces user-ownership for feedback.
+     */
+    match /users/{userId}/feedback/{feedbackId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Rules for the /users/{userId}/files/{fileId} collection. Allows a user to manage their own files.
+     * @path /users/{userId}/files/{fileId}
+     * @allow (create) User can create a file under their profile.
+     * @allow (get, list, update, delete) User can manage their own files.
+     * @deny (create) Another user tries to create a file under this profile.
+     * @deny (get, list, update, delete) Another user tries to access/modify this file.
+     * @principle Enforces user-ownership for files.
+     */
+    match /users/{userId}/files/{fileId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
     }
   }
 }
