@@ -4,7 +4,7 @@
 import { z } from 'zod';
 import { db, storage } from '@/firebase/client-config';
 import { collection, addDoc, doc, updateDoc, writeBatch, query, where, getDocs, deleteDoc, serverTimestamp } from 'firebase/firestore';
-import { ref, deleteObject, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, deleteObject } from 'firebase/storage';
 import { slugify } from '@/lib/slug';
 import { SEED_AREAS } from '@/data/seed-map';
 
@@ -373,8 +373,15 @@ export async function createFolderAction(prevState: any, formData: FormData): Pr
   const name = formData.get('name') as string;
   const parentId = formData.get('parentId') as string | null;
   const areaId = formData.get('areaId') as string | null;
-  const procesoId = formData.get('procesoId') as string | null;
-  const subprocesoId = formData.get('subprocesoId') as string | null;
+  
+  // Use a function to ensure empty strings from FormData become null
+  const getOrNull = (key: string) => {
+    const value = formData.get(key);
+    return value === '' ? null : value as string | null;
+  };
+
+  const procesoId = getOrNull('procesoId');
+  const subprocesoId = getOrNull('subprocesoId');
 
   if (!name || name.length < 3) {
     return { message: 'Error', error: 'El nombre debe tener al menos 3 caracteres.' };
@@ -388,8 +395,8 @@ export async function createFolderAction(prevState: any, formData: FormData): Pr
       name,
       parentId,
       areaId,
-      procesoId,
-      subprocesoId,
+      procesoId: procesoId,
+      subprocesoId: subprocesoId,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
