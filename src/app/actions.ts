@@ -483,3 +483,86 @@ export async function renameFolderAction(prevState: any, formData: FormData): Pr
         return { message: 'Error', error: `No se pudo renombrar la carpeta: ${e.message}` };
     }
 }
+
+const uploadFileSchema = z.object({
+  code: z.string().min(1, 'El código es requerido.'),
+  name: z.string().min(3, 'El nombre es requerido.'),
+  version: z.string().min(1, 'La versión es requerida.'),
+  validityDate: z.string(),
+  file: z.instanceof(File),
+  folderId: z.string().min(1),
+  areaId: z.string().nullable(),
+  procesoId: z.string().nullable(),
+  subprocesoId: z.string().nullable(),
+});
+
+
+export async function uploadFileAction(prevState: any, formData: FormData): Promise<{ message: string, error?: string }> {
+    const s = (v: any): string | null => {
+        const str = String(v);
+        return (str === '' || str === 'null' || str === 'undefined' || v === null || v === undefined) ? null : str;
+    };
+    
+    const validatedFields = uploadFileSchema.safeParse({
+        code: formData.get('code'),
+        name: formData.get('name'),
+        version: formData.get('version'),
+        validityDate: formData.get('validityDate'),
+        file: formData.get('file'),
+        folderId: formData.get('folderId'),
+        areaId: s(formData.get('areaId')),
+        procesoId: s(formData.get('procesoId')),
+        subprocesoId: s(formData.get('subprocesoId')),
+    });
+    
+    if (!validatedFields.success) {
+        return { message: "Error de validación", error: validatedFields.error.flatten().fieldErrors.file?.[0] ?? "Datos inválidos." };
+    }
+    
+    const { file, folderId, areaId, procesoId, subprocesoId, ...docData } = validatedFields.data;
+
+    if (!areaId) {
+        return { message: 'Error', error: 'El ID del área es requerido para la subida.' };
+    }
+    
+    try {
+        const pathParts = ['documentos', areaId];
+        if (procesoId) pathParts.push(procesoId);
+        if (subprocesoId) pathParts.push(subprocesoId);
+        pathParts.push(folderId);
+        pathParts.push(file.name);
+        const storagePath = pathParts.join('/');
+
+        const fileBuffer = Buffer.from(await file.arrayBuffer());
+        
+        const fileRef = storage.bucket().file(storagePath);
+        await fileRef.save(fileBuffer, {
+            metadata: { contentType: file.type }
+        });
+        const [url] = await fileRef.getSignedUrl({
+            action: 'read',
+            expires: '03-09-2491', // Far future expiration
+        });
+        
+        await addDoc(collection(db, 'documents'), {
+            ...docData,
+            validityDate: new Date(docData.validityDate),
+            folderId,
+            areaId,
+            procesoId,
+            subprocesoId,
+            url,
+            path: storagePath,
+            size: file.size,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+        });
+        
+        revalidatePath('/inicio/documentos');
+        return { message: 'Archivo subido con éxito.' };
+        
+    } catch(e: any) {
+        console.error("Error uploading file:", e);
+        return { message: 'Error', error: `No se pudo subir el archivo: ${e.message}` };
+    }
+}
