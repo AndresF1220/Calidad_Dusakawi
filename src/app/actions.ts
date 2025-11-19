@@ -417,11 +417,13 @@ export async function deleteFolderAction(prevState: any, formData: FormData): Pr
         // 1. Delete all files within the folder from Storage and their documents from Firestore
         const filesQuery = query(collection(db, 'documents'), where('folderId', '==', folderId));
         const filesSnap = await getDocs(filesQuery);
+        
+        const bucket = storage.bucket();
 
         for (const fileDoc of filesSnap.docs) {
             const fileData = fileDoc.data();
             if (fileData.path) {
-                const fileRef = storage.bucket().file(fileData.path);
+                const fileRef = bucket.file(fileData.path);
                 try {
                     await fileRef.delete();
                 } catch (storageError: any) {
@@ -483,7 +485,7 @@ export async function renameFolderAction(prevState: any, formData: FormData): Pr
     }
 }
 
-const createDocumentSchema = z.object({
+const uploadFileSchema = z.object({
   code: z.string().min(1, 'El código es requerido.'),
   name: z.string().min(3, 'El nombre es requerido.'),
   version: z.string().min(1, 'La versión es requerida.'),
@@ -492,19 +494,16 @@ const createDocumentSchema = z.object({
   areaId: z.string().nullable(),
   procesoId: z.string().nullable(),
   subprocesoId: z.string().nullable(),
-  url: z.string().url(),
-  path: z.string().min(1),
-  size: z.number(),
+  file: z.instanceof(File),
 });
 
-
-export async function createDocumentAction(prevState: any, formData: FormData): Promise<{ message: string, error?: string }> {
+export async function uploadFileAction(prevState: any, formData: FormData): Promise<{ message: string, error?: string }> {
     const s = (v: any): string | null => {
         const str = String(v);
         return (str === '' || str === 'null' || str === 'undefined' || v === null || v === undefined) ? null : str;
     };
     
-    const validatedFields = createDocumentSchema.safeParse({
+    const validatedFields = uploadFileSchema.safeParse({
         code: formData.get('code'),
         name: formData.get('name'),
         version: formData.get('version'),
@@ -513,21 +512,44 @@ export async function createDocumentAction(prevState: any, formData: FormData): 
         areaId: s(formData.get('areaId')),
         procesoId: s(formData.get('procesoId')),
         subprocesoId: s(formData.get('subprocesoId')),
-        url: formData.get('url'),
-        path: formData.get('path'),
-        size: Number(formData.get('size')),
+        file: formData.get('file'),
     });
-    
+
     if (!validatedFields.success) {
         console.error('Validation errors:', validatedFields.error.flatten());
-        return { message: "Error de validación", error: validatedFields.error.flatten().fieldErrors.file?.[0] ?? "Datos de documento inválidos." };
+        const fieldErrors = validatedFields.error.flatten().fieldErrors;
+        const firstError = Object.values(fieldErrors)[0]?.[0];
+        return { message: "Error de validación", error: firstError ?? "Datos de formulario inválidos." };
     }
-    
-    const { ...docData } = validatedFields.data;
+
+    const { file, ...docData } = validatedFields.data;
 
     try {
+        const bucket = storage.bucket();
+        const pathParts = ['documentos', docData.areaId];
+        if (docData.procesoId) pathParts.push(docData.procesoId);
+        if (docData.subprocesoId) pathParts.push(docData.subprocesoId);
+        pathParts.push(docData.folderId);
+        pathParts.push(file.name);
+        const fullPath = pathParts.filter(Boolean).join('/');
+
+        const fileBuffer = Buffer.from(await file.arrayBuffer());
+
+        const storageFile = bucket.file(fullPath);
+        await storageFile.save(fileBuffer, {
+            metadata: { contentType: file.type },
+        });
+
+        const [url] = await storageFile.getSignedUrl({
+            action: 'read',
+            expires: '03-09-2491', // Far future expiration
+        });
+        
         await addDoc(collection(db, 'documents'), {
             ...docData,
+            path: fullPath,
+            url: url,
+            size: file.size,
             validityDate: new Date(docData.validityDate),
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
