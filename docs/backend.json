@@ -1,173 +1,5 @@
 {
   "entities": {
-    "Dashboard": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Dashboard",
-      "type": "object",
-      "description": "Represents a quality dashboard for Dusakawi EPSI, displaying key metrics and performance indicators.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Dashboard entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the dashboard."
-        },
-        "description": {
-          "type": "string",
-          "description": "Description of the dashboard."
-        },
-        "layoutConfig": {
-          "type": "string",
-          "description": "JSON configuration for the dashboard layout, specifying the arrangement of widgets and data visualizations."
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N Dashboard).  The user who owns/created the dashboard."
-        }
-      },
-      "required": [
-        "id",
-        "name",
-        "layoutConfig",
-        "userId"
-      ]
-    },
-    "Report": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Report",
-      "type": "object",
-      "description": "Represents a quality report generated within Dusakawi Quality Central.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Report entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the report."
-        },
-        "description": {
-          "type": "string",
-          "description": "Description of the report."
-        },
-        "reportType": {
-          "type": "string",
-          "description": "Type of report (e.g., Daily, Weekly, Monthly)."
-        },
-        "dateGenerated": {
-          "type": "string",
-          "description": "Date and time the report was generated.",
-          "format": "date-time"
-        },
-        "queryParameters": {
-          "type": "string",
-          "description": "JSON string representing the query parameters used to generate the report."
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N Report).  The user who generated the report."
-        }
-      },
-      "required": [
-        "id",
-        "name",
-        "reportType",
-        "dateGenerated",
-        "queryParameters",
-        "userId"
-      ]
-    },
-    "Alert": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Alert",
-      "type": "object",
-      "description": "Represents a customizable alert for critical quality deviations.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Alert entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the alert."
-        },
-        "description": {
-          "type": "string",
-          "description": "Description of the alert."
-        },
-        "metric": {
-          "type": "string",
-          "description": "The quality metric being monitored (e.g., defect rate, customer satisfaction)."
-        },
-        "threshold": {
-          "type": "number",
-          "description": "Threshold value that triggers the alert."
-        },
-        "severity": {
-          "type": "string",
-          "description": "Severity level of the alert (e.g., Low, Medium, High)."
-        },
-        "notificationChannel": {
-          "type": "string",
-          "description": "The notification method (e.g., email, SMS)."
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N Alert).  The user who configured the alert."
-        }
-      },
-      "required": [
-        "id",
-        "name",
-        "metric",
-        "threshold",
-        "severity",
-        "notificationChannel",
-        "userId"
-      ]
-    },
-    "Feedback": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Feedback",
-      "type": "object",
-      "description": "Represents user feedback regarding KPIs.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Feedback entity."
-        },
-        "kpi": {
-          "type": "string",
-          "description": "The key performance indicator the feedback is related to."
-        },
-        "rating": {
-          "type": "number",
-          "description": "User rating for the KPI."
-        },
-        "comment": {
-          "type": "string",
-          "description": "Optional comment provided by the user."
-        },
-        "dateSubmitted": {
-          "type": "string",
-          "description": "Date and time the feedback was submitted.",
-          "format": "date-time"
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N Feedback). The user who submitted the feedback."
-        }
-      },
-      "required": [
-        "id",
-        "kpi",
-        "rating",
-        "dateSubmitted",
-        "userId"
-      ]
-    },
     "User": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
@@ -180,20 +12,20 @@
         },
         "username": {
           "type": "string",
-          "description": "Username of the user."
+          "description": "The user's username."
         },
         "email": {
           "type": "string",
-          "description": "Email address of the user.",
+          "description": "The user's email address.",
           "format": "email"
         },
         "fullName": {
           "type": "string",
-          "description": "Full name of the user."
+          "description": "The user's full name."
         },
         "role": {
           "type": "string",
-          "description": "Role of the user within the application (e.g., Administrator, Analyst, User)."
+          "description": "The user's role within the application (e.g., admin, analyst, viewer)."
         }
       },
       "required": [
@@ -204,50 +36,156 @@
         "role"
       ]
     },
-    "File": {
+    "QualityMetric": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "File",
+      "title": "QualityMetric",
       "type": "object",
-      "description": "Represents a file uploaded to the system, likely related to reporting or analysis.",
+      "description": "Represents a quality metric tracked within the Dusakawi Quality Central application.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the File entity."
+          "description": "Unique identifier for the QualityMetric entity."
         },
-        "filename": {
+        "name": {
           "type": "string",
-          "description": "The original name of the uploaded file."
+          "description": "The name of the quality metric (e.g., Defect Rate, Customer Satisfaction)."
         },
-        "fileType": {
+        "description": {
           "type": "string",
-          "description": "The MIME type of the file (e.g., application/pdf, image/jpeg)."
+          "description": "A detailed description of the quality metric."
         },
-        "fileSize": {
+        "targetValue": {
           "type": "number",
-          "description": "The size of the file in bytes."
+          "description": "The target value for the quality metric."
         },
-        "uploadDate": {
+        "unitOfMeasure": {
           "type": "string",
-          "description": "The date and time the file was uploaded.",
-          "format": "date-time"
-        },
-        "storageLocation": {
-          "type": "string",
-          "description": "The location where the file is stored (e.g., cloud storage URL, local file path)."
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N File). The user who uploaded the file."
+          "description": "The unit of measure for the quality metric (e.g., %, ppm)."
         }
       },
       "required": [
         "id",
-        "filename",
-        "fileType",
-        "fileSize",
-        "uploadDate",
-        "storageLocation",
-        "userId"
+        "name",
+        "description",
+        "targetValue",
+        "unitOfMeasure"
+      ]
+    },
+    "QualityDataPoint": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "QualityDataPoint",
+      "type": "object",
+      "description": "Represents a single data point for a quality metric at a specific point in time.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the QualityDataPoint entity."
+        },
+        "metricId": {
+          "type": "string",
+          "description": "Reference to QualityMetric. (Relationship: QualityMetric 1:N QualityDataPoint)"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "The timestamp when the data point was recorded.",
+          "format": "date-time"
+        },
+        "value": {
+          "type": "number",
+          "description": "The value of the quality metric at the given timestamp."
+        },
+        "source": {
+          "type": "string",
+          "description": "The source of the data (e.g., manual entry, automated system)."
+        }
+      },
+      "required": [
+        "id",
+        "metricId",
+        "timestamp",
+        "value",
+        "source"
+      ]
+    },
+    "Alert": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Alert",
+      "type": "object",
+      "description": "Represents a configured alert for a specific quality metric.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Alert entity."
+        },
+        "metricId": {
+          "type": "string",
+          "description": "Reference to QualityMetric. (Relationship: QualityMetric 1:N Alert)"
+        },
+        "threshold": {
+          "type": "number",
+          "description": "The threshold value that triggers the alert."
+        },
+        "operator": {
+          "type": "string",
+          "description": "The operator used to compare the metric value to the threshold (e.g., >, <, =)."
+        },
+        "message": {
+          "type": "string",
+          "description": "The message displayed when the alert is triggered."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Alert)"
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "Indicates whether the alert is currently enabled."
+        }
+      },
+      "required": [
+        "id",
+        "metricId",
+        "threshold",
+        "operator",
+        "message",
+        "userId",
+        "enabled"
+      ]
+    },
+    "Feedback": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Feedback",
+      "type": "object",
+      "description": "Represents user feedback on a specific KPI or aspect of the application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Feedback entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Feedback)"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "The timestamp when the feedback was submitted.",
+          "format": "date-time"
+        },
+        "comment": {
+          "type": "string",
+          "description": "The user's feedback comment."
+        },
+        "rating": {
+          "type": "number",
+          "description": "A rating provided by the user (e.g., on a scale of 1-5)."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "timestamp",
+        "comment",
+        "rating"
       ]
     }
   },
@@ -266,51 +204,47 @@
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "Collection to store user profiles.",
+          "description": "Stores user profiles. Path-based ownership ensures only the user or an admin can access the profile.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique identifier for the user."
+              "description": "The unique identifier of the user."
             }
           ]
         }
       },
       {
-        "path": "/users/{userId}/dashboards/{dashboardId}",
+        "path": "/qualityMetrics/{qualityMetricId}",
         "definition": {
-          "entityName": "Dashboard",
+          "entityName": "QualityMetric",
           "schema": {
-            "$ref": "#/backend/entities/Dashboard"
+            "$ref": "#/backend/entities/QualityMetric"
           },
-          "description": "Collection to store dashboards owned by a specific user. Includes denormalized 'userId' for authorization independence.",
+          "description": "Stores definitions of quality metrics tracked in the application.",
           "params": [
             {
-              "name": "userId",
-              "description": "The unique identifier for the user who owns the dashboard."
-            },
-            {
-              "name": "dashboardId",
-              "description": "The unique identifier for the dashboard."
+              "name": "qualityMetricId",
+              "description": "The unique identifier of the quality metric."
             }
           ]
         }
       },
       {
-        "path": "/users/{userId}/reports/{reportId}",
+        "path": "/qualityMetrics/{qualityMetricId}/dataPoints/{dataPointId}",
         "definition": {
-          "entityName": "Report",
+          "entityName": "QualityDataPoint",
           "schema": {
-            "$ref": "#/backend/entities/Report"
+            "$ref": "#/backend/entities/QualityDataPoint"
           },
-          "description": "Collection to store reports generated by a specific user. Includes denormalized 'userId' for authorization independence.",
+          "description": "Stores individual data points for a specific quality metric. Includes denormalized 'qualityMetricId' for efficient querying.",
           "params": [
             {
-              "name": "userId",
-              "description": "The unique identifier for the user who created the report."
+              "name": "qualityMetricId",
+              "description": "The unique identifier of the quality metric."
             },
             {
-              "name": "reportId",
-              "description": "The unique identifier for the report."
+              "name": "dataPointId",
+              "description": "The unique identifier of the data point."
             }
           ]
         }
@@ -322,15 +256,15 @@
           "schema": {
             "$ref": "#/backend/entities/Alert"
           },
-          "description": "Collection to store alerts configured by a specific user. Includes denormalized 'userId' for authorization independence.",
+          "description": "Stores alerts configured by users. Path-based ownership ensures only the user or an admin can manage their alerts.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique identifier for the user who configured the alert."
+              "description": "The unique identifier of the user."
             },
             {
               "name": "alertId",
-              "description": "The unique identifier for the alert."
+              "description": "The unique identifier of the alert."
             }
           ]
         }
@@ -342,40 +276,20 @@
           "schema": {
             "$ref": "#/backend/entities/Feedback"
           },
-          "description": "Collection to store feedback submitted by a specific user. Includes denormalized 'userId' for authorization independence.",
+          "description": "Stores user feedback. Path-based ownership ensures only the user or an admin can access their feedback.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique identifier for the user who submitted the feedback."
+              "description": "The unique identifier of the user."
             },
             {
               "name": "feedbackId",
-              "description": "The unique identifier for the feedback entry."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/files/{fileId}",
-        "definition": {
-          "entityName": "File",
-          "schema": {
-            "$ref": "#/backend/entities/File"
-          },
-          "description": "Collection to store files uploaded by a specific user. Includes denormalized 'userId' for authorization independence.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier for the user who uploaded the file."
-            },
-            {
-              "name": "fileId",
-              "description": "The unique identifier for the file."
+              "description": "The unique identifier of the feedback entry."
             }
           ]
         }
       }
     ],
-    "reasoning": "The Firestore data structure is designed to ensure security, scalability, and ease of debugging, following the principles of Authorization Independence, Clarity of Intent, DBAC, and QAPs. It leverages structural segregation and access modeling to simplify security rules and maintain data integrity.\n\n**Authorization Independence:**\nUser-owned data (Dashboards, Reports, Alerts, Feedbacks, and Files) is stored under the `/users/{userId}` path, eliminating the need for `get()` calls in security rules to check ownership. This ensures atomic operations and simplifies debugging. No membership maps are required, as the path inherently defines ownership.\n\n**Structural Segregation:**\nEach entity type is stored in its own collection. User-specific data is placed under the `/users/{userId}` collection to clearly segregate data based on ownership. This segregation strategy simplifies security rules by ensuring that all documents within a given collection share the same security posture.\n\n**Access Modeling:**\nPrivate data is modeled using path-based ownership (`/users/{userId}/dashboards/{dashboardId}`). This pattern is consistently applied across Dashboards, Reports, Alerts, Feedbacks, and Files.\n\n**QAPs (Rules are not Filters):**\nThe structure enables secure `list` operations. Because all user-related data is stored under `/users/{userId}`, listing operations can be performed securely by filtering based on the `userId` in the path, without needing to filter data based on its contents. This eliminates the need for complex query-based security rules.\n\n**Denormalization**: userId is duplicated in each subcollection to allow for simple security rules.\n\nThis structure promotes robust and easily debuggable security rules by making authorization intent explicit and minimizing the complexity of rule logic."
+    "reasoning": "The Firestore data structure is designed to support the Dusakawi Quality Central application, focusing on secure, scalable, and maintainable data management. The structure emphasizes authorization independence, clarity, and predictability.\n\n**Authorization Independence:**\nTo avoid hierarchical authorization dependencies and enable atomic operations, the design uses denormalization. For example, if `QualityDataPoint` access depends on `QualityMetric` attributes, relevant `QualityMetric` attributes (e.g., `ownerId`, `members`) are copied into each `QualityDataPoint` document.\n\n**Structural Segregation:**\nThe data is segregated into collections based on their security postures. User-specific data is stored under `/users/{userId}`, while global data like quality metrics are stored at the root level. This approach simplifies security rules by ensuring that all documents within a collection share the same access requirements.\n\n**Access Modeling:**\n*   **Private Data:** User-specific data (e.g., alerts, feedback) is stored under `/users/{userId}` to ensure path-based ownership.\n*   **Collaborative Data:**  Currently, there is no collaborative entity, but if there was (e.g. shared dashboards) the `members` map (`members: {uid1: \"role\", uid2: \"role\"}`) would be used.\n\n**QAPs (Rules are not Filters):**\nThe structure supports secure `list` operations by ensuring that collections do not contain mixed data with different access requirements. Path-based ownership and membership maps enable efficient filtering based on user ID or role, so rules do not act as filters. For example, listing `QualityDataPoint` documents under `/qualityMetrics/{qualityMetricId}/dataPoints` will only return data points associated with a specific quality metric, preventing unauthorized access to other metrics' data.\n\n**Data Clarity and Predictability:**\n*   **Explicit State Modeling:** While the schemas don't explicitly define states, adding a `status` field to entities like alerts or quality metrics can help manage workflows (e.g., `DRAFT`, `ACTIVE`, `ARCHIVED`).\n*   **Predictable Schema:** The design avoids dynamic keys by using static keys in objects and arrays where needed.\n*   **Radical Consistency:** Semantic naming conventions are applied throughout the structure to enhance readability and maintainability."
   }
 }
