@@ -270,7 +270,7 @@ export function UploadFileForm({
           </div>
           
           <div className="grid gap-2">
-            <Label htmlFor="file-upload-button">Archivo (PDF, Word, Excel, JPG, PNG)</Label>
+            <Label htmlFor="file-upload">Archivo (PDF, Word, Excel, JPG, PNG)</Label>
             <div className="flex items-center gap-4">
                 <Button 
                     id="file-upload-button"
