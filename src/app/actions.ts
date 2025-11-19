@@ -4,14 +4,11 @@
 
 import { z } from 'zod';
 import { collection, addDoc, serverTimestamp, writeBatch, doc, getDocs, deleteDoc, setDoc, updateDoc, query, where, getDoc } from 'firebase/firestore';
-import { getFirestore, getStorage } from 'firebase-admin/firestore';
-import { initializeFirebase } from '@/firebase';
+import { db, storage } from '@/firebase/server-config';
 import { revalidatePath } from 'next/cache';
 import { SEED_AREAS } from '@/data/seed-map';
 import { slugify } from '@/lib/slug';
 import { deleteObject, ref } from 'firebase/storage';
-
-const { firestore: db, storage } = initializeFirebase();
 
 const createSchema = z.object({
   name: z.string().min(3, 'Debe ingresar un nombre de al menos 3 caracteres.'),
@@ -426,12 +423,11 @@ export async function deleteFolderAction(prevState: any, formData: FormData): Pr
         for (const fileDoc of filesSnap.docs) {
             const fileData = fileDoc.data();
             if (fileData.path) {
-                const fileRef = ref(storage, fileData.path);
+                const fileRef = storage.bucket().file(fileData.path);
                 try {
-                    await deleteObject(fileRef);
+                    await fileRef.delete();
                 } catch (storageError: any) {
-                    // Ignore "object not found" errors, as it might have been deleted already
-                    if (storageError.code !== 'storage/object-not-found') {
+                    if (storageError.code !== 404) { // Not found
                         throw storageError;
                     }
                 }
@@ -487,5 +483,3 @@ export async function renameFolderAction(prevState: any, formData: FormData): Pr
         return { message: 'Error', error: `No se pudo renombrar la carpeta: ${e.message}` };
     }
 }
-
-    
