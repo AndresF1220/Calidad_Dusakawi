@@ -13,9 +13,7 @@ function initializeServerApp(): App {
   // In a Google Cloud environment (like Firebase App Hosting or Cloud Run),
   // calling initializeApp() with no arguments will automatically use the
   // project's service account credentials.
-  return initializeApp({
-     storageBucket: firebaseConfig.storageBucket
-  });
+  return initializeApp();
 }
 
 const serverApp = initializeServerApp();
