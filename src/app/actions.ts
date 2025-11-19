@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { z } from 'zod';
@@ -413,13 +412,12 @@ export async function deleteFolderAction(prevState: any, formData: FormData): Pr
 
     try {
         const batch = writeBatch(db);
+        const bucket = storage.bucket();
 
         // 1. Delete all files within the folder from Storage and their documents from Firestore
         const filesQuery = query(collection(db, 'documents'), where('folderId', '==', folderId));
         const filesSnap = await getDocs(filesQuery);
         
-        const bucket = storage.bucket();
-
         for (const fileDoc of filesSnap.docs) {
             const fileData = fileDoc.data();
             if (fileData.path) {
@@ -427,8 +425,7 @@ export async function deleteFolderAction(prevState: any, formData: FormData): Pr
                 try {
                     await fileRef.delete();
                 } catch (storageError: any) {
-                    // In a real app, you might want to log this, but for now we'll ignore if file doesn't exist
-                    if (storageError.code !== 404) { // 404 means 'Not Found'
+                    if (storageError.code !== 404) {
                         throw storageError;
                     }
                 }
@@ -440,7 +437,6 @@ export async function deleteFolderAction(prevState: any, formData: FormData): Pr
         const folderRef = doc(db, 'folders', folderId);
         batch.delete(folderRef);
         
-        // 3. Commit the batch
         await batch.commit();
 
         revalidatePath('/inicio/documentos');
@@ -485,7 +481,7 @@ export async function renameFolderAction(prevState: any, formData: FormData): Pr
     }
 }
 
-const createDocumentSchema = z.object({
+const uploadFileSchema = z.object({
   code: z.string().min(1, 'El código es requerido.'),
   name: z.string().min(3, 'El nombre es requerido.'),
   version: z.string().min(1, 'La versión es requerida.'),
@@ -494,12 +490,10 @@ const createDocumentSchema = z.object({
   areaId: z.string().nullable(),
   procesoId: z.string().nullable(),
   subprocesoId: z.string().nullable(),
-  path: z.string().min(1),
-  url: z.string().url(),
-  size: z.number().min(1),
+  file: z.instanceof(File),
 });
 
-export async function createDocumentAction(
+export async function uploadFileAction(
   prevState: any,
   formData: FormData
 ): Promise<{ message: string; error?: string }> {
@@ -507,6 +501,8 @@ export async function createDocumentAction(
     const str = String(v);
     return str === '' || str === 'null' || str === 'undefined' || v === null || v === undefined ? null : str;
   };
+  
+  const file = formData.get('file');
 
   const payload = {
     code: s(formData.get('code')),
@@ -517,33 +513,60 @@ export async function createDocumentAction(
     areaId: s(formData.get('areaId')),
     procesoId: s(formData.get('procesoId')),
     subprocesoId: s(formData.get('subprocesoId')),
-    path: s(formData.get('path')),
-    url: s(formData.get('url')),
-    size: Number(formData.get('size')),
+    file: file instanceof File ? file : undefined,
   };
 
-  const validatedFields = createDocumentSchema.safeParse(payload);
+  const validatedFields = uploadFileSchema.safeParse(payload);
 
   if (!validatedFields.success) {
-    console.error('Validation errors:', validatedFields.error.flatten());
-    const fieldErrors = validatedFields.error.flatten().fieldErrors;
-    const firstError = Object.values(fieldErrors)[0]?.[0];
+    const firstError = Object.values(validatedFields.error.flatten().fieldErrors)[0]?.[0];
     return { message: 'Error de validación', error: firstError ?? 'Datos de formulario inválidos.' };
   }
 
+  const { file: validFile, ...docData } = validatedFields.data;
+
   try {
+    const bucket = storage.bucket();
+    
+    const pathParts = ['documentos', docData.areaId];
+    if (docData.procesoId) pathParts.push(docData.procesoId);
+    if (docData.subprocesoId) pathParts.push(docData.subprocesoId);
+    pathParts.push(docData.folderId);
+    pathParts.push(validFile.name);
+    const fullPath = pathParts.filter(Boolean).join('/');
+
+    const fileRef = bucket.file(fullPath);
+    
+    const fileBuffer = Buffer.from(await validFile.arrayBuffer());
+
+    await fileRef.save(fileBuffer, {
+        metadata: { contentType: validFile.type },
+    });
+    
+    const [url] = await fileRef.getSignedUrl({
+        action: 'read',
+        expires: '03-09-2491' // Far future expiration
+    });
+
     const dataToSave = {
-      ...validatedFields.data,
-      validityDate: validatedFields.data.validityDate ? new Date(validatedFields.data.validityDate) : null,
+      ...docData,
+      path: fullPath,
+      url: url,
+      size: validFile.size,
+      validityDate: docData.validityDate ? new Date(docData.validityDate) : null,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
-    
+
     await addDoc(collection(db, 'documents'), dataToSave);
+
     revalidatePath('/inicio/documentos');
     return { message: 'Documento guardado con éxito.' };
+
   } catch (e: any) {
-    console.error('Error creating document:', e);
+    console.error('Error uploading file:', e);
     return { message: 'Error', error: `No se pudo guardar el documento: ${e.message}` };
   }
 }
+
+    
