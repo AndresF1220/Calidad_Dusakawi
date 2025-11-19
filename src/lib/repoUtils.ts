@@ -52,7 +52,8 @@ export async function getOrCreateRootFolder(firestore: Firestore, { areaId, proc
           name: "Root", // This name is internal and not typically displayed
           parentId: null,
           areaId, procesoId, subprocesoId,
-          createdAt: serverTimestamp()
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
         });
       }
     });

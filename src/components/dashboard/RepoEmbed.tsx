@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect, useRef, useActionState, useTransition } from 'react';
+import { useState, useMemo, useEffect, useRef, useTransition } from 'react';
 import { useFirestore, useCollection, useStorage, useMemoFirebase } from '@/firebase';
 import { useIsAdmin } from '@/lib/authMock';
 import {
@@ -59,7 +59,7 @@ import { CreateFolderForm } from './CreateFolderForm';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '../ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { deleteFolderAction, renameFolderAction } from '@/app/actions';
+import { deleteFolderAction } from '@/app/actions';
 import { RenameFolderForm } from './RenameFolderForm';
 
 
@@ -203,7 +203,6 @@ export default function RepoEmbed({
   const [isMigrating, setIsMigrating] = useState(false);
   const [key, setKey] = useState(0); // Used to force re-render
 
-  const [deleteState, deleteAction] = useActionState(deleteFolderAction, { message: '', error: undefined });
   const [isDeletePending, startDeleteTransition] = useTransition();
 
   const norm = (v:string|null|undefined) => v === "" || v === undefined ? null : v;
@@ -256,69 +255,50 @@ export default function RepoEmbed({
     
     // First pass: create a map of all folders
     allFolders.forEach((doc: any) => {
-      if (doc.id !== rootFolderId) {
+      if (doc.parentId === rootFolderId) {
+         rootLevelFolders.push({ ...doc, children: [] });
+      } else if (doc.parentId) {
         folderMap.set(doc.id, { ...doc, children: [] });
       }
     });
     
     // Second pass: build the tree structure
     folderMap.forEach(folder => {
-      if (folder.parentId && folder.parentId !== rootFolderId) {
-        const parent = folderMap.get(folder.parentId);
-        if (parent) {
-          parent.children.push(folder);
+      if (folder.parentId) {
+        const parentInRoot = rootLevelFolders.find(f => f.id === folder.parentId);
+        const parentInMap = folderMap.get(folder.parentId);
+         if (parentInRoot) {
+            parentInRoot.children.push(folder);
+        } else if (parentInMap) {
+           parentInMap.children.push(folder);
         }
-      } else if (folder.parentId === rootFolderId) {
-        rootLevelFolders.push(folder);
       }
     });
     
     // Sort children alphabetically
-    folderMap.forEach(f => f.children.sort((a, b) => a.name.localeCompare(b.name)));
-    // Sort root folders alphabetically
-    rootLevelFolders.sort((a,b) => a.name.localeCompare(b.name));
-
+    const sortRecursive = (folders: Folder[]) => {
+        folders.sort((a, b) => a.name.localeCompare(b.name));
+        folders.forEach(f => sortRecursive(f.children));
+    }
+    sortRecursive(rootLevelFolders);
+    
     return rootLevelFolders;
 
   }, [allFolders, rootFolderId]);
 
   useEffect(() => {
-     // Auto-select first folder if nothing is selected and structure is available
-     if (!selectedFolder && folderStructure.length > 0) {
-        setSelectedFolder(folderStructure[0]);
-     } else if (selectedFolder && !allFolders?.find(f => f.id === selectedFolder.id)) {
-        // If the selected folder was deleted, select null
-        setSelectedFolder(null);
+     if (selectedFolder && !allFolders?.find(f => f.id === selectedFolder.id)) {
+        // If the selected folder was deleted, select its parent or null
+        const parentId = selectedFolder.parentId;
+        if (parentId && parentId !== rootFolderId) {
+            const parentFolder = allFolders?.find(f => f.id === parentId) as Folder | null;
+            setSelectedFolder(parentFolder);
+        } else {
+            setSelectedFolder(null);
+        }
      }
-  }, [folderStructure, rootFolderId, selectedFolder, allFolders]);
+  }, [allFolders, selectedFolder, rootFolderId]);
 
-    useEffect(() => {
-        if (deleteState.message && !deleteState.error) {
-            toast({
-                title: '¡Éxito!',
-                description: deleteState.message,
-            });
-            // If the deleted folder was selected, select its parent or null
-            if (folderToEdit && folderToEdit.id === (deleteState as any).deletedFolderId) {
-                const parentId = folderToEdit.parentId;
-                if (parentId && parentId !== rootFolderId) {
-                    const parentFolder = allFolders?.find(f => f.id === parentId) as Folder | null;
-                     setSelectedFolder(parentFolder);
-                } else {
-                     setSelectedFolder(folderStructure.length > 0 ? folderStructure[0] : null);
-                }
-                setFolderToEdit(null);
-            }
-        }
-        if (deleteState.error) {
-            toast({
-                variant: 'destructive',
-                title: 'Error al Eliminar',
-                description: deleteState.error,
-            });
-        }
-        setIsDeletingFolder(false);
-    }, [deleteState, toast, folderToEdit, allFolders, rootFolderId, folderStructure]);
 
   const handleRunMigration = async () => {
     if (!firestore) return;
@@ -348,24 +328,35 @@ export default function RepoEmbed({
             });
             return;
         }
-         if (folder.id === rootFolderId) {
-            toast({
-                variant: "destructive",
-                title: "Acción no permitida",
-                description: "No se puede eliminar la carpeta raíz.",
-            });
-            return;
-        }
         setIsDeletingFolder(true);
     }
   }
 
   const handleConfirmDelete = () => {
     if (!folderToEdit) return;
-    startDeleteTransition(() => {
+    startDeleteTransition(async () => {
       const formData = new FormData();
       formData.append('folderId', folderToEdit.id);
-      deleteAction(formData);
+      
+      const result = await deleteFolderAction(null, formData);
+
+      if (result.error) {
+        toast({
+          variant: 'destructive',
+          title: 'Error al Eliminar',
+          description: result.error,
+        });
+      } else {
+        toast({
+          title: '¡Éxito!',
+          description: result.message,
+        });
+        if (selectedFolder?.id === folderToEdit.id) {
+            setSelectedFolder(null);
+        }
+      }
+      setIsDeletingFolder(false);
+      setFolderToEdit(null);
     });
   };
 
@@ -388,6 +379,11 @@ export default function RepoEmbed({
         }, 
         (error) => {
           console.error("Upload failed:", error);
+          toast({
+            variant: "destructive",
+            title: "Error al Subir",
+            description: "No se pudo subir el archivo. " + error.message,
+          });
           setUploadProgress(null);
         }, 
         () => {
@@ -407,6 +403,10 @@ export default function RepoEmbed({
               ownerId: 'superuser_id', // TODO: Replace with actual user ID
             });
             setUploadProgress(null);
+            toast({
+                title: "Archivo Subido",
+                description: `${file.name} se ha subido correctamente.`,
+            });
           });
         }
       );
@@ -426,10 +426,19 @@ export default function RepoEmbed({
 
         const fileRef = ref(storage, fileToDelete.path);
         await deleteObject(fileRef);
+        
+        toast({
+            title: "Archivo Eliminado",
+            description: `Se eliminó "${fileToDelete.name}".`
+        });
 
     } catch (error) {
         console.error("Error deleting file:", error);
-        alert("No se pudo eliminar el archivo. Verifique los permisos de Storage.");
+        toast({
+            variant: "destructive",
+            title: "Error al Eliminar",
+            description: "No se pudo eliminar el archivo. Verifique los permisos de Storage."
+        });
     }
   };
 
