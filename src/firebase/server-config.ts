@@ -1,20 +1,20 @@
+
 import { initializeApp, getApps, getApp, App } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { firebaseConfig } from './config';
 
 function initializeServerApp(): App {
-  if (getApps().length > 0) {
+  // Check if the default app is already initialized
+  if (getApps().some(app => app.name === '[DEFAULT]')) {
     return getApp();
   }
 
-  // En un entorno de servidor, puedes querer usar credenciales de servicio
-  // pero para este entorno, la configuración del cliente puede ser suficiente
-  // si el entorno de ejecución tiene los permisos adecuados (ej. en Cloud Run/Functions).
+  // In a Google Cloud environment (like Firebase App Hosting or Cloud Run),
+  // calling initializeApp() with no arguments will automatically use the
+  // project's service account credentials.
   return initializeApp({
-    credential: undefined, // Se usarán las credenciales del entorno de Google
-    projectId: firebaseConfig.projectId,
-    storageBucket: firebaseConfig.storageBucket,
+     storageBucket: firebaseConfig.storageBucket
   });
 }
 
