@@ -244,28 +244,31 @@ export default function RepoEmbed({
     if (!allFolders) return [];
 
     const folderMap = new Map<string, Folder>();
-    const rootLevelFolders: Folder[] = [];
     
-    // First pass: create a map of all folders
+    // First pass: create a map of all folders, ensuring each has a 'children' array.
     allFolders.forEach((doc: any) => {
-        folderMap.set(doc.id, { ...doc, children: [] });
+        if (!folderMap.has(doc.id)) {
+            folderMap.set(doc.id, { ...doc, children: [] });
+        }
     });
     
+    // Second pass: build the tree structure.
     folderMap.forEach(folder => {
         if (folder.parentId && folderMap.has(folder.parentId)) {
             folderMap.get(folder.parentId)!.children.push(folder);
-        } else if (folder.id !== rootFolderId) {
-             rootLevelFolders.push(folder);
         }
     });
 
-    const filteredRoots = allFolders.filter(f => f.parentId === null || f.parentId === rootFolderId) as Folder[];
+    // Filter for root-level folders.
+    const filteredRoots = Array.from(folderMap.values()).filter(f => f.parentId === null || f.parentId === rootFolderId);
     
-    // Sort children alphabetically at every level
+    // Sort children alphabetically at every level.
     const sortRecursive = (folders: Folder[]) => {
+        if (!folders) return; // Guard clause
         folders.sort((a, b) => a.name.localeCompare(b.name));
         folders.forEach(f => {
-            if (f.children.length > 0) {
+            // The check f.children is now safe because we initialized it for all folders.
+            if (f.children && f.children.length > 0) {
                 sortRecursive(f.children);
             }
         });
@@ -306,6 +309,7 @@ export default function RepoEmbed({
 
   const handleFolderAction = (action: 'rename' | 'delete', folder: Folder, event: React.MouseEvent) => {
     event.preventDefault();
+    event.stopPropagation();
     setFolderToEdit(folder);
     if (action === 'rename') {
         setIsRenamingFolder(true);
