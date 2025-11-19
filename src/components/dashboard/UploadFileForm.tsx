@@ -132,6 +132,7 @@ export function UploadFileForm({
     }
     
     setIsSubmitting(true);
+    console.log("Paso 1: Iniciando subida de archivo...");
     
     try {
         const file = data.file[0] as File;
@@ -147,6 +148,9 @@ export function UploadFileForm({
 
         const uploadResult = await uploadBytes(fileStorageRef, file);
         const downloadURL = await getDownloadURL(uploadResult.ref);
+        
+        console.log("Paso 2: Archivo subido. URL obtenida:", downloadURL);
+
 
         const docData = {
           code: data.code,
@@ -166,6 +170,8 @@ export function UploadFileForm({
 
         await addDoc(collection(firestore, 'documents'), docData);
         
+        console.log("Paso 3: Documento guardado en Firestore.");
+
         toast({
           title: '¡Éxito!',
           description: `El archivo "${file.name}" se ha subido y guardado correctamente.`,
@@ -174,7 +180,7 @@ export function UploadFileForm({
         onOpenChange(false);
 
     } catch(error: any) {
-        console.error("Error uploading file:", error);
+        console.error("Error detallado al subir archivo:", error);
         toast({
             variant: "destructive",
             title: 'Error al Subir',
@@ -182,6 +188,7 @@ export function UploadFileForm({
         });
     } finally {
         setIsSubmitting(false);
+        console.log("Paso 4: Proceso finalizado. Estado de carga reseteado.");
     }
   };
 
