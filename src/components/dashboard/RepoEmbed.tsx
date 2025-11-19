@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useTransition } from 'react';
@@ -253,32 +254,39 @@ export default function RepoEmbed({
     const folderMap = new Map<string, Folder>();
     const rootLevelFolders: Folder[] = [];
     
-    // First pass: create a map of all folders
+    // First pass: create a map of all folders that are not root-level folders
     allFolders.forEach((doc: any) => {
-      if (doc.parentId === rootFolderId) {
-         rootLevelFolders.push({ ...doc, children: [] });
-      } else if (doc.parentId) {
+      if (doc.parentId && doc.parentId !== rootFolderId) {
         folderMap.set(doc.id, { ...doc, children: [] });
+      } else if (doc.parentId === rootFolderId) {
+         rootLevelFolders.push({ ...doc, children: [] });
       }
     });
     
-    // Second pass: build the tree structure
+    // Second pass: build the tree structure for non-root folders
     folderMap.forEach(folder => {
       if (folder.parentId) {
-        const parentInRoot = rootLevelFolders.find(f => f.id === folder.parentId);
         const parentInMap = folderMap.get(folder.parentId);
-         if (parentInRoot) {
-            parentInRoot.children.push(folder);
-        } else if (parentInMap) {
+        if (parentInMap) {
            parentInMap.children.push(folder);
+        } else {
+            // This means the parent is a root-level folder
+            const parentInRoot = rootLevelFolders.find(f => f.id === folder.parentId);
+            if (parentInRoot) {
+                parentInRoot.children.push(folder);
+            }
         }
       }
     });
     
-    // Sort children alphabetically
+    // Sort children alphabetically at every level
     const sortRecursive = (folders: Folder[]) => {
         folders.sort((a, b) => a.name.localeCompare(b.name));
-        folders.forEach(f => sortRecursive(f.children));
+        folders.forEach(f => {
+            if (f.children.length > 0) {
+                sortRecursive(f.children);
+            }
+        });
     }
     sortRecursive(rootLevelFolders);
     
@@ -519,11 +527,11 @@ export default function RepoEmbed({
             <div>
               <CardTitle className="font-headline text-lg">
                 {selectedFolder
-                  ? `Archivos en ${selectedFolder.name}`
+                  ? selectedFolder.name
                   : 'Seleccione una carpeta'}
               </CardTitle>
               <CardDescription>
-                Navegue, suba y descargue archivos de gestión documental.
+                Documentos en esta carpeta.
               </CardDescription>
             </div>
              {isAdmin && (
@@ -622,7 +630,7 @@ export default function RepoEmbed({
                       colSpan={4}
                       className="h-24 text-center text-muted-foreground"
                     >
-                       {selectedFolder ? "No hay archivos en esta carpeta. Use el botón 'Subir Archivo' para agregar uno." : "Seleccione una carpeta para ver sus archivos."}
+                       {selectedFolder ? "Esta carpeta está vacía. Use ‘Subir Archivo’ para agregar documentos." : "Seleccione una carpeta para ver sus archivos."}
                     </TableCell>
                   </TableRow>
                 )}
