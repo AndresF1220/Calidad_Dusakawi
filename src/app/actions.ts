@@ -8,7 +8,6 @@ import { db, storage } from '@/firebase/server-config';
 import { revalidatePath } from 'next/cache';
 import { SEED_AREAS } from '@/data/seed-map';
 import { slugify } from '@/lib/slug';
-import { deleteObject, ref } from 'firebase/storage';
 
 const createSchema = z.object({
   name: z.string().min(3, 'Debe ingresar un nombre de al menos 3 caracteres.'),
@@ -287,7 +286,6 @@ export async function seedProcessMapAction(): Promise<{ message: string; error?:
     try {
         const batch = writeBatch(db);
         const areasCollection = collection(db, 'areas');
-        const rootFolderCollection = collection(db, 'folders');
 
         for (const area of SEED_AREAS) {
             const newAreaRef = doc(areasCollection);
@@ -427,7 +425,8 @@ export async function deleteFolderAction(prevState: any, formData: FormData): Pr
                 try {
                     await fileRef.delete();
                 } catch (storageError: any) {
-                    if (storageError.code !== 404) { // Not found
+                    // In a real app, you might want to log this, but for now we'll ignore if file doesn't exist
+                    if (storageError.code !== 404) { // 404 means 'Not Found'
                         throw storageError;
                     }
                 }
@@ -520,6 +519,7 @@ export async function createDocumentAction(prevState: any, formData: FormData): 
     });
     
     if (!validatedFields.success) {
+        console.error('Validation errors:', validatedFields.error.flatten());
         return { message: "Error de validación", error: validatedFields.error.flatten().fieldErrors.file?.[0] ?? "Datos de documento inválidos." };
     }
     

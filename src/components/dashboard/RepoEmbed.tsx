@@ -3,7 +3,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useTransition } from 'react';
-import { useFirestore, useCollection, useMemoFirebase, useFirebase } from '@/firebase';
+import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
 import { useIsAdmin } from '@/lib/authMock';
 import {
   collection,
@@ -11,7 +11,8 @@ import {
   where,
   doc,
   deleteDoc,
-  getDocs
+  getDocs,
+  writeBatch,
 } from 'firebase/firestore';
 import { deleteObject, ref as storageRef } from 'firebase/storage';
 import {
@@ -460,3 +461,4 @@ export default function RepoEmbed({
     </>
   );
 }
+

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useActionState, useEffect, useRef, useState, useTransition } from 'react';
@@ -56,10 +57,26 @@ interface UploadFileFormProps {
 
 function SubmitButton() {
   const { pending } = useFormStatus();
+  const [isUploading, setIsUploading] = useState(false);
+  const status = useFormStatus();
+
+  useEffect(() => {
+    // This effect is a bit of a hack to show a different loading state
+    // during the file upload vs. the form submission.
+    if (status.pending && !isUploading) {
+        // This is the actual file upload phase
+        setIsUploading(true);
+    } else if (!status.pending && isUploading) {
+        // This is the form submission (metadata save) phase
+        setIsUploading(false);
+    }
+  }, [status.pending, isUploading]);
+
+
   return (
-    <Button type="submit" disabled={pending}>
-      {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-      Subir Documento
+    <Button type="submit" disabled={status.pending}>
+      {status.pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+      {isUploading ? "Subiendo..." : "Guardar Documento"}
     </Button>
   );
 }
@@ -74,8 +91,7 @@ export function UploadFileForm({
 }: UploadFileFormProps) {
   const { toast } = useToast();
   const { storage } = useFirebase();
-  const [isPending, startTransition] = useTransition();
-
+  const [isUploading, startUploadTransition] = useTransition();
   const [state, formAction] = useActionState(createDocumentAction, { message: '', error: undefined });
   
   const formRef = useRef<HTMLFormElement>(null);
@@ -133,17 +149,13 @@ export function UploadFileForm({
       }
   }
 
-  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
-      
+  const handleFormSubmit = async (formData: FormData) => {
       if (!selectedFile || !folderId || !scope.areaId) {
           toast({ variant: 'destructive', title: 'Error', description: 'Faltan datos para la subida.'});
           return;
       }
       
-      const formData = new FormData(formRef.current!);
-      
-      startTransition(async () => {
+      startUploadTransition(async () => {
           try {
               toast({ title: 'Subiendo archivo...', description: 'Por favor espere.'});
 
@@ -158,11 +170,14 @@ export function UploadFileForm({
               
               const uploadResult = await uploadBytes(fileStorageRef, selectedFile);
               const url = await getDownloadURL(uploadResult.ref);
+              
+              toast({ title: 'Archivo subido', description: 'Guardando información del documento.'});
 
               formData.append('url', url);
               formData.append('path', fullPath);
               formData.append('size', selectedFile.size.toString());
 
+              // Now call the server action with all the data
               formAction(formData);
 
           } catch (error: any) {
@@ -188,7 +203,7 @@ export function UploadFileForm({
             Complete la información del documento y seleccione el archivo para subir.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleFormSubmit} ref={formRef} className="grid gap-4 py-4">
+        <form action={handleFormSubmit} ref={formRef} className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="code">Código del documento</Label>
             <Input id="code" name="code" required />
@@ -276,12 +291,12 @@ export function UploadFileForm({
             <Input type="hidden" name="subprocesoId" value={scope.subprocesoId || ''} />
 
           <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={isPending}>
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={isUploading}>
               Cancelar
             </Button>
-             <Button type="submit" disabled={isPending}>
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Subir Documento
+             <Button type="submit" disabled={isUploading}>
+              {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Subir y Guardar
             </Button>
           </DialogFooter>
         </form>
@@ -289,3 +304,4 @@ export function UploadFileForm({
     </Dialog>
   );
 }
+
