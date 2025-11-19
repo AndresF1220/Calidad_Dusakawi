@@ -73,7 +73,7 @@ export function UploadFileForm({
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  
 
   const form = useForm<UploadFormValues>({
     resolver: zodResolver(formSchema),
@@ -95,17 +95,15 @@ export function UploadFileForm({
     formState: { errors },
   } = form;
   
+  const fileRef = register('file');
   const selectedFile = watch('file');
   const fileName = selectedFile?.[0]?.name;
 
-  // Reset form state when the dialog is opened or closed
   useEffect(() => {
     if (!isOpen) {
         setTimeout(() => {
             reset();
-        }, 150); // Delay reset to allow closing animation
-    } else {
-        reset();
+        }, 150); 
     }
   }, [isOpen, reset]);
 
@@ -114,7 +112,6 @@ export function UploadFileForm({
     setIsSubmitting(true);
     console.log('Form data submitted:', data);
 
-    // Simulate an API call
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
     toast({
@@ -191,9 +188,10 @@ export function UploadFileForm({
                     <CustomCalendar
                         mode="single"
                         selected={watch('validityDate')}
-                        onSelect={handleSelectDate}
+                        onDayClick={handleSelectDate}
                         initialFocus
                         locale={es}
+                        onSelect={handleSelectDate}
                     />
                     </PopoverContent>
                 </Popover>
@@ -206,7 +204,7 @@ export function UploadFileForm({
              <div className="flex items-center gap-4">
                 <Button 
                     type="button" 
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => document.getElementById('file-upload')?.click()}
                     variant="outline"
                 >
                     <Upload className="mr-2 h-4 w-4" />
@@ -219,9 +217,8 @@ export function UploadFileForm({
                     id="file-upload" 
                     type="file" 
                     accept={ACCEPTED_FILE_TYPES.join(',')}
-                    {...register('file')}
-                    ref={fileInputRef} 
                     className="hidden"
+                    {...fileRef}
                 />
             </div>
             {errors.file && <p className="text-xs text-destructive">{errors.file.message as string}</p>}
