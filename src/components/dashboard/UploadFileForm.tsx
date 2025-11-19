@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -23,12 +22,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { CalendarIcon, Loader2 } from 'lucide-react';
+import { CalendarIcon, Loader2, Upload } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-
 
 const formSchema = z.object({
   code: z.string().min(1, 'El código es requerido.'),
@@ -63,6 +61,7 @@ export function UploadFileForm({
 }: UploadFileFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<UploadFormValues>({
     resolver: zodResolver(formSchema),
@@ -72,8 +71,13 @@ export function UploadFileForm({
     register,
     handleSubmit,
     control,
+    watch,
     formState: { errors },
   } = form;
+  
+  const selectedFile = watch('file');
+  const fileName = selectedFile?.[0]?.name;
+
 
   const onSubmit = async (data: UploadFormValues) => {
     setIsSubmitting(true);
@@ -149,6 +153,9 @@ export function UploadFileForm({
                         onSelect={(date) => form.setValue('validityDate', date as Date, { shouldValidate: true })}
                         initialFocus
                         locale={es}
+                        captionLayout="dropdown-buttons"
+                        fromYear={new Date().getFullYear() - 10}
+                        toYear={new Date().getFullYear() + 10}
                     />
                     </PopoverContent>
                 </Popover>
@@ -157,15 +164,28 @@ export function UploadFileForm({
           </div>
           
           <div className="grid gap-2">
-            <Label htmlFor="file">Archivo (PDF)</Label>
-            <Input 
-              id="file" 
-              type="file" 
-              accept=".pdf" 
-              {...register('file')} 
-              className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-              lang="es" 
-            />
+            <Label htmlFor="file-upload">Archivo (PDF)</Label>
+             <div className="flex items-center gap-4">
+                <Button 
+                    type="button" 
+                    onClick={() => fileInputRef.current?.click()}
+                    variant="outline"
+                >
+                    <Upload className="mr-2 h-4 w-4" />
+                    Seleccionar archivo
+                </Button>
+                <span className="text-sm text-muted-foreground truncate">
+                    {fileName || 'No hay archivo seleccionado'}
+                </span>
+                <Input 
+                    id="file" 
+                    type="file" 
+                    accept=".pdf" 
+                    {...register('file')}
+                    ref={fileInputRef} 
+                    className="hidden"
+                />
+            </div>
             {errors.file && <p className="text-xs text-destructive">{errors.file.message as string}</p>}
           </div>
 
