@@ -224,35 +224,33 @@ export default function RepoEmbed({
     if (!allFolders) return [];
 
     const folderMap = new Map<string, Folder>();
-    const rootFolders: Folder[] = [];
+    const rootLevelFolders: Folder[] = [];
     
     // First pass: create a map of all folders
     allFolders.forEach((doc: any) => {
-      folderMap.set(doc.id, { ...doc, children: [] });
+      if (doc.id !== rootFolderId) {
+        folderMap.set(doc.id, { ...doc, children: [] });
+      }
     });
     
     // Second pass: build the tree structure
     folderMap.forEach(folder => {
-      if (folder.parentId) {
+      if (folder.parentId && folder.parentId !== rootFolderId) {
         const parent = folderMap.get(folder.parentId);
         if (parent) {
           parent.children.push(folder);
-        } else {
-            // This might be a top-level folder if its parent is the logical root
-            if(folder.parentId === rootFolderId) {
-                rootFolders.push(folder);
-            }
         }
-      } 
-      // Note: We don't add the logical root folder itself to the displayable list
+      } else {
+        rootLevelFolders.push(folder);
+      }
     });
     
     // Sort children alphabetically
     folderMap.forEach(f => f.children.sort((a, b) => a.name.localeCompare(b.name)));
     // Sort root folders alphabetically
-    rootFolders.sort((a,b) => a.name.localeCompare(b.name));
+    rootLevelFolders.sort((a,b) => a.name.localeCompare(b.name));
 
-    return rootFolders;
+    return rootLevelFolders;
 
   }, [allFolders, rootFolderId]);
 
@@ -260,8 +258,8 @@ export default function RepoEmbed({
      // Auto-select first folder if nothing is selected and structure is available
      if (!selectedFolder && folderStructure.length > 0) {
         setSelectedFolder(folderStructure[0]);
-     } else if (!selectedFolder && rootFolderId && allFolders && allFolders.length <=1) {
-        // If there are no user-created folders, keep selection null
+     } else if (selectedFolder && !allFolders?.find(f => f.id === selectedFolder.id)) {
+        // If the selected folder was deleted, select null
         setSelectedFolder(null);
      }
   }, [folderStructure, rootFolderId, selectedFolder, allFolders]);
@@ -275,7 +273,7 @@ export default function RepoEmbed({
             // If the deleted folder was selected, select its parent or null
             if (selectedFolder && selectedFolder.id === (deleteState as any).deletedFolderId) {
                 const parentId = selectedFolder.parentId;
-                if (parentId) {
+                if (parentId && parentId !== rootFolderId) {
                     const parentFolder = allFolders?.find(f => f.id === parentId) as Folder | null;
                      setSelectedFolder(parentFolder);
                 } else {
@@ -291,7 +289,7 @@ export default function RepoEmbed({
             });
         }
         setIsDeletingFolder(false);
-    }, [deleteState, toast, selectedFolder, allFolders]);
+    }, [deleteState, toast, selectedFolder, allFolders, rootFolderId]);
 
   const handleRunMigration = async () => {
     if (!firestore) return;
