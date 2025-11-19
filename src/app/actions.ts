@@ -45,7 +45,7 @@ export async function createEntityAction(
     const { name, objetivo, alcance, responsable, type, parentId, grandParentId } = validatedFields.data;
 
     try {
-        const batch = writeBatch(db);
+        const batch = db.batch();
 
         const entityData: any = {
             nombre: name,
@@ -54,21 +54,21 @@ export async function createEntityAction(
         };
         
         let revalidationPath = '/inicio/documentos';
-        const newEntityRef = doc(collection(db, 'temp')); // Generate ID upfront
+        const newEntityRef = db.collection('temp').doc(); // Generate ID upfront
         entityData.id = newEntityRef.id;
 
         let finalEntityRef;
         let caracterizacionId = '';
 
         if (type === 'area') {
-            finalEntityRef = doc(db, 'areas', newEntityRef.id);
+            finalEntityRef = db.collection('areas').doc(newEntityRef.id);
             caracterizacionId = `area-${newEntityRef.id}`;
         } else if (type === 'process' && parentId) {
-            finalEntityRef = doc(db, `areas/${parentId}/procesos`, newEntityRef.id);
+            finalEntityRef = db.collection('areas').doc(parentId).collection('procesos').doc(newEntityRef.id);
             caracterizacionId = `process-${newEntityRef.id}`;
             revalidationPath = `/inicio/documentos/area/${parentId}`;
         } else if (type === 'subprocess' && parentId && grandParentId) {
-            finalEntityRef = doc(db, `areas/${grandParentId}/procesos/${parentId}/subprocesos`, newEntityRef.id);
+            finalEntityRef = db.collection('areas').doc(grandParentId).collection('procesos').doc(parentId).collection('subprocesos').doc(newEntityRef.id);
             caracterizacionId = `subprocess-${newEntityRef.id}`;
             revalidationPath = `/inicio/documentos/area/${grandParentId}/proceso/${parentId}`;
         } else {
@@ -77,7 +77,7 @@ export async function createEntityAction(
         
         batch.set(finalEntityRef, entityData);
 
-        const caracterizacionRef = doc(db, 'caracterizaciones', caracterizacionId);
+        const caracterizacionRef = db.collection('caracterizaciones').doc(caracterizacionId);
         batch.set(caracterizacionRef, {
             objetivo,
             alcance,
@@ -110,30 +110,30 @@ export async function deleteEntityAction(
   console.log('[DEL] args', { entityType, entityId, parentId, grandParentId });
   
   try {
-    const batch = writeBatch(db);
+    const batch = db.batch();
     let revalidationPath = '/inicio/documentos';
 
     switch (entityType) {
         case 'area':
             if (!entityId) throw new Error("Parámetros de eliminación inválidos (falta entityId).");
             
-            const areaRef = doc(db, 'areas', entityId);
-            const procesosQuery = collection(db, 'areas', entityId, 'procesos');
-            const procesosSnap = await getDocs(procesosQuery);
+            const areaRef = db.collection('areas').doc(entityId);
+            const procesosQuery = db.collection('areas').doc(entityId).collection('procesos');
+            const procesosSnap = await procesosQuery.get();
 
             for (const procesoDoc of procesosSnap.docs) {
-                const subprocesosQuery = collection(procesoDoc.ref, 'subprocesos');
-                const subprocesosSnap = await getDocs(subprocesosQuery);
+                const subprocesosQuery = procesoDoc.ref.collection('subprocesos');
+                const subprocesosSnap = await subprocesosQuery.get();
                 for (const subDoc of subprocesosSnap.docs) {
-                    const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${subDoc.id}`);
+                    const caracterizacionSubRef = db.collection('caracterizaciones').doc(`subprocess-${subDoc.id}`);
                     batch.delete(caracterizacionSubRef);
                     batch.delete(subDoc.ref);
                 }
-                const caracterizacionProcRef = doc(db, 'caracterizaciones', `process-${procesoDoc.id}`);
+                const caracterizacionProcRef = db.collection('caracterizaciones').doc(`process-${procesoDoc.id}`);
                 batch.delete(caracterizacionProcRef);
                 batch.delete(procesoDoc.ref);
             }
-            const caracterizacionAreaRef = doc(db, 'caracterizaciones', `area-${entityId}`);
+            const caracterizacionAreaRef = db.collection('caracterizaciones').doc(`area-${entityId}`);
             batch.delete(caracterizacionAreaRef);
             batch.delete(areaRef);
             revalidationPath = '/inicio/documentos';
@@ -142,16 +142,16 @@ export async function deleteEntityAction(
         case 'process':
             if (!entityId || !parentId) throw new Error("Parámetros de eliminación inválidos (falta entityId o parentId).");
 
-            const processRef = doc(db, `areas/${parentId}/procesos`, entityId);
-            const subprocesosProcQuery = collection(processRef, 'subprocesos');
-            const subprocesosProcSnap = await getDocs(subprocesosProcQuery);
+            const processRef = db.collection('areas').doc(parentId).collection('procesos').doc(entityId);
+            const subprocesosProcQuery = processRef.collection('subprocesos');
+            const subprocesosProcSnap = await subprocesosProcQuery.get();
 
             for (const subDoc of subprocesosProcSnap.docs) {
-                const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${subDoc.id}`);
+                const caracterizacionSubRef = db.collection('caracterizaciones').doc(`subprocess-${subDoc.id}`);
                 batch.delete(caracterizacionSubRef);
                 batch.delete(subDoc.ref);
             }
-            const caracterizacionProcRef = doc(db, 'caracterizaciones', `process-${entityId}`);
+            const caracterizacionProcRef = db.collection('caracterizaciones').doc(`process-${entityId}`);
             batch.delete(caracterizacionProcRef);
             batch.delete(processRef);
             revalidationPath = `/inicio/documentos/area/${parentId}`;
@@ -160,8 +160,8 @@ export async function deleteEntityAction(
         case 'subprocess':
             if (!entityId || !parentId || !grandParentId) throw new Error("Parámetros de eliminación inválidos (falta entityId, parentId o grandParentId).");
             
-            const subProcessRef = doc(db, `areas/${grandParentId}/procesos/${parentId}/subprocesos`, entityId);
-            const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${entityId}`);
+            const subProcessRef = db.collection('areas').doc(grandParentId).collection('procesos').doc(parentId).collection('subprocesos').doc(entityId);
+            const caracterizacionSubRef = db.collection('caracterizaciones').doc(`subprocess-${entityId}`);
             batch.delete(caracterizacionSubRef);
             batch.delete(subProcessRef);
             revalidationPath = `/inicio/documentos/area/${grandParentId}/proceso/${parentId}`;
@@ -220,24 +220,20 @@ export async function updateEntityAction(
     const { entityId, entityType, parentId, grandParentId, name, objetivo, alcance, responsable } = validatedFields.data;
 
     try {
-        const batch = writeBatch(db);
+        const batch = db.batch();
 
-        let entityPath = '';
-        let revalidationPath = '/inicio/documentos';
+        let entityRef;
 
         if (entityType === 'area') {
-            entityPath = `areas/${entityId}`;
+            entityRef = db.collection('areas').doc(entityId);
         } else if (entityType === 'process' && parentId) {
-            entityPath = `areas/${parentId}/procesos/${entityId}`;
-            revalidationPath = `/inicio/documentos/area/${parentId}`;
+            entityRef = db.collection('areas').doc(parentId).collection('procesos').doc(entityId);
         } else if (entityType === 'subprocess' && parentId && grandParentId) {
-            entityPath = `areas/${grandParentId}/procesos/${parentId}/subprocesos/${entityId}`;
-            revalidationPath = `/inicio/documentos/area/${grandParentId}/proceso/${parentId}`;
+            entityRef = db.collection('areas').doc(grandParentId).collection('procesos').doc(parentId).collection('subprocesos').doc(entityId);
         } else {
             return { message: 'Error', error: 'Parámetros inválidos para la actualización.' };
         }
 
-        const entityRef = doc(db, entityPath);
         batch.update(entityRef, { nombre: name, slug: slugify(name) });
 
         if (objetivo !== undefined || alcance !== undefined || responsable !== undefined) {
@@ -253,10 +249,10 @@ export async function updateEntityAction(
             if (alcance !== undefined) caracterizacionData.alcance = alcance;
             if (responsable !== undefined) caracterizacionData.responsable = responsable;
 
-            const caracterizacionRef = doc(db, 'caracterizaciones', caracterizacionId);
-            const caracterizacionSnap = await getDoc(caracterizacionRef);
+            const caracterizacionRef = db.collection('caracterizaciones').doc(caracterizacionId);
+            const caracterizacionSnap = await caracterizacionRef.get();
 
-            if (caracterizacionSnap.exists()) {
+            if (caracterizacionSnap.exists) {
                 batch.update(caracterizacionRef, caracterizacionData);
             } else {
                 batch.set(caracterizacionRef, caracterizacionData);
@@ -266,9 +262,10 @@ export async function updateEntityAction(
 
         await batch.commit();
         
-        revalidatePath(revalidationPath);
-        if (entityType !== 'area') {
-          revalidatePath(`/inicio/documentos/area/${grandParentId || parentId}`);
+        if (entityType === 'process') {
+          revalidatePath(`/inicio/documentos/area/${parentId}`);
+        } else if (entityType === 'subprocess') {
+            revalidatePath(`/inicio/documentos/area/${grandParentId}/proceso/${parentId}`);
         }
         revalidatePath(`/inicio/documentos`);
         
@@ -283,11 +280,11 @@ export async function updateEntityAction(
 
 export async function seedProcessMapAction(): Promise<{ message: string; error?: string }> {
     try {
-        const batch = writeBatch(db);
-        const areasCollection = collection(db, 'areas');
+        const batch = db.batch();
+        const areasCollection = db.collection('areas');
 
         for (const area of SEED_AREAS) {
-            const newAreaRef = doc(areasCollection);
+            const newAreaRef = areasCollection.doc();
             batch.set(newAreaRef, { 
                 nombre: area.titulo, 
                 slug: slugify(area.titulo),
@@ -296,7 +293,7 @@ export async function seedProcessMapAction(): Promise<{ message: string; error?:
             });
 
             for (const proceso of area.procesos) {
-                const newProcesoRef = doc(collection(db, 'areas', newAreaRef.id, 'procesos'));
+                const newProcesoRef = newAreaRef.collection('procesos').doc();
                 batch.set(newProcesoRef, { 
                     nombre: proceso.nombre,
                     slug: slugify(proceso.nombre),
@@ -305,7 +302,7 @@ export async function seedProcessMapAction(): Promise<{ message: string; error?:
                 });
 
                 for (const subproceso of proceso.subprocesos) {
-                    const newSubprocesoRef = doc(collection(db, 'areas', newAreaRef.id, 'procesos', newProcesoRef.id, 'subprocesos'));
+                    const newSubprocesoRef = newProcesoRef.collection('subprocesos').doc();
                     batch.set(newSubprocesoRef, { 
                         nombre: subproceso.nombre,
                         slug: slugify(subproceso.nombre),
@@ -390,7 +387,7 @@ export async function createFolderAction(prevState: any, formData: FormData): Pr
             updatedAt: serverTimestamp(),
         };
 
-        const newDocRef = await addDoc(collection(db, 'folders'), docData);
+        const newDocRef = await db.collection('folders').add(docData);
         
         console.log('Nueva carpeta creada', newDocRef.id, 'con datos:', docData);
 
@@ -411,12 +408,12 @@ export async function deleteFolderAction(prevState: any, formData: FormData): Pr
     }
 
     try {
-        const batch = writeBatch(db);
+        const batch = db.batch();
         const bucket = storage.bucket();
 
         // 1. Delete all files within the folder from Storage and their documents from Firestore
-        const filesQuery = query(collection(db, 'documents'), where('folderId', '==', folderId));
-        const filesSnap = await getDocs(filesQuery);
+        const filesQuery = db.collection('documents').where('folderId', '==', folderId);
+        const filesSnap = await filesQuery.get();
         
         for (const fileDoc of filesSnap.docs) {
             const fileData = fileDoc.data();
@@ -434,7 +431,7 @@ export async function deleteFolderAction(prevState: any, formData: FormData): Pr
         }
         
         // 2. Delete the folder document itself
-        const folderRef = doc(db, 'folders', folderId);
+        const folderRef = db.collection('folders').doc(folderId);
         batch.delete(folderRef);
         
         await batch.commit();
@@ -465,9 +462,9 @@ export async function renameFolderAction(prevState: any, formData: FormData): Pr
 
     try {
         const { folderId, newName } = validatedFields.data;
-        const folderRef = doc(db, 'folders', folderId);
+        const folderRef = db.collection('folders').doc(folderId);
         
-        await updateDoc(folderRef, {
+        await folderRef.update({
             name: newName,
             updatedAt: serverTimestamp(),
         });
@@ -558,7 +555,7 @@ export async function uploadFileAction(
       updatedAt: serverTimestamp(),
     };
 
-    await addDoc(collection(db, 'documents'), dataToSave);
+    await db.collection('documents').add(dataToSave);
 
     revalidatePath('/inicio/documentos');
     return { message: 'Documento guardado con éxito.' };
@@ -568,5 +565,3 @@ export async function uploadFileAction(
     return { message: 'Error', error: `No se pudo guardar el documento: ${e.message}` };
   }
 }
-
-    

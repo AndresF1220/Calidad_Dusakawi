@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { db } from '@/firebase/server-config';
 
 interface CaracterizacionEditorProps {
   idEntidad: string;
