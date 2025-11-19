@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/popover';
 import { CalendarIcon, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -135,9 +136,9 @@ export function UploadFileForm({
                     >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {form.watch('validityDate') ? (
-                        format(form.watch('validityDate'), 'PPP')
+                          format(form.watch('validityDate'), 'PPP', { locale: es })
                         ) : (
-                        <span>Elija una fecha</span>
+                          <span>Elija una fecha</span>
                         )}
                     </Button>
                     </PopoverTrigger>
@@ -147,6 +148,7 @@ export function UploadFileForm({
                         selected={form.watch('validityDate')}
                         onSelect={(date) => form.setValue('validityDate', date as Date, { shouldValidate: true })}
                         initialFocus
+                        locale={es}
                     />
                     </PopoverContent>
                 </Popover>
@@ -156,7 +158,14 @@ export function UploadFileForm({
           
           <div className="grid gap-2">
             <Label htmlFor="file">Archivo (PDF)</Label>
-            <Input id="file" type="file" accept=".pdf" {...register('file')} />
+            <Input 
+              id="file" 
+              type="file" 
+              accept=".pdf" 
+              {...register('file')} 
+              className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+              lang="es" 
+            />
             {errors.file && <p className="text-xs text-destructive">{errors.file.message as string}</p>}
           </div>
 
