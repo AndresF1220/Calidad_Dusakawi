@@ -450,12 +450,12 @@ export default function RepoEmbed({
   return (
     <>
       <h2 className="text-2xl font-bold font-headline -mb-4">
-        Repositorio de Documentos
+        Documentos
       </h2>
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <Card className="lg:col-span-1">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="font-headline text-lg">Documentos</CardTitle>
+            <CardTitle className="font-headline text-lg">Carpetas</CardTitle>
              {isAdmin && (
                 <div className="flex items-center gap-1">
                     <CreateFolderForm
@@ -670,3 +670,5 @@ export default function RepoEmbed({
     </>
   );
 }
+
+    
