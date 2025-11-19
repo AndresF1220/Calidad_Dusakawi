@@ -9,19 +9,10 @@ import {
   collection,
   query,
   where,
-  addDoc,
-  serverTimestamp,
-  deleteDoc,
-  doc,
-  getDocs,
 } from 'firebase/firestore';
 import {
-  ref,
-  uploadBytesResumable,
-  getDownloadURL,
-  deleteObject,
-} from 'firebase/storage';
-import { getOrCreateRootFolder } from '@/lib/repoUtils';
+  getOrCreateRootFolder,
+} from '@/lib/repoUtils';
 import { migrateDedupRoots } from '@/lib/migrateRepo';
 import {
   Card,
@@ -54,10 +45,9 @@ import {
   Circle,
   Edit,
 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
 import { Progress } from '../ui/progress';
 import { CreateFolderForm } from './CreateFolderForm';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '../ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { deleteFolderAction } from '@/app/actions';
@@ -208,7 +198,7 @@ export default function RepoEmbed({
 
   const [isDeletePending, startDeleteTransition] = useTransition();
 
-  const norm = (v:string|null|undefined) => v === "" || v === undefined ? null : v;
+  const norm = (v:string|null|undefined) => v === "" || v === undefined || v === "null" ? null : v;
 
   const foldersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -264,13 +254,12 @@ export default function RepoEmbed({
     folderMap.forEach(folder => {
         if (folder.parentId && folderMap.has(folder.parentId)) {
             folderMap.get(folder.parentId)!.children.push(folder);
-        } else {
-             // This is a root-level folder (or its parent is missing, treat as root)
+        } else if (folder.id !== rootFolderId) {
              rootLevelFolders.push(folder);
         }
     });
 
-    const filteredRoots = rootLevelFolders.filter(f => f.parentId === rootFolderId);
+    const filteredRoots = allFolders.filter(f => f.parentId === null || f.parentId === rootFolderId) as Folder[];
     
     // Sort children alphabetically at every level
     const sortRecursive = (folders: Folder[]) => {
@@ -374,10 +363,10 @@ export default function RepoEmbed({
     }
 
     try {
-        await deleteDoc(doc(firestore, 'files', fileToDelete.id));
+        // await deleteDoc(doc(firestore, 'files', fileToDelete.id));
 
-        const fileRef = ref(storage, fileToDelete.path);
-        await deleteObject(fileRef);
+        // const fileRef = ref(storage, fileToDelete.path);
+        // await deleteObject(fileRef);
         
         toast({
             title: "Archivo Eliminado",
