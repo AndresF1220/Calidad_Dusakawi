@@ -174,7 +174,7 @@ export default function RepoEmbed({
   const filesQuery = useMemoFirebase(() => {
     if (!firestore || !selectedFolder) return null;
     return query(
-        collection(firestore, 'files'),
+        collection(firestore, 'documents'),
         where('folderId', '==', selectedFolder.id)
     );
   }, [firestore, selectedFolder]);
@@ -184,7 +184,7 @@ export default function RepoEmbed({
 
   const rootFolders = useMemo(() => {
     if (!allFolders) return [];
-    return allFolders.filter(f => !f.parentId).sort((a, b) => a.name.localeCompare(b.name));
+    return allFolders.filter(f => f.parentId === null).sort((a, b) => a.name.localeCompare(b.name));
   }, [allFolders]);
 
 
@@ -250,7 +250,7 @@ export default function RepoEmbed({
         }
         
         // Delete doc from Firestore
-        const fileDocRef = doc(firestore, 'files', fileToDelete.id);
+        const fileDocRef = doc(firestore, 'documents', fileToDelete.id);
         await deleteDoc(fileDocRef);
 
         toast({

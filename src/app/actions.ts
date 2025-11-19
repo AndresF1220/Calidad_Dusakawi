@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { z } from 'zod';
@@ -416,7 +417,7 @@ export async function deleteFolderAction(prevState: any, formData: FormData): Pr
         const batch = writeBatch(db);
 
         // 1. Delete all files within the folder from Storage and their documents from Firestore
-        const filesQuery = query(collection(db, 'files'), where('folderId', '==', folderId));
+        const filesQuery = query(collection(db, 'documents'), where('folderId', '==', folderId));
         const filesSnap = await getDocs(filesQuery);
 
         for (const fileDoc of filesSnap.docs) {

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -164,7 +165,7 @@ export function UploadFileForm({
           updatedAt: serverTimestamp(),
         };
 
-        await addDoc(collection(firestore, 'files'), docData);
+        await addDoc(collection(firestore, 'documents'), docData);
         
         toast({
           title: '¡Éxito!',
@@ -193,11 +194,18 @@ export function UploadFileForm({
   }
 
   const handleOpenChange = (open: boolean) => {
-    onOpenChange(open);
+    setIsCalendarOpen(open);
+    if (!open) {
+      // Blur the trigger element to prevent focus issues
+      const trigger = document.querySelector('[aria-haspopup="dialog"]');
+      if (trigger instanceof HTMLElement) {
+        trigger.blur();
+      }
+    }
   };
   
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild disabled={disabled}>
         {children}
       </DialogTrigger>
@@ -229,7 +237,7 @@ export function UploadFileForm({
             </div>
              <div className="grid gap-2">
                 <Label htmlFor="validityDate">Fecha de vigencia</Label>
-                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                <Popover open={isCalendarOpen} onOpenChange={handleOpenChange}>
                     <PopoverTrigger asChild>
                     <Button
                         variant={'outline'}
@@ -262,9 +270,10 @@ export function UploadFileForm({
           </div>
           
           <div className="grid gap-2">
-            <Label>Archivo (PDF, Word, Excel, JPG, PNG)</Label>
+             <Label htmlFor="file-upload-button">Archivo (PDF, Word, Excel, JPG, PNG)</Label>
              <div className="flex items-center gap-4">
                 <Button 
+                    id="file-upload-button"
                     type="button" 
                     onClick={() => document.getElementById('file-upload')?.click()}
                     variant="outline"
@@ -282,8 +291,8 @@ export function UploadFileForm({
                     className="hidden"
                     ref={fileInputRef}
                     onChange={(e) => {
-                      const { onChange, ...rest } = register('file');
-                      onChange(e);
+                      onFileChange(e);
+                      setValue('file', e.target.files, { shouldValidate: true });
                     }}
                     {...fileInputProps}
                 />
