@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useActionState, useEffect, useRef, useState } from 'react';
-import { useFormStatus } from 'react-dom';
-import { uploadFileAction } from '@/app/actions';
-
+import { useEffect, useRef, useState, useTransition } from 'react';
+import { useFirebase } from '@/firebase';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -52,17 +52,6 @@ interface UploadFileFormProps {
   };
 }
 
-
-function SubmitButton() {
-    const { pending } = useFormStatus();
-    return (
-        <Button type="submit" disabled={pending}>
-        {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        {pending ? 'Subiendo...' : 'Subir y Guardar'}
-        </Button>
-    );
-}
-
 export function UploadFileForm({
   isOpen,
   onOpenChange,
@@ -72,14 +61,15 @@ export function UploadFileForm({
   scope,
 }: UploadFileFormProps) {
   const { toast } = useToast();
-  const [state, formAction] = useActionState(uploadFileAction, { message: '', error: undefined });
-  
   const formRef = useRef<HTMLFormElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [selectedFileName, setSelectedFileName] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+
+  const { firestore, storage } = useFirebase();
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     if (!isOpen) {
@@ -91,23 +81,6 @@ export function UploadFileForm({
       }
     }
   }, [isOpen]);
-
-  useEffect(() => {
-    if (state.message && !state.error) {
-      toast({
-        title: '¡Éxito!',
-        description: state.message,
-      });
-      onOpenChange(false);
-    }
-    if (state.error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error al Guardar',
-        description: state.error,
-      });
-    }
-  }, [state, toast, onOpenChange]);
 
   const handleSelectDate = (date: Date | undefined) => {
     if (date) {
@@ -125,6 +98,68 @@ export function UploadFileForm({
     }
   }
 
+  const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const selectedFile = (formData.get('file') as File);
+    
+    if (!selectedFile || !folderId || !scope.areaId || !storage || !firestore) {
+      toast({
+          variant: 'destructive',
+          title: 'Error de validación',
+          description: "Faltan datos o la conexión a Firebase no está lista.",
+      });
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        const pathParts = ['documentos', scope.areaId, scope.procesoId, scope.subprocesoId, folderId, selectedFile.name].filter(Boolean);
+        const fullPath = pathParts.join('/');
+        const fileStorageRef = ref(storage, fullPath);
+
+        // 1. Upload file
+        const uploadResult = await uploadBytes(fileStorageRef, selectedFile);
+        
+        // 2. Get download URL
+        const url = await getDownloadURL(uploadResult.ref);
+
+        // 3. Save metadata to Firestore
+        const docData = {
+          code: formData.get('code') as string,
+          name: formData.get('name') as string,
+          version: formData.get('version') as string,
+          validityDate: selectedDate ? new Date(selectedDate) : null,
+          folderId: folderId,
+          areaId: scope.areaId,
+          procesoId: scope.procesoId || null,
+          subprocesoId: scope.subprocesoId || null,
+          path: fullPath,
+          url: url,
+          size: selectedFile.size,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        };
+
+        await addDoc(collection(firestore, 'documents'), docData);
+
+        toast({
+          title: '¡Éxito!',
+          description: 'Documento guardado con éxito.',
+        });
+        onOpenChange(false);
+
+      } catch (e: any) {
+        console.error('Error uploading file:', e);
+        toast({
+          variant: 'destructive',
+          title: 'Error al Guardar',
+          description: `No se pudo guardar el documento: ${e.message}`,
+        });
+      }
+    });
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild disabled={disabled}>
@@ -137,7 +172,7 @@ export function UploadFileForm({
             Complete la información del documento y seleccione el archivo para subir.
           </DialogDescription>
         </DialogHeader>
-        <form action={formAction} ref={formRef} className="grid gap-4 py-4">
+        <form onSubmit={handleFormSubmit} ref={formRef} className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="code">Código del documento</Label>
             <Input id="code" name="code" required />
@@ -219,21 +254,17 @@ export function UploadFileForm({
             </div>
           </div>
           
-            <Input type="hidden" name="folderId" value={folderId || ''} />
-            <Input type="hidden" name="areaId" value={scope.areaId || ''} />
-            <Input type="hidden" name="procesoId" value={scope.procesoId || ''} />
-            <Input type="hidden" name="subprocesoId" value={scope.subprocesoId || ''} />
-
           <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={isPending}>
               Cancelar
             </Button>
-             <SubmitButton />
+             <Button type="submit" disabled={isPending}>
+                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isPending ? 'Subiendo...' : 'Subir y Guardar'}
+             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
   );
 }
-
-    

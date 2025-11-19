@@ -46,7 +46,6 @@ import { CreateFolderForm } from './CreateFolderForm';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { deleteFolderAction } from '@/app/actions';
 import { RenameFolderForm } from './RenameFolderForm';
 import { UploadFileForm } from './UploadFileForm';
 
@@ -207,30 +206,53 @@ export default function RepoEmbed({
   }
 
   const handleConfirmDelete = () => {
-    if (!folderToEdit) return;
-    startDeleteTransition(async () => {
-      const formData = new FormData();
-      formData.append('folderId', folderToEdit.id);
-      
-      const result = await deleteFolderAction(null, formData);
+    if (!folderToEdit || !firestore || !storage) return;
 
-      if (result.error) {
+    startDeleteTransition(async () => {
+      try {
+        const batch = writeBatch(firestore);
+
+        // 1. Find and delete all files within the folder
+        const filesQuery = query(collection(firestore, 'documents'), where('folderId', '==', folderToEdit.id));
+        const filesSnap = await getDocs(filesQuery);
+        
+        for (const fileDoc of filesSnap.docs) {
+          const fileData = fileDoc.data() as File;
+          if (fileData.path) {
+            const fileStorageRef = storageRef(storage, fileData.path);
+            try {
+              await deleteObject(fileStorageRef);
+            } catch (storageError: any) {
+              // If file doesn't exist in storage, we can still delete the firestore doc
+              if (storageError.code !== 'storage/object-not-found') {
+                throw storageError; 
+              }
+            }
+          }
+          batch.delete(fileDoc.ref);
+        }
+        
+        // 2. Delete the folder document itself
+        const folderRef = doc(firestore, 'folders', folderToEdit.id);
+        batch.delete(folderRef);
+        
+        await batch.commit();
+
+        toast({ title: '¡Éxito!', description: 'Carpeta eliminada con éxito.' });
+        if (selectedFolder?.id === folderToEdit.id) {
+          setSelectedFolder(null);
+        }
+      } catch (e: any) {
+        console.error("Error deleting folder:", e);
         toast({
           variant: 'destructive',
           title: 'Error al Eliminar',
-          description: result.error,
+          description: `No se pudo eliminar la carpeta: ${e.message}`,
         });
-      } else {
-        toast({
-          title: '¡Éxito!',
-          description: result.message,
-        });
-        if (selectedFolder?.id === folderToEdit.id) {
-            setSelectedFolder(null);
-        }
+      } finally {
+        setIsDeletingFolder(false);
+        setFolderToEdit(null);
       }
-      setIsDeletingFolder(false);
-      setFolderToEdit(null);
     });
   };
 
@@ -461,4 +483,3 @@ export default function RepoEmbed({
     </>
   );
 }
-
