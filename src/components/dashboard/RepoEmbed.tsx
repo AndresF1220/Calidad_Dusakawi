@@ -51,6 +51,7 @@ import {
   FolderPlus,
   MoreVertical,
   Circle,
+  Edit,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Progress } from '../ui/progress';
@@ -58,7 +59,8 @@ import { CreateFolderForm } from './CreateFolderForm';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '../ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { deleteFolderAction } from '@/app/actions';
+import { deleteFolderAction, renameFolderAction } from '@/app/actions';
+import { RenameFolderForm } from './RenameFolderForm';
 
 
 interface RepoEmbedProps {
@@ -91,6 +93,7 @@ const FolderTree = ({
   selectedFolder,
   openFolders,
   onToggleFolder,
+  onAction,
 }: {
   folders: Folder[];
   level?: number;
@@ -98,13 +101,15 @@ const FolderTree = ({
   selectedFolder: Folder | null;
   openFolders: Record<string, boolean>;
   onToggleFolder: (id: string) => void;
+  onAction: (action: 'rename' | 'delete', folder: Folder) => void;
 }) => {
+  const isAdmin = useIsAdmin();
   if (!folders || folders.length === 0) return null;
 
   return (
     <div style={{ marginLeft: level > 0 ? '1rem' : '0' }}>
       {folders.map(folder => (
-        <div key={folder.id}>
+        <div key={folder.id} className="group/folder-item">
           <div
             className={`flex items-center gap-2 cursor-pointer py-1 rounded-md px-2 ${
               selectedFolder?.id === folder.id ? 'bg-muted' : 'hover:bg-muted/50'
@@ -134,9 +139,28 @@ const FolderTree = ({
                  )}
             </div>
 
-            <span className="text-sm font-medium select-none">
+            <span className="text-sm font-medium select-none flex-1 truncate">
               {folder.name}
             </span>
+             {isAdmin && (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover/folder-item:opacity-100 focus:opacity-100" onClick={(e) => e.stopPropagation()}>
+                            <MoreVertical className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenuItem onSelect={() => onAction('rename', folder)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            <span>Renombrar</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => onAction('delete', folder)} className="text-destructive">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            <span>Eliminar</span>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            )}
           </div>
           {openFolders[folder.id] && folder.children.length > 0 && (
             <FolderTree
@@ -146,6 +170,7 @@ const FolderTree = ({
               selectedFolder={selectedFolder}
               openFolders={openFolders}
               onToggleFolder={onToggleFolder}
+              onAction={onAction}
             />
           )}
         </div>
@@ -166,7 +191,10 @@ export default function RepoEmbed({
   const { toast } = useToast();
   
   const [isAddingFolder, setIsAddingFolder] = useState(false);
+  const [isRenamingFolder, setIsRenamingFolder] = useState(false);
   const [isDeletingFolder, setIsDeletingFolder] = useState(false);
+  const [folderToEdit, setFolderToEdit] = useState<Folder | null>(null);
+
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
   const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({});
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
@@ -240,7 +268,7 @@ export default function RepoEmbed({
         if (parent) {
           parent.children.push(folder);
         }
-      } else {
+      } else if (folder.parentId === rootFolderId) {
         rootLevelFolders.push(folder);
       }
     });
@@ -271,14 +299,15 @@ export default function RepoEmbed({
                 description: deleteState.message,
             });
             // If the deleted folder was selected, select its parent or null
-            if (selectedFolder && selectedFolder.id === (deleteState as any).deletedFolderId) {
-                const parentId = selectedFolder.parentId;
+            if (folderToEdit && folderToEdit.id === (deleteState as any).deletedFolderId) {
+                const parentId = folderToEdit.parentId;
                 if (parentId && parentId !== rootFolderId) {
                     const parentFolder = allFolders?.find(f => f.id === parentId) as Folder | null;
                      setSelectedFolder(parentFolder);
                 } else {
-                     setSelectedFolder(null);
+                     setSelectedFolder(folderStructure.length > 0 ? folderStructure[0] : null);
                 }
+                setFolderToEdit(null);
             }
         }
         if (deleteState.error) {
@@ -289,7 +318,7 @@ export default function RepoEmbed({
             });
         }
         setIsDeletingFolder(false);
-    }, [deleteState, toast, selectedFolder, allFolders, rootFolderId]);
+    }, [deleteState, toast, folderToEdit, allFolders, rootFolderId, folderStructure]);
 
   const handleRunMigration = async () => {
     if (!firestore) return;
@@ -305,39 +334,36 @@ export default function RepoEmbed({
     }
   }
 
-  const handleDeleteFolder = () => {
-    if (!selectedFolder) {
-        toast({
-            variant: "destructive",
-            title: "Ninguna carpeta seleccionada",
-            description: "Por favor, seleccione una carpeta del árbol para eliminar.",
-        });
-        return;
+  const handleFolderAction = (action: 'rename' | 'delete', folder: Folder) => {
+    setFolderToEdit(folder);
+    if (action === 'rename') {
+        setIsRenamingFolder(true);
+    } else if (action === 'delete') {
+        if (folder.children.length > 0) {
+            toast({
+                variant: "destructive",
+                title: "La carpeta no está vacía",
+                description: "No se puede eliminar una carpeta que contiene otras carpetas.",
+            });
+            return;
+        }
+         if (folder.id === rootFolderId) {
+            toast({
+                variant: "destructive",
+                title: "Acción no permitida",
+                description: "No se puede eliminar la carpeta raíz.",
+            });
+            return;
+        }
+        setIsDeletingFolder(true);
     }
-    if (selectedFolder.children.length > 0) {
-        toast({
-            variant: "destructive",
-            title: "La carpeta no está vacía",
-            description: "No se puede eliminar una carpeta que contiene otras carpetas. Primero debe eliminar las subcarpetas.",
-        });
-        return;
-    }
-     if (selectedFolder.parentId === null || selectedFolder.id === rootFolderId) {
-        toast({
-            variant: "destructive",
-            title: "Acción no permitida",
-            description: "No se puede eliminar la carpeta raíz.",
-        });
-        return;
-    }
-    setIsDeletingFolder(true);
-  };
-  
+  }
+
   const handleConfirmDelete = () => {
-    if (!selectedFolder) return;
+    if (!folderToEdit) return;
     startDeleteTransition(() => {
       const formData = new FormData();
-      formData.append('folderId', selectedFolder.id);
+      formData.append('folderId', folderToEdit.id);
       deleteAction(formData);
     });
   };
@@ -434,19 +460,6 @@ export default function RepoEmbed({
                             <span className="sr-only">Crear Carpeta</span>
                         </Button>
                     </CreateFolderForm>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                         <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreVertical className="h-4 w-4" />
-                         </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                         <DropdownMenuItem onSelect={handleDeleteFolder} className="text-destructive focus:text-destructive">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            <span>Eliminar Carpeta</span>
-                         </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
                 </div>
             )}
           </CardHeader>
@@ -481,6 +494,7 @@ export default function RepoEmbed({
                 selectedFolder={selectedFolder}
                 openFolders={openFolders}
                 onToggleFolder={handleToggleFolder}
+                onAction={handleFolderAction}
               />
             ) : (
               <div className="text-center text-sm text-muted-foreground p-4">
@@ -607,6 +621,18 @@ export default function RepoEmbed({
           </CardContent>
         </Card>
       </div>
+      
+      {folderToEdit && (
+        <RenameFolderForm
+            isOpen={isRenamingFolder}
+            onOpenChange={setIsRenamingFolder}
+            folderId={folderToEdit.id}
+            initialName={folderToEdit.name}
+        >
+            <div />
+        </RenameFolderForm>
+      )}
+
 
        <AlertDialog open={isDeletingFolder} onOpenChange={setIsDeletingFolder}>
         <AlertDialogContent>
@@ -614,7 +640,7 @@ export default function RepoEmbed({
             <AlertDialogTitle>¿Está seguro de eliminar esta carpeta?</AlertDialogTitle>
             <AlertDialogDescription>
               Va a eliminar la carpeta "
-              <span className="font-semibold">{selectedFolder?.name}</span>". 
+              <span className="font-semibold">{folderToEdit?.name}</span>". 
               Todos los archivos dentro de esta carpeta serán eliminados permanentemente. 
               Esta acción no se puede deshacer.
             </AlertDialogDescription>

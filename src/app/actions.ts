@@ -450,3 +450,36 @@ export async function deleteFolderAction(prevState: any, formData: FormData): Pr
         return { message: 'Error', error: `No se pudo eliminar la carpeta: ${e.message}` };
     }
 }
+
+const renameFolderSchema = z.object({
+    folderId: z.string().min(1, 'ID de carpeta no proporcionado.'),
+    newName: z.string().min(1, 'El nuevo nombre no puede estar vacío.'),
+});
+
+export async function renameFolderAction(prevState: any, formData: FormData): Promise<{ message: string, error?: string }> {
+    const validatedFields = renameFolderSchema.safeParse({
+        folderId: formData.get('folderId'),
+        newName: formData.get('newName'),
+    });
+
+    if (!validatedFields.success) {
+        return { message: 'Error', error: 'Datos inválidos.' };
+    }
+
+    try {
+        const { folderId, newName } = validatedFields.data;
+        const folderRef = doc(db, 'folders', folderId);
+        
+        await updateDoc(folderRef, {
+            name: newName,
+            updatedAt: serverTimestamp(),
+        });
+        
+        revalidatePath('/inicio/documentos');
+        return { message: 'Carpeta renombrada con éxito.' };
+
+    } catch (e: any) {
+        console.error("Error renaming folder:", e);
+        return { message: 'Error', error: `No se pudo renombrar la carpeta: ${e.message}` };
+    }
+}
