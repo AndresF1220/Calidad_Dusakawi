@@ -1,174 +1,36 @@
-/**
- * @fileOverview Firestore Security Rules for Dusakawi Quality Central.
- *
- * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for user-specific data (alerts, feedback).
- * Quality metrics and data points are publicly readable, but only authorized users can create, update, or delete them.
- *
- * Data Structure:
- * - /users/{userId}: Stores individual user profiles. Access is restricted to the user and potentially admins (not yet implemented).
- * - /qualityMetrics/{qualityMetricId}: Stores definitions of quality metrics. Publicly readable, owner-only writable (if an ownership field existed).
- * - /qualityMetrics/{qualityMetricId}/dataPoints/{dataPointId}: Stores data points for quality metrics. Publicly readable, owner-only writable (if an ownership field existed).
- * - /users/{userId}/alerts/{alertId}: Stores alerts configured by users. Access is restricted to the user and potentially admins.
- * - /users/{userId}/feedback/{feedbackId}: Stores user feedback. Access is restricted to the user and potentially admins.
- *
- * Key Security Decisions:
- * - Users can only create, update, or delete their own profiles, alerts, and feedback.
- * - Listing of user profiles is disallowed.
- * - Quality metrics and data points are publicly readable.
- * - Data validation is limited to authorization-critical fields during the prototyping phase.
- *
- * Denormalization for Authorization:
- *  - While the data model doesn't explicitly require it yet, imagine a scenario where a `QualityMetric` could only be modified by its creator. In that case, we would add an `ownerId` field to the `QualityMetric` document and validate it in the rules. The `QualityDataPoint` would also need to inherit this `ownerId` for consistent authorization.
- * Structural Segregation:
- *  - User-specific data (alerts, feedback) is stored under /users/{userId} to ensure path-based ownership, simplifying security rules.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * @description Enforces user-ownership for user profiles.
-     * @path /users/{userId}
-     * @allow (create) - Authenticated user with matching userId can create their profile.
-     * @allow (get, update, delete) - Authenticated user with matching userId can get, update, and delete their profile.
-     * @deny (create) - Authenticated user attempting to create a profile with a mismatched userId.
-     * @deny (get, update, delete) - Authenticated user attempting to get, update, or delete another user's profile.
-     * @principle Enforces document ownership for all operations.
-     */
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
     match /users/{userId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(userId) {
-        return isSignedIn() && request.auth.uid == userId;
-      }
-
-      function isExistingOwner(userId) {
-          return isOwner(userId) && resource != null;
-      }
-
-      // Prevent listing all users.
-      allow list: if false;
-
-      // Only the user can read their own profile.
-      allow get: if isOwner(userId);
-
-      // Only the user can create their own profile. The ID in the document must match the `userId` in the path.
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-
-      // Only the user can update their own profile. The ID in the document must not be changed.
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-
-      // Only the user can delete their own profile.
-      allow delete: if isExistingOwner(userId);
+      allow read, write: if isOwner(userId);
+    }
+    
+    match /areas/{areaId} {
+      allow read: if true;
+      allow write: if request.auth != null;
     }
 
-    /**
-     * @description Allows public read access to quality metrics, but restricts writes (owner only if `ownerId` existed).
-     * @path /qualityMetrics/{qualityMetricId}
-     * @allow (get, list) - Any user can read quality metrics.
-     * @deny (create, update, delete) - No one can create, update, or delete a quality metric in this prototype due to the missing `ownerId` field.
-     * @principle Allows public read access with owner-only writes (if an ownership field existed).
-     */
-    match /qualityMetrics/{qualityMetricId} {
-      // Allow public read access to quality metrics.
-      allow get, list: if true;
-
-      // CRITICAL: Cannot implement owner-only writes. The 'QualityMetric' entity is missing an 'ownerId' or 'authorId' field.
-      allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+    match /areas/{areaId}/{allChildren=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
     }
 
-    /**
-     * @description Allows public read access to quality data points, but restricts writes (owner only if `ownerId` existed).
-     * @path /qualityMetrics/{qualityMetricId}/dataPoints/{dataPointId}
-     * @allow (get, list) - Any user can read quality data points.
-     * @deny (create, update, delete) - No one can create, update, or delete a quality data point in this prototype due to the missing `ownerId` field.
-     * @principle Allows public read access with owner-only writes (if an ownership field existed).
-     */
-    match /qualityMetrics/{qualityMetricId}/dataPoints/{dataPointId} {
-      // Allow public read access to quality data points.
-      allow get, list: if true;
-
-      // CRITICAL: Cannot implement owner-only writes. The 'QualityDataPoint' entity is missing an 'ownerId' or 'authorId' field.
-      allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+    match /caracterizaciones/{caracterizacionId} {
+      allow read: if true;
+      allow write: if request.auth != null;
     }
 
-    /**
-     * @description Enforces user-ownership for alerts.
-     * @path /users/{userId}/alerts/{alertId}
-     * @allow (create) - Authenticated user with matching userId can create an alert.
-     * @allow (get, update, delete) - Authenticated user with matching userId can get, update, and delete their alert.
-     * @deny (create) - Authenticated user attempting to create an alert with a mismatched userId.
-     * @deny (get, update, delete) - Authenticated user attempting to get, update, or delete another user's alert.
-     * @principle Enforces document ownership for all operations.
-     */
-    match /users/{userId}/alerts/{alertId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(userId) {
-        return isSignedIn() && request.auth.uid == userId;
-      }
-
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
-      // Only the owner can list their own alerts.
-      allow list: if isOwner(userId);
-
-      // Only the owner can read their own alert.
-      allow get: if isOwner(userId);
-
-      // Only the owner can create their own alert.
-      allow create: if isOwner(userId);
-
-      // Only the owner can update their own alert.
-      allow update: if isExistingOwner(userId);
-
-      // Only the owner can delete their own alert.
-      allow delete: if isExistingOwner(userId);
+    match /folders/{folderId} {
+       allow read, write: if request.auth != null;
     }
 
-    /**
-     * @description Enforces user-ownership for feedback.
-     * @path /users/{userId}/feedback/{feedbackId}
-     * @allow (create) - Authenticated user with matching userId can create feedback.
-     * @allow (get, update, delete) - Authenticated user with matching userId can get, update, and delete their feedback.
-     * @deny (create) - Authenticated user attempting to create feedback with a mismatched userId.
-     * @deny (get, update, delete) - Authenticated user attempting to get, update, or delete another user's feedback.
-     * @principle Enforces document ownership for all operations.
-     */
-    match /users/{userId}/feedback/{feedbackId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(userId) {
-        return isSignedIn() && request.auth.uid == userId;
-      }
-
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
-      // Only the owner can list their own feedback.
-      allow list: if isOwner(userId);
-
-      // Only the owner can read their own feedback.
-      allow get: if isOwner(userId);
-
-      // Only the owner can create their own feedback.
-      allow create: if isOwner(userId);
-
-      // Only the owner can update their own feedback.
-      allow update: if isExistingOwner(userId);
-
-      // Only the owner can delete their own feedback.
-      allow delete: if isExistingOwner(userId);
+    match /documents/{documentId} {
+       allow read, write: if request.auth != null;
     }
   }
 }
