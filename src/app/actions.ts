@@ -277,6 +277,30 @@ export async function updateEntityAction(
     }
 }
 
+export async function renameFolderAction(
+  prevState: any,
+  formData: FormData
+): Promise<{ message: string; error?: string }> {
+  const newName = formData.get('newName') as string;
+  const folderId = formData.get('folderId') as string;
+
+  if (!newName || newName.length < 3) {
+    return { message: 'Error', error: 'El nombre debe tener al menos 3 caracteres.' };
+  }
+  if (!folderId) {
+    return { message: 'Error', error: 'No se encontró el ID de la carpeta.' };
+  }
+
+  try {
+    const folderRef = db.collection('folders').doc(folderId);
+    await folderRef.update({ name: newName });
+    revalidatePath('/inicio/documentos', 'layout'); // Revalidate the whole documents layout
+    return { message: 'Carpeta renombrada con éxito.' };
+  } catch (e: any) {
+    console.error("Error renaming folder:", e);
+    return { message: 'Error', error: `No se pudo renombrar la carpeta: ${e.message}` };
+  }
+}
 
 export async function seedProcessMapAction(): Promise<{ message: string; error?: string }> {
     try {
@@ -349,3 +373,39 @@ export async function suggestAdditionalDataAction(prevState: any, formData: Form
         }
     };
 }
+
+export async function createFolderAction(prevState: any, formData: FormData): Promise<{ message: string; error?: string }> {
+  const name = formData.get('name') as string;
+  const parentId = formData.get('parentId') as string | null;
+  const areaId = formData.get('areaId') as string | null;
+  const procesoId = formData.get('procesoId') as string | null;
+  const subprocesoId = formData.get('subprocesoId') as string | null;
+
+  if (!name || name.length < 3) {
+    return { message: 'Error', error: 'El nombre debe tener al menos 3 caracteres.' };
+  }
+   if (!areaId) {
+    return { message: 'Error', error: 'El ID del área es requerido.' };
+  }
+
+  try {
+    const docData = {
+      name,
+      parentId,
+      areaId,
+      procesoId,
+      subprocesoId,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    };
+    await db.collection('folders').add(docData);
+    revalidatePath('/inicio/documentos', 'layout');
+    return { message: 'Carpeta creada con éxito.' };
+  } catch (e: any) {
+    console.error("Error creating folder:", e);
+    return { message: 'Error', error: `No se pudo crear la carpeta: ${e.message}` };
+  }
+}
+    
+
+    

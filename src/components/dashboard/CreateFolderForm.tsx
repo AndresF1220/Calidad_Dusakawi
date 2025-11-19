@@ -1,10 +1,9 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useActionState, useEffect, useRef } from 'react';
 import { useFormStatus } from 'react-dom';
-import { useFirebase } from '@/firebase';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { createFolderAction } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -53,8 +52,24 @@ export function CreateFolderForm({
 }: CreateFolderFormProps) {
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
-  const { firestore } = useFirebase();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [state, formAction] = useActionState(createFolderAction, { message: '', error: undefined });
+
+  useEffect(() => {
+    if (state.message && !state.error) {
+      toast({
+        title: '¡Éxito!',
+        description: state.message,
+      });
+      onOpenChange(false);
+    }
+    if (state.error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error al Crear Carpeta',
+        description: state.error,
+      });
+    }
+  }, [state, toast, onOpenChange]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -62,51 +77,7 @@ export function CreateFolderForm({
     }
   }, [isOpen]);
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!firestore) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Firebase no está listo.' });
-      return;
-    }
-
-    setIsSubmitting(true);
-    const formData = new FormData(event.currentTarget);
-    const name = formData.get('name') as string;
-
-    const s = (v: any): string | null => {
-        const str = String(v);
-        return (str === '' || str === 'null' || str === 'undefined' || v === null || v === undefined) ? null : str;
-    };
-    
-    const docData = {
-        name: name,
-        parentId: s(parentId),
-        areaId: s(scope.areaId),
-        procesoId: s(scope.procesoId),
-        subprocesoId: s(scope.subprocesoId),
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-    };
-
-    try {
-      await addDoc(collection(firestore, 'folders'), docData);
-      toast({
-        title: '¡Éxito!',
-        description: 'Carpeta creada con éxito.',
-      });
-      onOpenChange(false);
-    } catch (e: any) {
-      console.error("Error creating folder:", e);
-      toast({
-        variant: 'destructive',
-        title: 'Error al Crear Carpeta',
-        description: `No se pudo crear la carpeta: ${e.message}`,
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
+  const s = (v: any) => (v === null || v === undefined) ? '' : String(v);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -118,24 +89,27 @@ export function CreateFolderForm({
             Escriba un nombre para la nueva carpeta. Se creará en el nivel actual.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} ref={formRef}>
+        <form action={formAction} ref={formRef}>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="name">Nombre de la Carpeta</Label>
               <Input id="name" name="name" placeholder="Ej: Formatos Generales" required />
             </div>
+            <input type="hidden" name="parentId" value={s(parentId)} />
+            <input type="hidden" name="areaId" value={s(scope.areaId)} />
+            <input type="hidden" name="procesoId" value={s(scope.procesoId)} />
+            <input type="hidden" name="subprocesoId" value={s(scope.subprocesoId)} />
           </div>
           <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Crear Carpeta
-            </Button>
+            <SubmitButton />
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
   );
 }
+
+    
