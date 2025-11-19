@@ -9,7 +9,11 @@ import {
   collection,
   query,
   where,
+  doc,
+  deleteDoc,
+  getDocs
 } from 'firebase/firestore';
+import { deleteObject, ref as storageRef } from 'firebase/storage';
 import {
   Card,
   CardContent,
@@ -68,14 +72,9 @@ type Folder = {
   id: string;
   name: string;
   parentId: string | null;
-  createdAt: any; // Keep timestamp for sorting
+  createdAt: any;
 };
 
-const mockFiles: File[] = [
-    { id: '1', code: 'FIN-001', name: 'Presupuesto Anual 2024', version: '2.1', validityDate: { seconds: 1732057200 }, url: '#', path: '', modifiedAt: null, size: 0 },
-    { id: '2', code: 'RH-015', name: 'Política de Teletrabajo', version: '1.3', validityDate: { seconds: 1729388400 }, url: '#', path: '', modifiedAt: null, size: 0 },
-    { id: '3', code: 'CAL-007', name: 'Manual de Calidad', version: '4.0', validityDate: { seconds: 1714518000 }, url: '', path: '', modifiedAt: null, size: 0 },
-];
 
 const FolderList = ({
   folders,
@@ -180,15 +179,12 @@ export default function RepoEmbed({
     );
   }, [firestore, selectedFolder]);
 
-  // Using mock data for now
-  const files = mockFiles;
-  const isLoadingFiles = false;
+  const { data: files, isLoading: isLoadingFiles } = useCollection<File>(filesQuery);
 
 
   const rootFolders = useMemo(() => {
     if (!allFolders) return [];
-    // A flat list of folders since we removed subfolder logic.
-    return allFolders.sort((a, b) => a.name.localeCompare(b.name));
+    return allFolders.filter(f => !f.parentId).sort((a, b) => a.name.localeCompare(b.name));
   }, [allFolders]);
 
 
@@ -246,17 +242,30 @@ export default function RepoEmbed({
     }
 
     try {
+        
+        // Delete file from Storage
+        if(fileToDelete.path) {
+            const fileStorageRef = storageRef(storage, fileToDelete.path);
+            await deleteObject(fileStorageRef);
+        }
+        
+        // Delete doc from Firestore
+        const fileDocRef = doc(firestore, 'files', fileToDelete.id);
+        await deleteDoc(fileDocRef);
+
         toast({
             title: "Archivo Eliminado",
             description: `Se eliminó "${fileToDelete.name}".`
         });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error deleting file:", error);
         toast({
             variant: "destructive",
             title: "Error al Eliminar",
-            description: "No se pudo eliminar el archivo. Verifique los permisos de Storage."
+            description: error.code === 'storage/object-not-found' 
+                ? "El archivo ya no existía en Storage, pero el registro fue eliminado."
+                : "No se pudo eliminar el archivo.",
         });
     }
   };
@@ -295,7 +304,7 @@ export default function RepoEmbed({
                     <CreateFolderForm
                         isOpen={isAddingFolder}
                         onOpenChange={setIsAddingFolder}
-                        parentId={null} 
+                        parentId={null}
                         scope={{ areaId, procesoId, subprocesoId }}
                     >
                         <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -452,3 +461,5 @@ export default function RepoEmbed({
     </>
   );
 }
+
+    

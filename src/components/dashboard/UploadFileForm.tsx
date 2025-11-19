@@ -2,11 +2,12 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useForm, useFormContext } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { useStorage } from '@/firebase';
+import { useFirestore, useStorage } from '@/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -83,6 +84,7 @@ export function UploadFileForm({
 }: UploadFileFormProps) {
   const { toast } = useToast();
   const storage = useStorage();
+  const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   
@@ -120,11 +122,11 @@ export function UploadFileForm({
 
 
   const onSubmit = async (data: UploadFormValues) => {
-    if (!folderId || !scope.areaId || !storage) {
+    if (!folderId || !scope.areaId || !storage || !firestore) {
         toast({
             variant: "destructive",
             title: 'Error de Configuración',
-            description: 'Falta información de la carpeta o área para subir el archivo.',
+            description: 'Falta información de la carpeta, área o conexión para subir el archivo.',
         });
         return;
     }
@@ -134,7 +136,6 @@ export function UploadFileForm({
     try {
         const file = data.file[0] as File;
         
-        // Construct the storage path
         const pathParts = ['documentos', scope.areaId];
         if (scope.procesoId) pathParts.push(scope.procesoId);
         if (scope.subprocesoId) pathParts.push(scope.subprocesoId);
@@ -144,20 +145,30 @@ export function UploadFileForm({
         
         const storageRef = ref(storage, storagePath);
 
-        // Upload the file
         const uploadResult = await uploadBytes(storageRef, file);
-        console.log('File uploaded successfully!', uploadResult);
-
-        // Get the download URL
         const downloadURL = await getDownloadURL(uploadResult.ref);
-        console.log('File available at', downloadURL);
 
-        // Here you would typically save the document metadata and the URL to Firestore
-        // For now, we just show a success toast.
+        const docData = {
+          code: data.code,
+          name: data.name,
+          version: data.version,
+          validityDate: data.validityDate,
+          folderId: folderId,
+          areaId: scope.areaId,
+          procesoId: scope.procesoId || null,
+          subprocesoId: scope.subprocesoId || null,
+          url: downloadURL,
+          path: storagePath,
+          size: file.size,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        };
+
+        await addDoc(collection(firestore, 'files'), docData);
         
         toast({
-          title: '¡Documento Subido!',
-          description: `El archivo "${file.name}" se ha subido correctamente.`,
+          title: '¡Éxito!',
+          description: `El archivo "${file.name}" se ha subido y guardado correctamente.`,
         });
 
         onOpenChange(false);
@@ -251,7 +262,7 @@ export function UploadFileForm({
           </div>
           
           <div className="grid gap-2">
-            <Label>Archivo</Label>
+            <Label>Archivo (PDF, Word, Excel, JPG, PNG)</Label>
              <div className="flex items-center gap-4">
                 <Button 
                     type="button" 
@@ -270,7 +281,10 @@ export function UploadFileForm({
                     accept={ACCEPTED_FILE_TYPES.join(',')}
                     className="hidden"
                     ref={fileInputRef}
-                    onChange={(e) => onFileChange(e)}
+                    onChange={(e) => {
+                      const { onChange, ...rest } = register('file');
+                      onChange(e);
+                    }}
                     {...fileInputProps}
                 />
             </div>
@@ -291,3 +305,5 @@ export function UploadFileForm({
     </Dialog>
   );
 }
+
+    
