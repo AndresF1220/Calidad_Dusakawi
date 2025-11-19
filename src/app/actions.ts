@@ -4,11 +4,14 @@
 
 import { z } from 'zod';
 import { collection, addDoc, serverTimestamp, writeBatch, doc, getDocs, deleteDoc, setDoc, updateDoc, query, where, getDoc } from 'firebase/firestore';
-import { db, storage } from '@/firebase/config';
+import { getFirestore, getStorage } from 'firebase-admin/firestore';
+import { initializeFirebase } from '@/firebase';
 import { revalidatePath } from 'next/cache';
 import { SEED_AREAS } from '@/data/seed-map';
 import { slugify } from '@/lib/slug';
 import { deleteObject, ref } from 'firebase/storage';
+
+const { firestore: db, storage } = initializeFirebase();
 
 const createSchema = z.object({
   name: z.string().min(3, 'Debe ingresar un nombre de al menos 3 caracteres.'),
@@ -484,3 +487,5 @@ export async function renameFolderAction(prevState: any, formData: FormData): Pr
         return { message: 'Error', error: `No se pudo renombrar la carpeta: ${e.message}` };
     }
 }
+
+    
