@@ -108,7 +108,7 @@ export function UploadFileForm({
     formState: { errors },
   } = form;
   
-  const { ref: fileInputRef, onChange: onFileChange, ...fileInputProps } = register('file');
+  const fileInputRef = register('file');
   const selectedFile = watch('file');
   const fileName = selectedFile?.[0]?.name;
 
@@ -269,8 +269,8 @@ export function UploadFileForm({
           </div>
           
           <div className="grid gap-2">
-             <Label htmlFor="file-upload-button">Archivo (PDF, Word, Excel, JPG, PNG)</Label>
-             <div className="flex items-center gap-4">
+            <Label htmlFor="file-upload-button">Archivo (PDF, Word, Excel, JPG, PNG)</Label>
+            <div className="flex items-center gap-4">
                 <Button 
                     id="file-upload-button"
                     type="button" 
@@ -280,7 +280,7 @@ export function UploadFileForm({
                     <Upload className="mr-2 h-4 w-4" />
                     Seleccionar archivo
                 </Button>
-                 <span className="text-sm text-muted-foreground truncate">
+                <span className="text-sm text-muted-foreground truncate">
                     {fileName || 'No hay archivo seleccionado'}
                 </span>
                 <Input 
@@ -288,12 +288,7 @@ export function UploadFileForm({
                     type="file" 
                     accept={ACCEPTED_FILE_TYPES.join(',')}
                     className="hidden"
-                    ref={fileInputRef}
-                    onChange={(e) => {
-                      onFileChange(e);
-                      setValue('file', e.target.files, { shouldValidate: true });
-                    }}
-                    {...fileInputProps}
+                    {...fileInputRef}
                 />
             </div>
             {errors.file && <p className="text-xs text-destructive">{errors.file.message as string}</p>}
@@ -313,3 +308,5 @@ export function UploadFileForm({
     </Dialog>
   );
 }
+
+    
