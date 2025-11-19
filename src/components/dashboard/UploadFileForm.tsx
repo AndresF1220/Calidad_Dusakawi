@@ -191,7 +191,7 @@ export function UploadFileForm({
           
           <div className="grid gap-2">
             <Label htmlFor="file-upload-button">Archivo (PDF, Word, Excel, JPG, PNG)</Label>
-            <div className="flex items-center gap-4">
+            <div className="grid grid-cols-[auto_1fr] items-center gap-4">
                 <Button 
                     type="button" 
                     onClick={() => fileInputRef.current?.click()}
