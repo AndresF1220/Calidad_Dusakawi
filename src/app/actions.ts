@@ -396,7 +396,7 @@ export async function createFolderAction(prevState: any, formData: FormData): Pr
         
         console.log('Nueva carpeta creada', newDocRef.id, 'con datos:', docData);
 
-        revalidatePath('/inicio/documentos', 'layout');
+        revalidatePath('/inicio/documentos');
         return { message: 'Carpeta creada con éxito.' };
 
     } catch(e:any) {
@@ -442,7 +442,7 @@ export async function deleteFolderAction(prevState: any, formData: FormData): Pr
         // 3. Commit the batch
         await batch.commit();
 
-        revalidatePath('/inicio/documentos', 'layout');
+        revalidatePath('/inicio/documentos');
         return { message: 'Carpeta eliminada con éxito.', deletedFolderId: folderId };
 
     } catch (e: any) {
