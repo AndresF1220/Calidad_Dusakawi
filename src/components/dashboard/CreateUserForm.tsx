@@ -51,6 +51,12 @@ const roleTranslations: Record<string, string> = {
 
 const roleOptions = Object.keys(roleTranslations);
 
+const initialState = {
+  message: '',
+  errors: undefined,
+  error: undefined,
+};
+
 export function CreateUserForm({
   isOpen,
   onOpenChange,
@@ -58,10 +64,11 @@ export function CreateUserForm({
 }: CreateUserFormProps) {
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
-  const [state, formAction] = useActionState(createUserAction, { message: '', errors: undefined, error: undefined });
+  const [state, formAction, isPending] = useActionState(createUserAction, initialState);
   const [isActive, setIsActive] = useState(true);
 
   useEffect(() => {
+    if (!state) return;
     if (state.message && !state.error) {
       toast({
         title: '¡Éxito!',
@@ -82,12 +89,10 @@ export function CreateUserForm({
     if (!isOpen) {
       formRef.current?.reset();
       setIsActive(true);
-      // Reset action state when closing
-      formAction(new FormData()); 
     }
-  }, [isOpen, formAction]);
+  }, [isOpen]);
   
-  const getError = (fieldName: string) => state.errors?.[fieldName]?.[0];
+  const getError = (fieldName: string) => state?.errors?.[fieldName]?.[0];
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
