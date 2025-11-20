@@ -1,0 +1,48 @@
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSuperAdmin() {
+      return request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'superadmin';
+    }
+
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    match /users/{userId} {
+      // El superadmin puede ver y gestionar todos los usuarios
+      allow read, write: if isSuperAdmin();
+
+      // Un usuario normal solo puede leer/actualizar su propio registro
+      allow read, update: if isOwner(userId);
+    }
+    
+    match /areas/{areaId} {
+      allow read: if request.auth != null;
+      allow write: if isSuperAdmin();
+    }
+
+    match /areas/{areaId}/{allChildren=**} {
+      allow read: if request.auth != null;
+      allow write: if isSuperAdmin();
+    }
+
+    match /caracterizaciones/{caracterizacionId} {
+      allow read: if request.auth != null;
+      allow write: if isSuperAdmin();
+    }
+
+    match /folders/{folderId} {
+       allow read: if request.auth != null;
+       allow write: if isSuperAdmin();
+    }
+
+    match /documents/{documentId} {
+       allow read: if request.auth != null;
+       allow write: if isSuperAdmin();
+    }
+  }
+}
