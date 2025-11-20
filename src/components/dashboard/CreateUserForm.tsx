@@ -75,6 +75,33 @@ export function CreateUserForm({
     }
   }, [isOpen]);
 
+  // A little hack to get the Switch's value into FormData
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) return;
+
+    const statusSwitch = form.querySelector<HTMLButtonElement>('[name="status-switch"]');
+    const hiddenStatusInput = form.querySelector<HTMLInputElement>('[name="status"]');
+
+    if (!statusSwitch || !hiddenStatusInput) return;
+
+    // Set initial value
+    hiddenStatusInput.value = statusSwitch.dataset.state === 'checked' ? 'active' : 'inactive';
+
+    const observer = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'data-state') {
+                const state = (mutation.target as HTMLElement).dataset.state;
+                hiddenStatusInput.value = state === 'checked' ? 'active' : 'inactive';
+            }
+        }
+    });
+
+    observer.observe(statusSwitch, { attributes: true });
+
+    return () => observer.disconnect();
+}, [isOpen]);
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
@@ -115,7 +142,7 @@ export function CreateUserForm({
                  <Switch id="status-switch" name="status-switch" defaultChecked={true} />
                 <Label htmlFor="status-switch" className="text-sm font-normal">
                     {/* Hidden input to submit the actual value */}
-                    <input type="hidden" name="status" value={formRef.current?.querySelector<HTMLButtonElement>('[name="status-switch"]')?.dataset.state === 'checked' ? 'active' : 'inactive'} />
+                    <input type="hidden" name="status" value={'active'} />
                     Activo
                 </Label>
             </div>
@@ -132,27 +159,3 @@ export function CreateUserForm({
     </Dialog>
   );
 }
-
-// A little hack to get the Switch's value into FormData
-useEffect(() => {
-    const form = formRef.current;
-    if (!form) return;
-
-    const statusSwitch = form.querySelector<HTMLButtonElement>('[name="status-switch"]');
-    const hiddenStatusInput = form.querySelector<HTMLInputElement>('[name="status"]');
-
-    if (!statusSwitch || !hiddenStatusInput) return;
-
-    const observer = new MutationObserver((mutations) => {
-        for (const mutation of mutations) {
-            if (mutation.type === 'attributes' && mutation.attributeName === 'data-state') {
-                const state = (mutation.target as HTMLElement).dataset.state;
-                hiddenStatusInput.value = state === 'checked' ? 'active' : 'inactive';
-            }
-        }
-    });
-
-    observer.observe(statusSwitch, { attributes: true });
-
-    return () => observer.disconnect();
-}, [isOpen]);
