@@ -3,10 +3,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
-    }
-    
     function isSuperAdmin() {
       // For development purposes, grant superadmin access if the user is authenticated.
       // This will be secured properly later.
@@ -20,7 +16,7 @@ service cloud.firestore {
         // Allow any authenticated user to update any profile (for development)
         allow update: if request.auth != null;
         // A user can create their own document. isSuperAdmin can create any.
-        allow create: if isOwner(userId) || isSuperAdmin();
+        allow create: if isSuperAdmin();
         // Superadmin can delete
         allow delete: if isSuperAdmin();
     }
