@@ -19,8 +19,10 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      // Users can read their own profile, admins can read any profile
-      allow read: if isOwner(userId) || isSuperAdmin();
+      // A user can read their own profile. A superadmin can read any profile.
+      allow get: if isOwner(userId) || isSuperAdmin();
+      // A superadmin can list all users.
+      allow list: if isSuperAdmin();
       // Users can only create their own profile, or update their own if it exists.
       allow write: if isOwner(userId);
     }
