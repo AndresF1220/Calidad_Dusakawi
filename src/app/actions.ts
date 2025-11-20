@@ -495,14 +495,16 @@ export async function uploadFileAndCreateDocument(formData: FormData): Promise<{
   }
 }
 
-const createUserSchema = z.object({
+const userSchema = {
   fullName: z.string().min(3, 'El nombre completo es requerido.'),
   cedula: z.string().min(1, 'La cédula es requerida.'),
   email: z.string().email('El correo electrónico no es válido.'),
   role: z.enum(['superadmin', 'admin', 'viewer']),
   status: z.enum(['active', 'inactive']),
   tempPassword: z.string().min(1, 'La contraseña temporal es requerida.'),
-});
+};
+
+const createUserSchema = z.object(userSchema);
 
 export async function createUserAction(
   prevState: any,
@@ -541,5 +543,51 @@ export async function createUserAction(
   } catch (e: any) {
     console.error('Error creando usuario:', e);
     return { message: 'Error', error: `No se pudo crear el usuario: ${e.message}` };
+  }
+}
+
+const updateUserSchema = z.object({
+  ...userSchema,
+  userId: z.string().min(1, 'ID de usuario es requerido.'),
+});
+
+export async function updateUserAction(
+  prevState: any,
+  formData: FormData
+): Promise<{ message: string; error?: string, errors?: { [key: string]: string[] } }> {
+  if (!db) return { message: 'Error', error: 'Firestore no está inicializado.' };
+
+  const validatedFields = updateUserSchema.safeParse({
+    userId: formData.get('userId'),
+    fullName: formData.get('fullName'),
+    cedula: formData.get('cedula'),
+    email: formData.get('email'),
+    role: formData.get('role'),
+    status: formData.get('status'),
+    tempPassword: formData.get('tempPassword'),
+  });
+  
+  if (!validatedFields.success) {
+    const fieldErrors = validatedFields.error.flatten().fieldErrors;
+    return {
+      message: 'Error de validación',
+      errors: fieldErrors,
+      error: Object.values(fieldErrors).flat().join(' '),
+    };
+  }
+
+  try {
+    const { userId, ...userData } = validatedFields.data;
+    const userRef = doc(db, 'users', userId);
+    
+    await updateDoc(userRef, {
+        ...userData,
+        updatedAt: serverTimestamp(),
+    });
+
+    return { message: 'Usuario actualizado con éxito.' };
+  } catch (e: any) {
+    console.error('Error actualizando usuario:', e);
+    return { message: 'Error', error: `No se pudo actualizar el usuario: ${e.message}` };
   }
 }

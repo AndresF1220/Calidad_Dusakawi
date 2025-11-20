@@ -11,8 +11,9 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle, ShieldAlert, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { CreateUserForm } from '@/components/dashboard/CreateUserForm';
+import { UserActionsDropdown } from '@/components/dashboard/UserActionsDropdown';
 
-type User = {
+export type User = {
     id: string;
     fullName: string;
     email: string;
@@ -35,6 +36,7 @@ const translateRole = (role: User['role']) => {
 function UserManagement() {
     const firestore = useFirestore();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const { userRole } = useAuth();
 
     const usersQuery = useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, [firestore]);
     const { data: users, isLoading } = useCollection<User>(usersQuery);
@@ -68,12 +70,13 @@ function UserManagement() {
                                 <TableHead>Contraseña Temporal</TableHead>
                                 <TableHead>Rol</TableHead>
                                 <TableHead>Estado</TableHead>
+                                <TableHead className="text-right">Acciones</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {isLoading ? (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-24 text-center">
+                                    <TableCell colSpan={7} className="h-24 text-center">
                                         <div className="flex justify-center items-center gap-2 text-muted-foreground">
                                             <Loader2 className="h-5 w-5 animate-spin" />
                                             Cargando usuarios...
@@ -95,11 +98,14 @@ function UserManagement() {
                                                 {user.status === 'active' ? 'Activo' : 'Inactivo'}
                                             </Badge>
                                         </TableCell>
+                                        <TableCell className="text-right">
+                                            {userRole === 'superadmin' && <UserActionsDropdown user={user} />}
+                                        </TableCell>
                                     </TableRow>
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                                    <TableCell colSpan={7} className="text-center text-muted-foreground">
                                         No se encontraron usuarios. Comience creando uno.
                                     </TableCell>
                                 </TableRow>
