@@ -591,3 +591,56 @@ export async function updateUserAction(
     return { message: 'Error', error: `No se pudo actualizar el usuario: ${e.message}` };
   }
 }
+
+
+export async function toggleUserStatusAction(
+  userId: string,
+  currentStatus: 'active' | 'inactive'
+): Promise<{ success: boolean; error?: string }> {
+  if (!db) return { success: false, error: 'Firestore no está inicializado.' };
+
+  try {
+    const userRef = doc(db, 'users', userId);
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    await updateDoc(userRef, { status: newStatus });
+    return { success: true };
+  } catch (e: any) {
+    console.error('Error cambiando estado de usuario:', e);
+    return { success: false, error: `No se pudo cambiar el estado: ${e.message}` };
+  }
+}
+
+export async function deleteUserAction(
+  userIdToDelete: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!db) return { success: false, error: 'Firestore no está inicializado.' };
+
+  try {
+    const usersRef = collection(db, 'users');
+    
+    // Check if the user to be deleted is the last superadmin
+    const userToDeleteDoc = await getDocs(query(usersRef, where('__name__', '==', userIdToDelete)));
+
+    if (userToDeleteDoc.empty) {
+        return { success: false, error: 'El usuario no existe.' };
+    }
+    const userToDeleteData = userToDeleteDoc.docs[0].data();
+
+    if (userToDeleteData.role === 'superadmin') {
+      const superAdminQuery = query(usersRef, where('role', '==', 'superadmin'));
+      const superAdminSnapshot = await getDocs(superAdminQuery);
+      if (superAdminSnapshot.size <= 1) {
+        return { success: false, error: 'No se puede eliminar al último superadministrador.' };
+      }
+    }
+
+    // Proceed with deletion
+    const userRef = doc(db, 'users', userIdToDelete);
+    await deleteDoc(userRef);
+
+    return { success: true };
+  } catch (e: any) {
+    console.error('Error eliminando usuario:', e);
+    return { success: false, error: `No se pudo eliminar el usuario: ${e.message}` };
+  }
+}
