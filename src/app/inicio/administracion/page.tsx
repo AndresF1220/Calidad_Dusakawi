@@ -20,6 +20,16 @@ type User = {
     status: 'active' | 'inactive';
 };
 
+const roleTranslations: Record<User['role'], string> = {
+    superadmin: 'Superadministrador',
+    admin: 'Administrador',
+    viewer: 'Visualizador',
+};
+
+const translateRole = (role: User['role']) => {
+    return roleTranslations[role] || role;
+}
+
 function UserManagement() {
     const firestore = useFirestore();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -72,7 +82,7 @@ function UserManagement() {
                                         <TableCell className="font-medium">{user.fullName || 'N/A'}</TableCell>
                                         <TableCell>{user.email}</TableCell>
                                         <TableCell>
-                                            <Badge variant={user.role === 'superadmin' ? 'default' : 'secondary'} className="capitalize">{user.role}</Badge>
+                                            <Badge variant={user.role === 'superadmin' ? 'default' : 'secondary'}>{translateRole(user.role)}</Badge>
                                         </TableCell>
                                         <TableCell>
                                             <Badge variant={user.status === 'active' ? 'outline' : 'destructive'} className={user.status === 'active' ? 'text-green-600 border-green-600' : ''}>

@@ -130,9 +130,9 @@ export function CreateUserForm({
                 <SelectValue placeholder="Seleccione un rol" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="viewer">Viewer</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="superadmin">Superadmin</SelectItem>
+                <SelectItem value="viewer">Visualizador</SelectItem>
+                <SelectItem value="admin">Administrador</SelectItem>
+                <SelectItem value="superadmin">Superadministrador</SelectItem>
               </SelectContent>
             </Select>
           </div>
