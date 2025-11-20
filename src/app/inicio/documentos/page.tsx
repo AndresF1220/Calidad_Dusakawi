@@ -77,8 +77,8 @@ const AreaCard = ({ area }: { area: any }) => {
 export default function RepositoryAreasPage() {
   const { areas, isLoading } = useAreas();
   const [isAdding, setIsAdding] = useState(false);
-  const [isSeeding, setIsSeeding]_ = useState(false); // Renamed to avoid confusion
-  const [isSeedingAction, setIsSeedingAction] = useState(false); // New state for action
+  const [isSeeding, setIsSeeding] = useState(false);
+  const [isSeedingAction, setIsSeedingAction] = useState(false);
   const { toast } = useToast();
   const { userRole } = useAuth();
 
