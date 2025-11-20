@@ -47,7 +47,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from '@/hooks/use-toast';
 import { RenameFolderForm } from './RenameFolderForm';
 import { UploadFileForm } from './UploadFileForm';
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '@/lib/auth.tsx';
 
 
 interface RepoEmbedProps {

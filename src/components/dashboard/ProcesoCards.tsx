@@ -9,7 +9,7 @@ import { Skeleton } from '../ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import React from 'react';
 import { EntityOptionsDropdown } from './EntityOptionsDropdown';
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '@/lib/auth.tsx';
 
 interface ProcesoCardsProps {
     areaId: string;

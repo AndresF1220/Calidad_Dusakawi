@@ -28,7 +28,7 @@ import {
   Loader,
 } from 'lucide-react';
 import CaracterizacionEditor from './CaracterizacionEditor';
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '@/lib/auth.tsx';
 
 interface CaracterizacionPanelProps {
   idEntidad: string;

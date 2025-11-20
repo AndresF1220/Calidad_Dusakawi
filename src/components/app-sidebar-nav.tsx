@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -18,10 +17,10 @@ import {
   MessageSquareHeart,
   User,
   FolderKanban,
-  UsersCog,
+  UserCog,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '@/lib/auth.tsx';
 
 
 interface AppSidebarNavProps {
@@ -41,7 +40,7 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
   ];
 
   const bottomMenuItems = [
-    { href: '/inicio/administracion', label: 'Administración', icon: UsersCog, roles: ['superadmin'] },
+    { href: '/inicio/administracion', label: 'Administración', icon: UserCog, roles: ['superadmin'] },
     { href: '/inicio/account', label: 'Cuenta', icon: User },
   ]
 

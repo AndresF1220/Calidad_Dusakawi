@@ -13,7 +13,7 @@ import { AddEntityForm } from '@/components/dashboard/AddEntityForm';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { EntityOptionsDropdown } from '@/components/dashboard/EntityOptionsDropdown';
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '@/lib/auth.tsx';
 
 export default function ProcesoIdPage() {
   const params = useParams();

@@ -11,7 +11,7 @@ import { AddEntityForm } from '@/components/dashboard/AddEntityForm';
 import { useToast } from '@/hooks/use-toast';
 import { seedProcessMapAction } from '@/app/actions';
 import { EntityOptionsDropdown } from '@/components/dashboard/EntityOptionsDropdown';
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '@/lib/auth.tsx';
 
 const iconMap: { [key: string]: React.ElementType } = {
     'direccion-administrativa-y-financiera': Building,

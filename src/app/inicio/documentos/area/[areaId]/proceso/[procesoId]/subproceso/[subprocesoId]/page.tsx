@@ -10,7 +10,7 @@ import { EntityOptionsDropdown } from '@/components/dashboard/EntityOptionsDropd
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '@/lib/auth.tsx';
 
 export default function SubprocesoIdPage() {
   const params = useParams();

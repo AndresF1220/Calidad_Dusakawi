@@ -2,7 +2,7 @@
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/app-sidebar';
 import AppHeader from '@/components/app-header';
-import { AuthProvider } from '@/lib/auth';
+import { AuthProvider } from '@/lib/auth.tsx';
 
 export default function InicioLayout({
   children,
