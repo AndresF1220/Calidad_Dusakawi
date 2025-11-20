@@ -641,6 +641,10 @@ export async function deleteUserAction(
   currentUserId: string | null,
   userIdToDelete: string
 ): Promise<{ success: boolean; error?: string }> {
+  // 1. Validaciones básicas
+  if (!db) {
+    return { success: false, error: 'Firestore no está inicializado.' };
+  }
   if (!currentUserId) {
     return { success: false, error: 'No se pudo identificar al usuario actual.' };
   }
@@ -649,40 +653,39 @@ export async function deleteUserAction(
   }
 
   try {
-    // Dynamically import server-side modules only within the server action
+    // 2. Auth admin (Firebase Admin)
     const { getAuth } = await import('firebase-admin/auth');
     const { adminApp } = await import('@/firebase/server-config');
     const auth = getAuth(adminApp);
 
-    // Check if user is the last superadmin BEFORE any deletion
-    const { db: serverDb } = await import('@/firebase/client-config');
-    const userToDeleteDocRef = doc(serverDb, 'users', userIdToDelete);
+    // 3. Referencias usando el mismo db ya importado
+    const userToDeleteDocRef = doc(db, 'users', userIdToDelete);
     const userToDeleteDocSnap = await getDoc(userToDeleteDocRef);
-    
+
+    // 4. Verificar si es el último superadmin
     if (userToDeleteDocSnap.exists() && userToDeleteDocSnap.data().role === 'superadmin') {
-      const usersRef = collection(serverDb, 'users');
+      const usersRef = collection(db, 'users');
       const superAdminQuery = query(usersRef, where('role', '==', 'superadmin'));
       const superAdminSnapshot = await getDocs(superAdminQuery);
+
       if (superAdminSnapshot.size <= 1) {
         return { success: false, error: 'No se puede eliminar al último superadministrador.' };
       }
     }
 
-    // 1. Delete from Auth
+    // 5. Eliminar en Firebase Auth
     try {
       await auth.deleteUser(userIdToDelete);
     } catch (authError: any) {
-      // If user not found in Auth, we can still proceed to delete from Firestore
       if (authError.code !== 'auth/user-not-found') {
-        throw authError; // Re-throw other auth errors
+        throw authError;
       }
     }
-    
-    // 2. Delete from Firestore
+
+    // 6. Eliminar en Firestore
     await deleteDoc(userToDeleteDocRef);
 
     return { success: true };
-
   } catch (e: any) {
     console.error('Error eliminando usuario:', e);
     return { success: false, error: `No se pudo eliminar el usuario: ${e.message}` };
