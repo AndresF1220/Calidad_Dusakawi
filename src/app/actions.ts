@@ -494,3 +494,46 @@ export async function uploadFileAndCreateDocument(formData: FormData): Promise<{
     return { success: false, error: e.message };
   }
 }
+
+const createUserSchema = z.object({
+  fullName: z.string().min(3, 'El nombre completo es requerido.'),
+  email: z.string().email('El correo electrónico no es válido.'),
+  role: z.enum(['superadmin', 'admin', 'viewer']),
+  status: z.enum(['active', 'inactive']),
+});
+
+export async function createUserAction(
+  prevState: any,
+  formData: FormData
+): Promise<{ message: string; error?: string }> {
+  if (!db) return { message: 'Error', error: 'Firestore no está inicializado.' };
+
+  const validatedFields = createUserSchema.safeParse({
+    fullName: formData.get('fullName'),
+    email: formData.get('email'),
+    role: formData.get('role'),
+    status: formData.get('status'),
+  });
+
+  if (!validatedFields.success) {
+    const errors = validatedFields.error.flatten().fieldErrors;
+    const errorMessages = Object.values(errors).flat().join(' ');
+    return { message: 'Error de validación', error: errorMessages };
+  }
+
+  try {
+    const { fullName, email, role, status } = validatedFields.data;
+    await addDoc(collection(db, 'users'), {
+      fullName,
+      email,
+      role,
+      status,
+      createdAt: serverTimestamp(),
+    });
+
+    return { message: 'Usuario creado con éxito.' };
+  } catch (e: any) {
+    console.error('Error creando usuario:', e);
+    return { message: 'Error', error: `No se pudo crear el usuario: ${e.message}` };
+  }
+}

@@ -8,15 +8,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { PlusCircle, ShieldAlert, Loader2 } from 'lucide-react';
 import { useState } from 'react';
+import { CreateUserForm } from '@/components/dashboard/CreateUserForm';
 
 type User = {
     id: string;
     fullName: string;
     email: string;
     role: 'superadmin' | 'admin' | 'viewer';
+    status: 'active' | 'inactive';
 };
 
 function UserManagement() {
@@ -33,25 +34,12 @@ function UserManagement() {
                     <h1 className="text-3xl font-bold font-headline">Gestión de usuarios</h1>
                     <p className="text-muted-foreground">Aquí se administran los usuarios del sistema.</p>
                 </div>
-                <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-                    <DialogTrigger asChild>
-                        <Button>
-                            <PlusCircle className="mr-2" />
-                            Crear usuario
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Crear Nuevo Usuario</DialogTitle>
-                            <DialogDescription>
-                                La funcionalidad para crear un nuevo usuario se implementará próximamente.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="py-4">
-                            <p className="text-center text-muted-foreground">(Formulario de creación de usuario irá aquí)</p>
-                        </div>
-                    </DialogContent>
-                </Dialog>
+                <CreateUserForm isOpen={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+                    <Button>
+                        <PlusCircle className="mr-2" />
+                        Crear usuario
+                    </Button>
+                </CreateUserForm>
             </div>
             <Card>
                 <CardHeader>
@@ -87,14 +75,16 @@ function UserManagement() {
                                             <Badge variant={user.role === 'superadmin' ? 'default' : 'secondary'} className="capitalize">{user.role}</Badge>
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant="outline" className="text-green-600 border-green-600">Activo</Badge>
+                                            <Badge variant={user.status === 'active' ? 'outline' : 'destructive'} className={user.status === 'active' ? 'text-green-600 border-green-600' : ''}>
+                                                {user.status === 'active' ? 'Activo' : 'Inactivo'}
+                                            </Badge>
                                         </TableCell>
                                     </TableRow>
                                 ))
                             ) : (
                                 <TableRow>
                                     <TableCell colSpan={4} className="text-center text-muted-foreground">
-                                        No se encontraron usuarios.
+                                        No se encontraron usuarios. Comience creando uno.
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -119,6 +109,7 @@ function AccessDenied() {
 export default function AdministracionPage() {
     const { userRole } = useAuth();
     
+    // During development, we can force superadmin. In production, this would be based on actual roles.
     if (userRole === 'superadmin') {
         return <UserManagement />;
     }
