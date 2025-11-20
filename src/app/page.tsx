@@ -65,11 +65,17 @@ export default function LoginPage() {
 
     } catch (error: any) {
       console.error("Authentication failed:", error);
-      // Show generic error for security reasons
+      let errorMessage = 'Cédula o contraseña incorrectos, o el usuario está inactivo.';
+      
+      // Handle specific Firebase Auth errors
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+          errorMessage = 'Cédula o contraseña incorrectos, o el usuario está inactivo.';
+      }
+
       toast({
           variant: 'destructive',
           title: 'Error de acceso',
-          description: 'Cédula o contraseña incorrectos, o el usuario está inactivo.',
+          description: errorMessage,
       });
       setIsLoading(false);
     }
