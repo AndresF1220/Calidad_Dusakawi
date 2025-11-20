@@ -24,7 +24,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const { user, firestore, isUserLoading } = useFirebase();
+    const { user, firestore, isUserLoading: isAuthLoading } = useFirebase();
     const [userRole, setUserRole] = useState<UserRole | null>(null);
     const [isActive, setIsActive] = useState<boolean>(false);
     const [isRoleLoading, setIsRoleLoading] = useState<boolean>(true);
@@ -37,28 +37,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
     useEffect(() => {
-        // Determine if we are still in a loading state.
-        // We are loading if the user auth state is loading, OR if we have a user but their profile hasn't loaded yet.
-        const isLoading = isUserLoading || (user != null && isProfileLoading);
+        // We are loading if the Firebase Auth user is still loading, OR
+        // if we have a user but we are still waiting for their profile from Firestore.
+        const isLoading = isAuthLoading || (!!user && isProfileLoading);
         setIsRoleLoading(isLoading);
-        
+
         if (isLoading) {
-            // While loading, ensure default non-privileged state.
+            // While loading, maintain a non-privileged, inactive state.
             setUserRole(null);
             setIsActive(false);
             return;
         }
 
-        // Once loading is complete, determine the role and status.
+        // Once all loading is complete, we can make a final determination.
         if (user && userProfile) {
+            // We have a user and their profile data. Set role and active status.
             setUserRole(userProfile.role);
             setIsActive(userProfile.status === 'active');
         } else {
-            // If there's no user or no profile, they have no role and are not active.
+            // No user or no profile found after loading is complete.
             setUserRole(null);
             setIsActive(false);
         }
-    }, [user, userProfile, isUserLoading, isProfileLoading]);
+    }, [user, userProfile, isAuthLoading, isProfileLoading]);
     
     const authInfo: AuthContextType = {
         user,

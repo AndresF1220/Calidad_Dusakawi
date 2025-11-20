@@ -48,14 +48,18 @@ function LoadingScreen() {
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     const { isRoleLoading, isActive } = useAuth();
     
+    // First, handle the loading state. Show a full-screen loader.
     if (isRoleLoading) {
         return <LoadingScreen />;
     }
 
+    // After loading is complete, check if the user is active.
+    // If not active, show the isolated inactive screen.
     if (!isActive) {
         return <InactiveUserScreen />;
     }
     
+    // If loading is complete and the user is active, render the full app layout.
     return (
         <SidebarProvider>
             <AppSidebar />
