@@ -6,34 +6,53 @@
       "type": "object",
       "description": "Represents a user of the Dusakawi Quality Central application.",
       "properties": {
-        "id": {
+        "fullName": {
           "type": "string",
-          "description": "Unique identifier for the User entity."
+          "description": "The user's full name."
         },
-        "username": {
+        "cedula": {
           "type": "string",
-          "description": "The user's username."
+          "description": "The user's national ID number."
         },
         "email": {
           "type": "string",
           "description": "The user's email address.",
           "format": "email"
         },
-        "fullName": {
-          "type": "string",
-          "description": "The user's full name."
-        },
         "role": {
           "type": "string",
-          "description": "The user's role within the application (e.g., admin, analyst, viewer)."
+          "description": "The user's role (e.g., superadmin, admin, viewer).",
+          "enum": [
+            "superadmin",
+            "admin",
+            "viewer"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "description": "The user's account status.",
+          "enum": [
+            "active",
+            "inactive"
+          ]
+        },
+        "tempPassword": {
+          "type": "string",
+          "description": "A temporary password for the user, visible to superadmins."
+        },
+        "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of when the user was created."
         }
       },
       "required": [
-        "id",
-        "username",
-        "email",
         "fullName",
-        "role"
+        "cedula",
+        "email",
+        "role",
+        "status",
+        "tempPassword"
       ]
     },
     "QualityMetric": {
@@ -202,7 +221,7 @@
         "definition": {
           "entityName": "User",
           "schema": {
-            "$ref": "#/backend/entities/User"
+            "$ref": "#/entities/User"
           },
           "description": "Stores user profiles. Path-based ownership ensures only the user or an admin can access the profile.",
           "params": [
@@ -218,7 +237,7 @@
         "definition": {
           "entityName": "QualityMetric",
           "schema": {
-            "$ref": "#/backend/entities/QualityMetric"
+            "$ref": "#/entities/QualityMetric"
           },
           "description": "Stores definitions of quality metrics tracked in the application.",
           "params": [
@@ -234,7 +253,7 @@
         "definition": {
           "entityName": "QualityDataPoint",
           "schema": {
-            "$ref": "#/backend/entities/QualityDataPoint"
+            "$ref": "#/entities/QualityDataPoint"
           },
           "description": "Stores individual data points for a specific quality metric. Includes denormalized 'qualityMetricId' for efficient querying.",
           "params": [
@@ -254,7 +273,7 @@
         "definition": {
           "entityName": "Alert",
           "schema": {
-            "$ref": "#/backend/entities/Alert"
+            "$ref": "#/entities/Alert"
           },
           "description": "Stores alerts configured by users. Path-based ownership ensures only the user or an admin can manage their alerts.",
           "params": [
@@ -274,7 +293,7 @@
         "definition": {
           "entityName": "Feedback",
           "schema": {
-            "$ref": "#/backend/entities/Feedback"
+            "$ref": "#/entities/Feedback"
           },
           "description": "Stores user feedback. Path-based ownership ensures only the user or an admin can access their feedback.",
           "params": [

@@ -43,6 +43,14 @@ function SubmitButton() {
   );
 }
 
+const roleTranslations: Record<string, string> = {
+    superadmin: 'Superadministrador',
+    admin: 'Administrador',
+    viewer: 'Visualizador',
+};
+
+const roleOptions = Object.keys(roleTranslations);
+
 export function CreateUserForm({
   isOpen,
   onOpenChange,
@@ -70,15 +78,8 @@ export function CreateUserForm({
   }, [state, toast, onOpenChange]);
 
   useEffect(() => {
-    if (!isOpen) {
-      formRef.current?.reset();
-    }
-  }, [isOpen]);
-
-  // A little hack to get the Switch's value into FormData
-  useEffect(() => {
     const form = formRef.current;
-    if (!form) return;
+    if (!form || !isOpen) return;
 
     const statusSwitch = form.querySelector<HTMLButtonElement>('[name="status-switch"]');
     const hiddenStatusInput = form.querySelector<HTMLInputElement>('[name="status"]');
@@ -100,7 +101,13 @@ export function CreateUserForm({
     observer.observe(statusSwitch, { attributes: true });
 
     return () => observer.disconnect();
-}, [isOpen]);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      formRef.current?.reset();
+    }
+  }, [isOpen]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -119,9 +126,17 @@ export function CreateUserForm({
             <Label htmlFor="fullName">Nombre completo</Label>
             <Input id="fullName" name="fullName" placeholder="John Doe" required />
           </div>
+           <div className="grid gap-2">
+            <Label htmlFor="cedula">Cédula</Label>
+            <Input id="cedula" name="cedula" placeholder="12345678" required />
+          </div>
           <div className="grid gap-2">
             <Label htmlFor="email">Correo electrónico</Label>
             <Input id="email" name="email" type="email" placeholder="john.doe@example.com" required />
+          </div>
+           <div className="grid gap-2">
+            <Label htmlFor="tempPassword">Contraseña Temporal</Label>
+            <Input id="tempPassword" name="tempPassword" required />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="role">Rol</Label>
@@ -130,9 +145,9 @@ export function CreateUserForm({
                 <SelectValue placeholder="Seleccione un rol" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="viewer">Visualizador</SelectItem>
-                <SelectItem value="admin">Administrador</SelectItem>
-                <SelectItem value="superadmin">Superadministrador</SelectItem>
+                {roleOptions.map(role => (
+                    <SelectItem key={role} value={role}>{roleTranslations[role]}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

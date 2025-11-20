@@ -16,8 +16,10 @@ type User = {
     id: string;
     fullName: string;
     email: string;
+    cedula: string;
     role: 'superadmin' | 'admin' | 'viewer';
     status: 'active' | 'inactive';
+    tempPassword?: string;
 };
 
 const roleTranslations: Record<User['role'], string> = {
@@ -61,7 +63,9 @@ function UserManagement() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Nombre</TableHead>
+                                <TableHead>Cédula</TableHead>
                                 <TableHead>Correo Electrónico</TableHead>
+                                <TableHead>Contraseña Temporal</TableHead>
                                 <TableHead>Rol</TableHead>
                                 <TableHead>Estado</TableHead>
                             </TableRow>
@@ -69,7 +73,7 @@ function UserManagement() {
                         <TableBody>
                             {isLoading ? (
                                 <TableRow>
-                                    <TableCell colSpan={4} className="h-24 text-center">
+                                    <TableCell colSpan={6} className="h-24 text-center">
                                         <div className="flex justify-center items-center gap-2 text-muted-foreground">
                                             <Loader2 className="h-5 w-5 animate-spin" />
                                             Cargando usuarios...
@@ -80,7 +84,9 @@ function UserManagement() {
                                 users.map((user) => (
                                     <TableRow key={user.id}>
                                         <TableCell className="font-medium">{user.fullName || 'N/A'}</TableCell>
+                                        <TableCell>{user.cedula}</TableCell>
                                         <TableCell>{user.email}</TableCell>
+                                        <TableCell className="font-mono text-xs">{user.tempPassword || 'N/A'}</TableCell>
                                         <TableCell>
                                             <Badge variant={user.role === 'superadmin' ? 'default' : 'secondary'}>{translateRole(user.role)}</Badge>
                                         </TableCell>
@@ -93,7 +99,7 @@ function UserManagement() {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={4} className="text-center text-muted-foreground">
+                                    <TableCell colSpan={6} className="text-center text-muted-foreground">
                                         No se encontraron usuarios. Comience creando uno.
                                     </TableCell>
                                 </TableRow>

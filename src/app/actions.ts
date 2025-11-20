@@ -497,9 +497,11 @@ export async function uploadFileAndCreateDocument(formData: FormData): Promise<{
 
 const createUserSchema = z.object({
   fullName: z.string().min(3, 'El nombre completo es requerido.'),
+  cedula: z.string().min(1, 'La cédula es requerida.'),
   email: z.string().email('El correo electrónico no es válido.'),
   role: z.enum(['superadmin', 'admin', 'viewer']),
   status: z.enum(['active', 'inactive']),
+  tempPassword: z.string().min(1, 'La contraseña temporal es requerida.'),
 });
 
 export async function createUserAction(
@@ -510,9 +512,11 @@ export async function createUserAction(
 
   const validatedFields = createUserSchema.safeParse({
     fullName: formData.get('fullName'),
+    cedula: formData.get('cedula'),
     email: formData.get('email'),
     role: formData.get('role'),
     status: formData.get('status'),
+    tempPassword: formData.get('tempPassword'),
   });
 
   if (!validatedFields.success) {
@@ -522,12 +526,14 @@ export async function createUserAction(
   }
 
   try {
-    const { fullName, email, role, status } = validatedFields.data;
+    const { fullName, email, role, status, cedula, tempPassword } = validatedFields.data;
     await addDoc(collection(db, 'users'), {
       fullName,
       email,
+      cedula,
       role,
       status,
+      tempPassword,
       createdAt: serverTimestamp(),
     });
 
