@@ -18,13 +18,22 @@ service cloud.firestore {
       return request.auth == null || role == null || role == 'superadmin';
     }
 
+    // Rules for individual user documents
     match /users/{userId} {
       // A user can read their own profile. A superadmin can read any profile.
       allow get: if isOwner(userId) || isSuperAdmin();
-      // A superadmin can list all users.
-      allow list: if isSuperAdmin();
-      // Users can only create their own profile, or update their own if it exists.
-      allow write: if isOwner(userId);
+      // A user can update their own profile. A superadmin can update any profile.
+      allow update: if isOwner(userId) || isSuperAdmin();
+      // Only a superadmin can delete a user.
+      allow delete: if isSuperAdmin();
+    }
+    
+    // Rules for the users collection as a whole
+    match /users {
+        // A superadmin can list all users.
+        allow list: if isSuperAdmin();
+        // Any authenticated user can create their own user document.
+        allow create: if request.auth != null;
     }
     
     match /areas/{areaId} {
