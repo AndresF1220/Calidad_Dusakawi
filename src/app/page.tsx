@@ -4,25 +4,74 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import React from 'react';
-import { useFirebaseApp } from '@/firebase';
-import { getAuth, signInAnonymously } from 'firebase/auth';
+import React, { useState } from 'react';
+import { useFirebase } from '@/firebase';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
-
+import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
-  const app = useFirebaseApp();
+  const { firestore } = useFirebase();
   const router = useRouter();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async () => {
-    const auth = getAuth(app);
+  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsLoading(true);
+
+    if (!firestore) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'No se pudo conectar a la base de datos.',
+      });
+      setIsLoading(false);
+      return;
+    }
+    
+    const formData = new FormData(event.currentTarget);
+    const cedula = formData.get('cedula') as string;
+    const password = formData.get('password') as string;
+
     try {
-      // For now, we'll use anonymous sign-in as it's enabled.
-      await signInAnonymously(auth);
+      // 1. Find user by cedula and status
+      const usersRef = collection(firestore, 'users');
+      const q = query(usersRef, where('cedula', '==', cedula), where('status', '==', 'active'));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        toast({
+          variant: 'destructive',
+          title: 'Error de acceso',
+          description: 'Cédula o contraseña incorrectos, o el usuario está inactivo.',
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // 2. Get user's email and sign in with Firebase Auth
+      const userDoc = querySnapshot.docs[0];
+      const userData = userDoc.data();
+      const email = userData.email;
+      
+      const auth = getAuth();
+      await signInWithEmailAndPassword(auth, email, password);
+      
+      // 3. Redirect on success
       router.push('/inicio');
+
     } catch (error: any) {
-        console.error("Authentication failed:", error);
-        alert(`El inicio de sesión falló: ${error.message}. Por favor, asegúrese de que el proveedor de inicio de sesión 'Anónimo' o 'Correo electrónico/Contraseña' esté habilitado en su consola de Firebase.`);
+      console.error("Authentication failed:", error);
+      // Show generic error for security reasons
+      toast({
+          variant: 'destructive',
+          title: 'Error de acceso',
+          description: 'Cédula o contraseña incorrectos, o el usuario está inactivo.',
+      });
+      setIsLoading(false);
     }
   };
 
@@ -47,23 +96,28 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-8">
-            <div className="grid gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="email">Correo Electrónico</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="usuario@ejemplo.com"
-                />
+            <form onSubmit={handleLogin}>
+              <div className="grid gap-6">
+                <div className="grid gap-2">
+                  <Label htmlFor="cedula">Número de identificación</Label>
+                  <Input
+                    id="cedula"
+                    name="cedula"
+                    type="text"
+                    placeholder="Escriba su cédula"
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="password">Contraseña</Label>
+                  <Input id="password" name="password" type="password" required />
+                </div>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Entrar
+                </Button>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="password">Contraseña</Label>
-                <Input id="password" type="password" />
-              </div>
-              <Button type="submit" className="w-full" onClick={handleLogin}>
-                Entrar
-              </Button>
-            </div>
+            </form>
           </CardContent>
         </Card>
       </div>
