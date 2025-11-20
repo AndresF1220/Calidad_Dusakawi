@@ -2,21 +2,38 @@
 'use client';
 
 import { useUser } from '@/firebase/provider';
+import React, { createContext, useContext, ReactNode } from 'react';
 
 type UserRole = 'superadmin' | 'admin' | 'viewer';
 
-/**
- * A simplified hook for development that always returns 'superadmin' role.
- * This ensures all UI controls are visible without needing a user session or Firestore document.
- */
-export function useAuth() {
-  const { user, isUserLoading } = useUser();
+interface AuthContextType {
+    userRole: UserRole;
+    isLoading: boolean;
+}
 
-  // For development purposes, always return 'superadmin' to ensure all UI is accessible.
-  // The original logic for fetching roles from Firestore can be restored later.
-  return { 
-    user, 
-    userRole: 'superadmin' as UserRole, 
-    isLoading: isUserLoading 
-  };
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+    const { user, isUserLoading } = useUser();
+
+    // For development, always return 'superadmin' to ensure all UI is accessible.
+    const authInfo = {
+        user,
+        userRole: 'superadmin' as UserRole,
+        isLoading: isUserLoading
+    };
+
+    return (
+        <AuthContext.Provider value={authInfo}>
+            {children}
+        </AuthContext.Provider>
+    );
+}
+
+export function useAuth() {
+    const context = useContext(AuthContext);
+    if (context === undefined) {
+        throw new Error("useAuth must be used within an AuthProvider");
+    }
+    return context;
 }

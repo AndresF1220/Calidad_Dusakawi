@@ -18,8 +18,10 @@ import {
   MessageSquareHeart,
   User,
   FolderKanban,
+  UsersCog,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { useAuth } from '@/lib/auth';
 
 
 interface AppSidebarNavProps {
@@ -28,6 +30,7 @@ interface AppSidebarNavProps {
 
 export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
   const pathname = usePathname();
+  const { userRole } = useAuth();
   
   const menuItems = [
     { href: '/inicio', label: 'Inicio', icon: LayoutDashboard },
@@ -35,8 +38,12 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
     { href: '/inicio/reports', label: 'Informes', icon: BarChart3 },
     { href: '/inicio/alerts', label: 'Alertas', icon: Bell },
     { href: '/inicio/feedback', label: 'Feedback', icon: MessageSquareHeart },
-    { href: '/inicio/account', label: 'Cuenta', icon: User },
   ];
+
+  const bottomMenuItems = [
+    { href: '/inicio/administracion', label: 'Administración', icon: UsersCog, roles: ['superadmin'] },
+    { href: '/inicio/account', label: 'Cuenta', icon: User },
+  ]
 
   const isInicioActive = pathname === '/inicio';
 
@@ -62,7 +69,7 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
         </div>
       </div>
 
-      <SidebarContent className="p-4">
+      <SidebarContent className="p-4 flex flex-col justify-between">
         <SidebarMenu>
           {menuItems.map((item) => (
             <SidebarMenuItem key={item.href}>
@@ -78,6 +85,22 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
+        </SidebarMenu>
+        <SidebarMenu>
+            {bottomMenuItems.filter(item => !item.roles || item.roles.includes(userRole)).map((item) => (
+                <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                        asChild
+                        isActive={pathname.startsWith(item.href)}
+                        tooltip={item.label}
+                    >
+                        <Link href={item.href}>
+                        <item.icon />
+                        <span>{item.label}</span>
+                        </Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            ))}
         </SidebarMenu>
       </SidebarContent>
     </>
