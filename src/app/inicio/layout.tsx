@@ -10,6 +10,8 @@ import { useFirebaseApp } from '@/firebase';
 import { Loader2, UserX, LogOut } from 'lucide-react';
 import React from 'react';
 import { useRouter } from 'next/navigation';
+import { AppSettingsProvider, useAppSettings } from '@/hooks/use-app-settings';
+import { useEffect } from 'react';
 
 function InactiveUserScreen() {
     const app = useFirebaseApp();
@@ -46,7 +48,15 @@ function LoadingScreen() {
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     const { isRoleLoading, isActive } = useAuth();
+    const { settings, isLoading: isSettingsLoading } = useAppSettings();
     
+    useEffect(() => {
+        if (!isSettingsLoading) {
+            document.title = `${settings.appName} | ${settings.companyName}`;
+        }
+    }, [settings, isSettingsLoading]);
+
+
     // First, handle the loading state. Show a full-screen loader while we check auth and profile.
     if (isRoleLoading) {
         return <LoadingScreen />;
@@ -80,7 +90,11 @@ export default function InicioLayout({
 }) {
   return (
     <AuthProvider>
+      <AppSettingsProvider>
         <AuthenticatedLayout>{children}</AuthenticatedLayout>
+      </AppSettingsProvider>
     </AuthProvider>
   );
 }
+
+    

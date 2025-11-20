@@ -11,9 +11,11 @@ import { useAuth } from "@/lib/auth";
 import { getAuth, signOut } from "firebase/auth";
 import { useFirebaseApp } from "@/firebase";
 import { useRouter } from "next/navigation";
+import { useAppSettings } from "@/hooks/use-app-settings";
 
 export default function AccountPage() {
     const { user } = useAuth();
+    const { settings, isLoading } = useAppSettings();
     const app = useFirebaseApp();
     const router = useRouter();
 
@@ -47,7 +49,7 @@ export default function AccountPage() {
                         </Avatar>
                     </div>
                     <CardTitle className="font-headline text-2xl">{displayUser.name}</CardTitle>
-                    <CardDescription>Dusakawi EPSI</CardDescription>
+                    <CardDescription>{isLoading ? '...' : settings.companyName}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div className="grid gap-2">
@@ -69,3 +71,5 @@ export default function AccountPage() {
         </div>
     );
 }
+
+    

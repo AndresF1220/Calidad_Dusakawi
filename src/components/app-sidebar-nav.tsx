@@ -24,6 +24,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useAuth } from '@/lib/auth';
 import { Skeleton } from './ui/skeleton';
+import { useAppSettings } from '@/hooks/use-app-settings';
 
 
 interface AppSidebarNavProps {
@@ -33,6 +34,7 @@ interface AppSidebarNavProps {
 export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
   const pathname = usePathname();
   const { user, userRole, isRoleLoading } = useAuth();
+  const { settings, isLoading: isSettingsLoading } = useAppSettings();
   
   const menuItems = [
     { href: '/inicio', label: 'Inicio', icon: LayoutDashboard },
@@ -56,7 +58,7 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
         <div className="flex items-center gap-2.5 p-4">
           <DusakawiLogo className="h-8 w-8 text-sidebar-primary" />
           <span className="text-lg font-headline font-semibold text-sidebar-foreground">
-            Dusakawi
+            {isSettingsLoading ? <Skeleton className="h-5 w-24" /> : settings.appName}
           </span>
         </div>
       </SidebarHeader>
@@ -68,7 +70,7 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
         </Avatar>
         <div className="text-center">
             <h3 className="font-semibold text-base text-sidebar-foreground truncate max-w-36">{user?.displayName || user?.email || 'Usuario'}</h3>
-            <p className="text-sm text-sidebar-foreground/70">Dusakawi EPSI</p>
+            <p className="text-sm text-sidebar-foreground/70">{isSettingsLoading ? '...' : settings.companyName}</p>
         </div>
       </div>
 
@@ -124,3 +126,5 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
     </>
   );
 }
+
+    

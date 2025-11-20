@@ -6,8 +6,8 @@ import { cn } from '@/lib/utils';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
-  title: 'Dusakawi Quality Central',
-  description: 'Quality Management for Dusakawi EPSI',
+  title: 'Quality Central',
+  description: 'Quality Management System',
 };
 
 export default function RootLayout({
@@ -38,3 +38,5 @@ export default function RootLayout({
     </html>
   );
 }
+
+    

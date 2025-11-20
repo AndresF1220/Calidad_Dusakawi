@@ -20,6 +20,13 @@ service cloud.firestore {
         // Superadmin can delete
         allow delete: if isSuperAdmin();
     }
+
+    match /settings/app {
+      // Any authenticated user can read the settings.
+      allow read: if request.auth != null;
+      // Only superadmins can write the settings.
+      allow write: if isSuperAdmin();
+    }
     
     match /areas/{areaId} {
       allow read: if request.auth != null;
@@ -47,3 +54,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

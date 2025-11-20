@@ -206,6 +206,26 @@
         "comment",
         "rating"
       ]
+    },
+    "AppSettings": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AppSettings",
+      "type": "object",
+      "description": "Stores global application settings and branding information.",
+      "properties": {
+        "appName": {
+          "type": "string",
+          "description": "The name of the application, displayed in the UI."
+        },
+        "companyName": {
+          "type": "string",
+          "description": "The name of the company using the application."
+        }
+      },
+      "required": [
+        "appName",
+        "companyName"
+      ]
     }
   },
   "auth": {
@@ -307,8 +327,20 @@
             }
           ]
         }
+      },
+      {
+        "path": "/settings/app",
+        "definition": {
+          "entityName": "AppSettings",
+          "schema": {
+            "$ref": "#/entities/AppSettings"
+          },
+          "description": "Stores global application settings and branding. This is a single document."
+        }
       }
     ],
-    "reasoning": "The Firestore data structure is designed to support the Dusakawi Quality Central application, focusing on secure, scalable, and maintainable data management. The structure emphasizes authorization independence, clarity, and predictability.\n\n**Authorization Independence:**\nTo avoid hierarchical authorization dependencies and enable atomic operations, the design uses denormalization. For example, if `QualityDataPoint` access depends on `QualityMetric` attributes, relevant `QualityMetric` attributes (e.g., `ownerId`, `members`) are copied into each `QualityDataPoint` document.\n\n**Structural Segregation:**\nThe data is segregated into collections based on their security postures. User-specific data is stored under `/users/{userId}`, while global data like quality metrics are stored at the root level. This approach simplifies security rules by ensuring that all documents within a collection share the same access requirements.\n\n**Access Modeling:**\n*   **Private Data:** User-specific data (e.g., alerts, feedback) is stored under `/users/{userId}` to ensure path-based ownership.\n*   **Collaborative Data:**  Currently, there is no collaborative entity, but if there was (e.g. shared dashboards) the `members` map (`members: {uid1: \"role\", uid2: \"role\"}`) would be used.\n\n**QAPs (Rules are not Filters):**\nThe structure supports secure `list` operations by ensuring that collections do not contain mixed data with different access requirements. Path-based ownership and membership maps enable efficient filtering based on user ID or role, so rules do not act as filters. For example, listing `QualityDataPoint` documents under `/qualityMetrics/{qualityMetricId}/dataPoints` will only return data points associated with a specific quality metric, preventing unauthorized access to other metrics' data.\n\n**Data Clarity and Predictability:**\n*   **Explicit State Modeling:** While the schemas don't explicitly define states, adding a `status` field to entities like alerts or quality metrics can help manage workflows (e.g., `DRAFT`, `ACTIVE`, `ARCHIVED`).\n*   **Predictable Schema:** The design avoids dynamic keys by using static keys in objects and arrays where needed.\n*   **Radical Consistency:** Semantic naming conventions are applied throughout the structure to enhance readability and maintainability."
+    "reasoning": "The Firestore data structure is designed to support the Dusakawi Quality Central application, focusing on secure, scalable, and maintainable data management. The structure emphasizes authorization independence, clarity, and predictability.\n\n**Authorization Independence:**\nTo avoid hierarchical authorization dependencies and enable atomic operations, the design uses denormalization. For example, if `QualityDataPoint` access depends on `QualityMetric` attributes, relevant `QualityMetric` attributes (e.g., `ownerId`, `members`) are copied into each `QualityDataPoint` document.\n\n**Structural Segregation:**\nThe data is segregated into collections based on their security postures. User-specific data is stored under `/users/{userId}`, while global data like quality metrics and app settings are stored at the root level. This approach simplifies security rules by ensuring that all documents within a collection share the same access requirements.\n\n**Access Modeling:**\n*   **Private Data:** User-specific data (e.g., alerts, feedback) is stored under `/users/{userId}` to ensure path-based ownership.\n*   **Collaborative Data:**  Currently, there is no collaborative entity, but if there was (e.g. shared dashboards) the `members` map (`members: {uid1: \"role\", uid2: \"role\"}`) would be used.\n*   **Global Data:** The `/settings/app` document is global and readable by all authenticated users.\n\n**QAPs (Rules are not Filters):**\nThe structure supports secure `list` operations by ensuring that collections do not contain mixed data with different access requirements. Path-based ownership and membership maps enable efficient filtering based on user ID or role, so rules do not act as filters. For example, listing `QualityDataPoint` documents under `/qualityMetrics/{qualityMetricId}/dataPoints` will only return data points associated with a specific quality metric, preventing unauthorized access to other metrics' data.\n\n**Data Clarity and Predictability:**\n*   **Explicit State Modeling:** While the schemas don't explicitly define states, adding a `status` field to entities like alerts or quality metrics can help manage workflows (e.g., `DRAFT`, `ACTIVE`, `ARCHIVED`).\n*   **Predictable Schema:** The design avoids dynamic keys by using static keys in objects and arrays where needed.\n*   **Radical Consistency:** Semantic naming conventions are applied throughout the structure to enhance readability and maintainability."
   }
 }
+
+    
