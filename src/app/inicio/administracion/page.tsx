@@ -38,6 +38,7 @@ const translateRole = (role: User['role']) => {
 
 function UserManagement() {
     const firestore = useFirestore();
+    const { user: currentUser } = useAuth();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     
     const usersQuery = useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, [firestore]);
@@ -110,7 +111,10 @@ function UserManagement() {
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <UserActionsDropdown user={user} />
+                                            <UserActionsDropdown 
+                                                user={user} 
+                                                currentUserId={currentUser?.uid ?? null}
+                                            />
                                         </TableCell>
                                     </TableRow>
                                 ))
@@ -171,24 +175,24 @@ export default function AdministracionPage() {
     const router = useRouter();
 
     useEffect(() => {
-        // Una vez que la carga de roles ha terminado y el rol no es superadmin, redirigir.
+        // Once role loading is complete and the role is not superadmin, redirect.
         if (!isRoleLoading && userRole !== 'superadmin') {
             router.push('/inicio');
         }
     }, [isRoleLoading, userRole, router]);
     
-    // Mientras se carga la información del rol, mostrar un estado de carga.
+    // While loading role information, show a loading state.
     if (isRoleLoading) {
         return <LoadingPermissions />;
     }
 
-    // Si la carga ha terminado y el rol es superadmin, mostrar el contenido.
+    // If loading is complete and the role is superadmin, show the content.
     if (userRole === 'superadmin') {
         return <UserManagement />;
     }
 
-    // Si la carga ha terminado y el rol no es superadmin, se mostrará brevemente
-    // el loader antes de que el useEffect redirija. Devolver el loader para evitar
-    // mostrar "Access Denied" innecesariamente antes de la redirección.
+    // If loading is complete and the role is not superadmin, the loader will be shown briefly
+    // before the useEffect redirects. Return the loader to avoid
+    // flashing "Access Denied" unnecessarily before the redirect.
     return <LoadingPermissions />;
 }

@@ -27,9 +27,11 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import type { User } from '@/app/inicio/administracion/page';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 interface EditUserFormProps {
   user: User;
+  currentUserId: string | null;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   children: React.ReactNode;
@@ -62,6 +64,7 @@ const initialState = {
 
 export function EditUserForm({
   user,
+  currentUserId,
   isOpen,
   onOpenChange,
   children,
@@ -70,6 +73,8 @@ export function EditUserForm({
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction] = useActionState(updateUserAction, initialState);
   const [isActive, setIsActive] = useState(user.status === 'active');
+  const isCurrentUser = user.id === currentUserId;
+
 
   useEffect(() => {
     if (!state) return;
@@ -143,29 +148,58 @@ export function EditUserForm({
           </div>
           <div className="grid gap-2">
             <Label htmlFor="role">Rol</Label>
-            <Select name="role" defaultValue={safeUser.role}>
-              <SelectTrigger id="role">
-                <SelectValue placeholder="Seleccione un rol" />
-              </SelectTrigger>
-              <SelectContent>
-                {roleOptions.map(role => (
-                    <SelectItem key={role} value={role}>{roleTranslations[role]}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+             <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div>
+                            <Select name="role" defaultValue={safeUser.role} disabled={isCurrentUser}>
+                                <SelectTrigger id="role" aria-label={isCurrentUser ? 'No puede cambiar su propio rol' : 'Seleccione un rol'}>
+                                    <SelectValue placeholder="Seleccione un rol" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {roleOptions.map(role => (
+                                        <SelectItem key={role} value={role}>{roleTranslations[role]}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </TooltipTrigger>
+                    {isCurrentUser && (
+                        <TooltipContent>
+                            <p>No puede cambiar su propio rol.</p>
+                        </TooltipContent>
+                    )}
+                </Tooltip>
+            </TooltipProvider>
              {getError('role') && <p className="text-xs text-destructive">{getError('role')}</p>}
           </div>
           <div className="grid gap-2">
             <Label>Estado</Label>
             <div className="flex items-center space-x-2">
-              <Switch
-                id="status-switch"
-                checked={isActive}
-                onCheckedChange={setIsActive}
-              />
-              <Label htmlFor="status-switch" className="text-sm font-normal">
-                {isActive ? 'Activo' : 'Inactivo'}
-              </Label>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                             <div className="flex items-center space-x-2">
+                                <Switch
+                                    id="status-switch"
+                                    checked={isActive}
+                                    onCheckedChange={setIsActive}
+                                    disabled={isCurrentUser}
+                                    aria-label={isCurrentUser ? 'No puede desactivar su propio usuario' : (isActive ? 'Usuario activo' : 'Usuario inactivo')}
+                                />
+                                <Label htmlFor="status-switch" className="text-sm font-normal">
+                                    {isActive ? 'Activo' : 'Inactivo'}
+                                </Label>
+                            </div>
+                        </TooltipTrigger>
+                         {isCurrentUser && (
+                            <TooltipContent>
+                                <p>No puede desactivar su propio usuario.</p>
+                            </TooltipContent>
+                        )}
+                    </Tooltip>
+                </TooltipProvider>
+
               <input type="hidden" name="status" value={isActive ? 'active' : 'inactive'} />
             </div>
             {getError('status') && <p className="text-xs text-destructive">{getError('status')}</p>}

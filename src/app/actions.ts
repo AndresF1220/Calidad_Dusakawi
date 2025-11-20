@@ -615,9 +615,15 @@ export async function toggleUserStatusAction(
 }
 
 export async function deleteUserAction(
+  currentUserId: string | null,
   userIdToDelete: string
 ): Promise<{ success: boolean; error?: string }> {
   if (!db) return { success: false, error: 'Firestore no está inicializado.' };
+  if (!currentUserId) return { success: false, error: 'No se pudo identificar al usuario actual.' };
+  if (currentUserId === userIdToDelete) {
+      return { success: false, error: 'No se puede eliminar a sí mismo.' };
+  }
+
 
   try {
     const usersRef = collection(db, 'users');

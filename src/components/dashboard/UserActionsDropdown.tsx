@@ -21,23 +21,37 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Edit, Trash2, ToggleRight, ToggleLeft, Loader2 } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, ToggleRight, ToggleLeft, Loader2, Info } from 'lucide-react';
 import type { User } from '@/app/inicio/administracion/page';
 import { EditUserForm } from './EditUserForm';
 import { toggleUserStatusAction, deleteUserAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { useAuth } from '@/lib/auth';
 
 interface UserActionsDropdownProps {
   user: User;
+  currentUserId: string | null;
 }
 
-export function UserActionsDropdown({ user }: UserActionsDropdownProps) {
+export function UserActionsDropdown({ user, currentUserId }: UserActionsDropdownProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+  const { user: authUser } = useAuth();
+  const isCurrentUser = user.id === currentUserId;
 
   const handleToggleStatus = () => {
+    if (isCurrentUser) {
+        toast({
+            variant: 'destructive',
+            title: 'Acción no permitida',
+            description: 'No puede cambiar su propio estado.',
+        });
+        return;
+    }
+    
     const confirmation = confirm(`¿Está seguro de que desea ${user.status === 'active' ? 'desactivar' : 'activar'} a este usuario?`);
     if (!confirmation) return;
     
@@ -52,8 +66,18 @@ export function UserActionsDropdown({ user }: UserActionsDropdownProps) {
   };
 
   const handleDelete = () => {
+     if (isCurrentUser) {
+        toast({
+            variant: 'destructive',
+            title: 'Acción no permitida',
+            description: 'No puede eliminarse a sí mismo.',
+        });
+        setIsDeleting(false);
+        return;
+    }
+    
     startTransition(async () => {
-        const result = await deleteUserAction(user.id);
+        const result = await deleteUserAction(authUser?.uid ?? null, user.id);
         if(result.success) {
             toast({ title: '¡Éxito!', description: 'Usuario eliminado correctamente.' });
             setIsDeleting(false);
@@ -79,12 +103,12 @@ export function UserActionsDropdown({ user }: UserActionsDropdownProps) {
             <Edit className="mr-2 h-4 w-4" />
             <span>Editar usuario</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={handleToggleStatus}>
+           <DropdownMenuItem onSelect={handleToggleStatus} disabled={isCurrentUser}>
              {user.status === 'active' ? <ToggleLeft className="mr-2 h-4 w-4" /> : <ToggleRight className="mr-2 h-4 w-4" />}
             <span>{user.status === 'active' ? 'Desactivar' : 'Activar'}</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => setIsDeleting(true)} className="text-destructive focus:text-destructive">
+          <DropdownMenuItem onSelect={() => setIsDeleting(true)} className="text-destructive focus:text-destructive" disabled={isCurrentUser}>
             <Trash2 className="mr-2 h-4 w-4" />
             <span>Eliminar usuario</span>
           </DropdownMenuItem>
@@ -93,6 +117,7 @@ export function UserActionsDropdown({ user }: UserActionsDropdownProps) {
 
       <EditUserForm
         user={user}
+        currentUserId={currentUserId}
         isOpen={isEditing}
         onOpenChange={setIsEditing}
       >
