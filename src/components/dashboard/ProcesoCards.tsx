@@ -9,7 +9,7 @@ import { Skeleton } from '../ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import React from 'react';
 import { EntityOptionsDropdown } from './EntityOptionsDropdown';
-import { useIsAdmin } from '@/lib/authMock';
+import { useAuth } from '@/lib/auth';
 
 interface ProcesoCardsProps {
     areaId: string;
@@ -18,7 +18,7 @@ interface ProcesoCardsProps {
 
 const ItemCard = ({ item, linkHref, entityType, parentId, grandParentId }: { item: any, linkHref: string, entityType: 'process' | 'subprocess', parentId?: string, grandParentId?: string }) => {
     const { toast } = useToast();
-    const isAdmin = useIsAdmin();
+    const { userRole } = useAuth();
 
     const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
         // Stop navigation if the click is on the dropdown menu or its trigger
@@ -48,7 +48,7 @@ const ItemCard = ({ item, linkHref, entityType, parentId, grandParentId }: { ite
                     <CardTitle className="font-headline text-lg">{item?.nombre || 'Elemento inválido'}</CardTitle>
                 </CardHeader>
             </Card>
-             {isAdmin && item.id && (
+             {userRole === 'superadmin' && item.id && (
                  <div 
                     className="absolute top-2 right-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity"
                  >

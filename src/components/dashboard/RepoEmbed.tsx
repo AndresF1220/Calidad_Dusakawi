@@ -4,7 +4,6 @@
 
 import { useState, useMemo, useEffect, useTransition } from 'react';
 import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
-import { useIsAdmin } from '@/lib/authMock';
 import {
   collection,
   query,
@@ -48,6 +47,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from '@/hooks/use-toast';
 import { RenameFolderForm } from './RenameFolderForm';
 import { UploadFileForm } from './UploadFileForm';
+import { useAuth } from '@/lib/auth';
 
 
 interface RepoEmbedProps {
@@ -87,7 +87,7 @@ const FolderList = ({
   selectedFolder: Folder | null;
   onAction: (action: 'rename' | 'delete', folder: Folder, event: React.MouseEvent) => void;
 }) => {
-  const isAdmin = useIsAdmin();
+  const { userRole } = useAuth();
   if (!folders || folders.length === 0) return null;
 
   return (
@@ -110,7 +110,7 @@ const FolderList = ({
             <span className="text-sm font-medium select-none flex-1 truncate">
               {folder.name}
             </span>
-             {isAdmin && (
+             {userRole === 'superadmin' && (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover/folder-item:opacity-100 focus:opacity-100" onClick={(e) => e.stopPropagation()}>
@@ -143,7 +143,7 @@ export default function RepoEmbed({
   subprocesoId,
 }: RepoEmbedProps) {
   const { firestore, storage } = useFirebase();
-  const isAdmin = useIsAdmin();
+  const { userRole } = useAuth();
   const { toast } = useToast();
   
   const [isAddingFolder, setIsAddingFolder] = useState(false);
@@ -321,7 +321,7 @@ export default function RepoEmbed({
         <Card className="lg:col-span-1">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="font-headline text-lg">Carpetas</CardTitle>
-             {isAdmin && (
+             {userRole === 'superadmin' && (
                 <div className="flex items-center gap-1">
                     <CreateFolderForm
                         isOpen={isAddingFolder}
@@ -352,7 +352,7 @@ export default function RepoEmbed({
               />
             ) : (
               <div className="text-center text-sm text-muted-foreground p-4">
-                  No hay carpetas. Cree una para comenzar.
+                  {userRole === 'superadmin' ? 'No hay carpetas. Cree una para comenzar.' : 'No hay carpetas disponibles.'}
               </div>
             )}
           </CardContent>
@@ -370,7 +370,7 @@ export default function RepoEmbed({
                 Documentos en esta carpeta.
               </CardDescription>
             </div>
-             {isAdmin && (
+             {userRole === 'superadmin' && (
                  <UploadFileForm 
                     isOpen={isUploading} 
                     onOpenChange={setIsUploading}
@@ -415,7 +415,7 @@ export default function RepoEmbed({
                         <TableCell>{file.validityDate ? new Date(file.validityDate.seconds * 1000).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric'}) : 'N/A'}</TableCell>
                         <TableCell className="text-right">
                              <ViewFileButton url={file.url} />
-                             {isAdmin && (
+                             {userRole === 'superadmin' && (
                                 <Button
                                 variant="ghost"
                                 size="icon"
@@ -483,5 +483,3 @@ export default function RepoEmbed({
     </>
   );
 }
-
-    

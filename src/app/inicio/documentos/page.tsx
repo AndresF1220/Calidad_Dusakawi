@@ -11,7 +11,7 @@ import { AddEntityForm } from '@/components/dashboard/AddEntityForm';
 import { useToast } from '@/hooks/use-toast';
 import { seedProcessMapAction } from '@/app/actions';
 import { EntityOptionsDropdown } from '@/components/dashboard/EntityOptionsDropdown';
-import { useIsAdmin } from '@/lib/authMock';
+import { useAuth } from '@/lib/auth';
 
 const iconMap: { [key: string]: React.ElementType } = {
     'direccion-administrativa-y-financiera': Building,
@@ -28,7 +28,7 @@ const iconMap: { [key: string]: React.ElementType } = {
 
 const AreaCard = ({ area }: { area: any }) => {
     const { toast } = useToast();
-    const isAdmin = useIsAdmin();
+    const { userRole } = useAuth();
     const Icon = iconMap[area.slug] || iconMap['default'];
 
     const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -61,7 +61,7 @@ const AreaCard = ({ area }: { area: any }) => {
                     Gestión de {area.nombre.toLowerCase()}
                 </CardDescription>
             </Card>
-             {isAdmin && (
+             {userRole === 'superadmin' && (
                 <div className="absolute top-2 right-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                     <EntityOptionsDropdown
                         entityId={area.id}
@@ -79,11 +79,11 @@ export default function RepositoryAreasPage() {
   const [isAdding, setIsAdding] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
   const { toast } = useToast();
-  const isAdmin = useIsAdmin();
+  const { userRole } = useAuth();
 
   useEffect(() => {
     const ensureSeeded = async () => {
-        if (!isLoading && areas && areas.length === 0) {
+        if (!isLoading && areas && areas.length === 0 && userRole === 'superadmin') {
             setIsSeeding(true);
             toast({
                 title: "Restaurando mapa de procesos...",
@@ -106,7 +106,7 @@ export default function RepositoryAreasPage() {
         }
     };
     ensureSeeded();
-  }, [isLoading, areas, toast]);
+  }, [isLoading, areas, toast, userRole]);
 
 
   return (
@@ -116,7 +116,7 @@ export default function RepositoryAreasPage() {
             <h1 className="text-3xl font-bold font-headline">Mapa de Procesos</h1>
             <p className="text-muted-foreground">Seleccione un área para explorar su información y procesos asociados.</p>
         </div>
-         {isAdmin && (
+         {userRole === 'superadmin' && (
             <AddEntityForm 
                 entityType="area" 
                 isOpen={isAdding} 

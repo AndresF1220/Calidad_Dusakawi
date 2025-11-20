@@ -28,7 +28,7 @@ import {
   Loader,
 } from 'lucide-react';
 import CaracterizacionEditor from './CaracterizacionEditor';
-import { useIsAdmin } from '@/lib/authMock';
+import { useAuth } from '@/lib/auth';
 
 interface CaracterizacionPanelProps {
   idEntidad: string;
@@ -47,7 +47,7 @@ export default function CaracterizacionPanel({
   tipo,
 }: CaracterizacionPanelProps) {
   const firestore = useFirestore();
-  const isAdmin = useIsAdmin();
+  const { userRole } = useAuth();
   const [caracterizacion, setCaracterizacion] =
     useState<CaracterizacionData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -87,7 +87,7 @@ export default function CaracterizacionPanel({
     );
 
     return () => unsubscribe();
-  }, [firestore, idEntidad, tipo, docId, isAdmin]);
+  }, [firestore, idEntidad, tipo, docId]);
   
   const isDataEmpty = !caracterizacion || (!caracterizacion.objetivo && !caracterizacion.alcance && !caracterizacion.responsable);
 
@@ -100,7 +100,7 @@ export default function CaracterizacionPanel({
             Caracterización del {tipo.charAt(0).toUpperCase() + tipo.slice(1)}
           </CardTitle>
         </div>
-        {isAdmin && (
+        {userRole === 'superadmin' && (
           <Dialog open={isEditorOpen} onOpenChange={setIsEditorOpen}>
             <DialogTrigger asChild>
               <Button
@@ -135,7 +135,7 @@ export default function CaracterizacionPanel({
            </div>
         ) : isDataEmpty ? (
              <p className="text-muted-foreground text-center py-4">
-               {isAdmin 
+               {userRole === 'superadmin' 
                  ? "No se ha registrado la caracterización para este elemento. Haga clic en 'Editar' para comenzar."
                  : "Aún no se ha agregado información."
                }

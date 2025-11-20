@@ -7,17 +7,17 @@ import RepoEmbed from '@/components/dashboard/RepoEmbed';
 import { useSubproceso, useProceso, useArea } from '@/hooks/use-areas-data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EntityOptionsDropdown } from '@/components/dashboard/EntityOptionsDropdown';
-import { useIsAdmin } from '@/lib/authMock';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { useAuth } from '@/lib/auth';
 
 export default function SubprocesoIdPage() {
   const params = useParams();
   const areaId = params.areaId as string;
   const procesoId = params.procesoId as string;
   const subprocesoId = params.subprocesoId as string;
-  const isAdmin = useIsAdmin();
+  const { userRole } = useAuth();
 
   // Hooks to fetch data
   const { area, isLoading: isLoadingArea } = useArea(areaId);
@@ -57,7 +57,7 @@ export default function SubprocesoIdPage() {
     <div className="flex flex-col gap-8">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold font-headline capitalize">{subproceso.nombre}</h1>
-        {isAdmin && (
+        {userRole === 'superadmin' && (
             <EntityOptionsDropdown
                 entityId={subproceso.id}
                 entityType="subprocess"

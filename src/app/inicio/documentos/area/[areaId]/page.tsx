@@ -5,7 +5,6 @@ import { useParams } from 'next/navigation';
 import CaracterizacionPanel from '@/components/dashboard/CaracterizacionPanel';
 import ProcesoCards from '@/components/dashboard/ProcesoCards';
 import RepoEmbed from '@/components/dashboard/RepoEmbed';
-import { useIsAdmin } from '@/lib/authMock';
 import { useArea } from '@/hooks/use-areas-data';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -14,12 +13,13 @@ import { AddEntityForm } from '@/components/dashboard/AddEntityForm';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { EntityOptionsDropdown } from '@/components/dashboard/EntityOptionsDropdown';
+import { useAuth } from '@/lib/auth';
 
 export default function AreaIdPage() {
   const params = useParams();
   const areaId = params.areaId as string;
   const { area, isLoading } = useArea(areaId);
-  const isAdmin = useIsAdmin();
+  const { userRole } = useAuth();
   const [isAdding, setIsAdding] = useState(false);
 
   // If params are not yet available or data is loading, show a loading state.
@@ -58,7 +58,7 @@ export default function AreaIdPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold font-headline">{area.nombre}</h1>
          <div className="flex items-center gap-2">
-            {isAdmin && (
+            {userRole === 'superadmin' && (
                 <AddEntityForm 
                     entityType="process"
                     parentId={area.id}
@@ -71,7 +71,7 @@ export default function AreaIdPage() {
                     </Button>
                 </AddEntityForm>
             )}
-            {isAdmin && (
+            {userRole === 'superadmin' && (
                 <EntityOptionsDropdown
                     entityId={area.id}
                     entityType="area"

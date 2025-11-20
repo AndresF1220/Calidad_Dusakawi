@@ -13,14 +13,14 @@ import { AddEntityForm } from '@/components/dashboard/AddEntityForm';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { EntityOptionsDropdown } from '@/components/dashboard/EntityOptionsDropdown';
-import { useIsAdmin } from '@/lib/authMock';
+import { useAuth } from '@/lib/auth';
 
 export default function ProcesoIdPage() {
   const params = useParams();
   const areaId = params.areaId as string;
   const procesoId = params.procesoId as string;
   const [isAdding, setIsAdding] = useState(false);
-  const isAdmin = useIsAdmin();
+  const { userRole } = useAuth();
 
   const { area, isLoading: isLoadingArea } = useArea(areaId);
   const { proceso, isLoading: isLoadingProceso } = useProceso(areaId, procesoId);
@@ -61,7 +61,7 @@ export default function ProcesoIdPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold font-headline">{proceso.nombre}</h1>
         <div className="flex items-center gap-2">
-            {isAdmin && (
+            {userRole === 'superadmin' && (
                 <AddEntityForm 
                     entityType="subprocess"
                     parentId={proceso.id}
@@ -75,7 +75,7 @@ export default function ProcesoIdPage() {
                     </Button>
                 </AddEntityForm>
             )}
-             {isAdmin && (
+             {userRole === 'superadmin' && (
                 <EntityOptionsDropdown
                     entityId={proceso.id}
                     entityType="process"
