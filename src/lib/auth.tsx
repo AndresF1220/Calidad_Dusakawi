@@ -28,6 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         const fetchOrSetUserProfile = async () => {
             if (isAuthLoading) {
+                setIsRoleLoading(true);
                 return;
             }
 
@@ -48,7 +49,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                 if (docSnap.exists()) {
                     userProfile = docSnap.data();
-                    console.log("Perfil Firestore:", userProfile);
                 } else {
                     console.warn(`User with UID ${firebaseUser.uid} not found in Firestore. Creating default profile.`);
                     
@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         role: 'viewer' as UserRole,
                         status: 'active' as UserStatus,
                         fullName: firebaseUser.displayName || '',
-                        cedula: '',
+                        cedula: '', // cedula is not available from auth, must be added later
                         email: firebaseUser.email || '',
                         tempPassword: '',
                         createdAt: serverTimestamp(),
@@ -94,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const authInfo: AuthContextType = {
         user: firebaseUser,
         userRole,
-        isRoleLoading: isRoleLoading,
+        isRoleLoading: isAuthLoading || isRoleLoading, // Overall loading is true if either auth or role is loading
         isActive,
     };
 
@@ -112,3 +112,5 @@ export function useAuth() {
     }
     return context;
 }
+
+    

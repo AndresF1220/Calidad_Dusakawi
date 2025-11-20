@@ -4,30 +4,25 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function isSuperAdmin() {
-      // For development purposes, grant superadmin access if the user is authenticated.
-      // This will be secured properly later.
-      return request.auth != null;
+      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'superadmin';
     }
 
-    // Rules for the users collection
+    function isAuthOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
     match /users/{userId} {
-        // Anyone can query the collection to find a user by cedula for login purposes.
-        // This is safe because the rules on the read operation below prevent fetching the whole document.
-        allow list: if true;
-        // An authenticated user can read their own profile.
-        allow read: if request.auth != null && request.auth.uid == userId;
-        // Allow any authenticated user to update any profile (for development)
-        allow update: if request.auth != null;
-        // A user can create their own document. isSuperAdmin can create any.
-        allow create: if isSuperAdmin();
-        // Superadmin can delete
-        allow delete: if isSuperAdmin();
+        // A user can read their own profile
+        allow read: if isAuthOwner(userId) || isSuperAdmin();
+        // Superadmin can write to any user profile
+        allow write: if isSuperAdmin();
+        // Any user can query the users collection to find a user by cedula for login.
+        // This is safe because the rule only allows querying, not reading the whole document content.
+        allow list: if true; 
     }
 
     match /settings/app {
-      // Any authenticated user can read the settings.
       allow read: if request.auth != null;
-      // Only superadmins can write the settings.
       allow write: if isSuperAdmin();
     }
     
@@ -57,3 +52,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

@@ -532,8 +532,11 @@ export async function createUserAction(
   const { fullName, email, role, status, cedula, tempPassword } = validatedFields.data;
 
   try {
+    // Dynamic imports for server-side code
     const { getAuth } = await import('firebase-admin/auth');
     const { adminApp } = await import('@/firebase/server-config');
+    const { db: adminDb } = await import('@/firebase/server-config');
+    
     const auth = getAuth(adminApp);
     
     // 1. Create user in Firebase Auth
@@ -544,16 +547,14 @@ export async function createUserAction(
     });
     
     // 2. Create user document in Firestore with the same UID
-    if (!db) throw new Error('Firestore no está inicializado.');
-    
-    const userDocRef = doc(db, 'users', userRecord.uid);
+    const userDocRef = doc(adminDb, 'users', userRecord.uid);
     await setDoc(userDocRef, {
       fullName,
       email,
       cedula,
       role,
       status,
-      tempPassword, // It can be useful for admins to see the initial password
+      tempPassword,
       createdAt: serverTimestamp(),
     });
 
@@ -580,7 +581,6 @@ export async function updateUserAction(
   prevState: any,
   formData: FormData
 ): Promise<{ message: string; error?: string, errors?: { [key: string]: string[] } }> {
-  if (!db) return { message: 'Error', error: 'Firestore no está inicializado.' };
 
   const payload = {
     userId: formData.get('userId'),
@@ -605,12 +605,27 @@ export async function updateUserAction(
 
   try {
     const { userId, ...userData } = validatedFields.data;
-    const userRef = doc(db, 'users', userId);
+    const { db: adminDb } = await import('@/firebase/server-config');
+    const userRef = doc(adminDb, 'users', userId);
     
     await updateDoc(userRef, {
         ...userData,
         updatedAt: serverTimestamp(),
     });
+    
+     // Also update email in Firebase Auth if it has changed
+    const { getAuth } = await import('firebase-admin/auth');
+    const { adminApp } = await import('@/firebase/server-config');
+    const auth = getAuth(adminApp);
+    const userRecord = await auth.getUser(userId);
+
+    if (userRecord.email !== userData.email) {
+        await auth.updateUser(userId, { email: userData.email });
+    }
+    if(userRecord.displayName !== userData.fullName){
+        await auth.updateUser(userId, { displayName: userData.fullName });
+    }
+
 
     return { message: 'Usuario actualizado con éxito.' };
   } catch (e: any) {
@@ -641,10 +656,7 @@ export async function deleteUserAction(
   currentUserId: string | null,
   userIdToDelete: string
 ): Promise<{ success: boolean; error?: string }> {
-  // 1. Validaciones básicas
-  if (!db) {
-    return { success: false, error: 'Firestore no está inicializado.' };
-  }
+  
   if (!currentUserId) {
     return { success: false, error: 'No se pudo identificar al usuario actual.' };
   }
@@ -653,18 +665,16 @@ export async function deleteUserAction(
   }
 
   try {
-    // 2. Auth admin (Firebase Admin)
     const { getAuth } = await import('firebase-admin/auth');
     const { adminApp } = await import('@/firebase/server-config');
+    const { db: adminDb } = await import('@/firebase/server-config');
     const auth = getAuth(adminApp);
 
-    // 3. Referencias usando el mismo db ya importado
-    const userToDeleteDocRef = doc(db, 'users', userIdToDelete);
+    const userToDeleteDocRef = doc(adminDb, 'users', userIdToDelete);
     const userToDeleteDocSnap = await getDoc(userToDeleteDocRef);
 
-    // 4. Verificar si es el último superadmin
     if (userToDeleteDocSnap.exists() && userToDeleteDocSnap.data().role === 'superadmin') {
-      const usersRef = collection(db, 'users');
+      const usersRef = collection(adminDb, 'users');
       const superAdminQuery = query(usersRef, where('role', '==', 'superadmin'));
       const superAdminSnapshot = await getDocs(superAdminQuery);
 
@@ -673,16 +683,14 @@ export async function deleteUserAction(
       }
     }
 
-    // 5. Eliminar en Firebase Auth
     try {
       await auth.deleteUser(userIdToDelete);
     } catch (authError: any) {
       if (authError.code !== 'auth/user-not-found') {
-        throw authError;
+        console.error("Error deleting user from Auth, but will proceed to delete from Firestore:", authError);
       }
     }
 
-    // 6. Eliminar en Firestore
     await deleteDoc(userToDeleteDocRef);
 
     return { success: true };
@@ -691,4 +699,6 @@ export async function deleteUserAction(
     return { success: false, error: `No se pudo eliminar el usuario: ${e.message}` };
   }
 }
+    
+
     

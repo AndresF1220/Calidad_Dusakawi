@@ -1,5 +1,6 @@
 
 import { initializeApp, getApps, getApp, cert, App } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 
 const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
   ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
@@ -18,4 +19,8 @@ if (getApps().some(app => app.name === 'admin')) {
   adminApp = initializeApp(undefined, 'admin');
 }
 
-export { adminApp };
+const db = getFirestore(adminApp);
+
+export { adminApp, db };
+
+    

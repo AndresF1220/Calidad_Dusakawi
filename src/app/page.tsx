@@ -1,3 +1,4 @@
+
 'use client';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -37,7 +38,6 @@ export default function LoginPage() {
     const password = formData.get('password') as string;
 
     try {
-      // 1. Find user by cedula and status
       const usersRef = collection(firestore, 'users');
       const q = query(usersRef, where('cedula', '==', cedula), where('status', '==', 'active'));
       const querySnapshot = await getDocs(q);
@@ -52,7 +52,6 @@ export default function LoginPage() {
         return;
       }
 
-      // 2. Get user's email and sign in with Firebase Auth
       const userDoc = querySnapshot.docs[0];
       const userData = userDoc.data();
       const email = userData.email;
@@ -60,14 +59,12 @@ export default function LoginPage() {
       const auth = getAuth();
       await signInWithEmailAndPassword(auth, email, password);
       
-      // 3. Redirect on success
       router.push('/inicio');
 
     } catch (error: any) {
       console.error("Authentication failed:", error);
-      let errorMessage = 'Cédula o contraseña incorrectos, o el usuario está inactivo.';
+      let errorMessage = 'Error desconocido. Por favor intente de nuevo.';
       
-      // Handle specific Firebase Auth errors
       if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
           errorMessage = 'Cédula o contraseña incorrectos, o el usuario está inactivo.';
       }
@@ -77,7 +74,8 @@ export default function LoginPage() {
           title: 'Error de acceso',
           description: errorMessage,
       });
-      setIsLoading(false);
+    } finally {
+        setIsLoading(false);
     }
   };
 
@@ -112,11 +110,12 @@ export default function LoginPage() {
                     type="text"
                     placeholder="Escriba su cédula"
                     required
+                    disabled={isLoading}
                   />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="password">Contraseña</Label>
-                  <Input id="password" name="password" type="password" required />
+                  <Input id="password" name="password" type="password" required disabled={isLoading}/>
                 </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -130,3 +129,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    
