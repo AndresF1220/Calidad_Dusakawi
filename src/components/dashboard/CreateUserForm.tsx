@@ -64,7 +64,7 @@ export function CreateUserForm({
 }: CreateUserFormProps) {
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
-  const [state, formAction] = useActionState(createUserAction, initialState);
+  const [state, formAction, isPending] = useActionState(createUserAction, initialState);
   const [isActive, setIsActive] = useState(true);
 
   useEffect(() => {
@@ -89,12 +89,8 @@ export function CreateUserForm({
     if (!isOpen) {
       formRef.current?.reset();
       setIsActive(true);
-      // Resetting the action state if it has errors
-      if (state?.errors || state?.error) {
-          formAction(new FormData());
-      }
     }
-  }, [isOpen, state?.errors, state?.error, formAction]);
+  }, [isOpen]);
   
   const getError = (fieldName: string) => state?.errors?.[fieldName]?.[0];
 

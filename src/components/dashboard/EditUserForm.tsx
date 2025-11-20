@@ -96,6 +96,15 @@ export function EditUserForm({
   }, [isOpen, user]);
 
   const getError = (fieldName: string) => state?.errors?.[fieldName]?.[0];
+  
+  // Helper to safely provide default values to the form
+  const safeUser = {
+      fullName: user.fullName || '',
+      cedula: user.cedula || '',
+      email: user.email || '',
+      tempPassword: user.tempPassword || '',
+      role: user.role || 'viewer'
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -114,27 +123,27 @@ export function EditUserForm({
           
           <div className="grid gap-2">
             <Label htmlFor="fullName">Nombre completo</Label>
-            <Input id="fullName" name="fullName" defaultValue={user.fullName || ''} />
+            <Input id="fullName" name="fullName" defaultValue={safeUser.fullName} />
             {getError('fullName') && <p className="text-xs text-destructive">{getError('fullName')}</p>}
           </div>
           <div className="grid gap-2">
             <Label htmlFor="cedula">Cédula</Label>
-            <Input id="cedula" name="cedula" defaultValue={user.cedula || ''} />
+            <Input id="cedula" name="cedula" defaultValue={safeUser.cedula} />
             {getError('cedula') && <p className="text-xs text-destructive">{getError('cedula')}</p>}
           </div>
           <div className="grid gap-2">
             <Label htmlFor="email">Correo electrónico</Label>
-            <Input id="email" name="email" type="email" defaultValue={user.email || ''} />
+            <Input id="email" name="email" type="email" defaultValue={safeUser.email} />
             {getError('email') && <p className="text-xs text-destructive">{getError('email')}</p>}
           </div>
           <div className="grid gap-2">
             <Label htmlFor="tempPassword">Contraseña Temporal</Label>
-            <Input id="tempPassword" name="tempPassword" defaultValue={user.tempPassword || ''} />
+            <Input id="tempPassword" name="tempPassword" defaultValue={safeUser.tempPassword} />
             {getError('tempPassword') && <p className="text-xs text-destructive">{getError('tempPassword')}</p>}
           </div>
           <div className="grid gap-2">
             <Label htmlFor="role">Rol</Label>
-            <Select name="role" defaultValue={user.role || 'viewer'}>
+            <Select name="role" defaultValue={safeUser.role}>
               <SelectTrigger id="role">
                 <SelectValue placeholder="Seleccione un rol" />
               </SelectTrigger>

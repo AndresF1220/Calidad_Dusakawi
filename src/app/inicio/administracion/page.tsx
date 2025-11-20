@@ -8,11 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, ShieldAlert, Loader2 } from 'lucide-react';
-import { useState, useActionState, useEffect } from 'react';
+import { PlusCircle, ShieldAlert, Loader2, AlertTriangle } from 'lucide-react';
+import { useState } from 'react';
 import { CreateUserForm } from '@/components/dashboard/CreateUserForm';
 import { UserActionsDropdown } from '@/components/dashboard/UserActionsDropdown';
-import { createUserAction } from '@/app/actions';
 
 export type User = {
     id: string;
@@ -39,8 +38,9 @@ function UserManagement() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const { userRole } = useAuth();
     
+    // FIX: Memoize the query to prevent re-creating it on every render, which causes an infinite loop.
     const usersQuery = useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, [firestore]);
-    const { data: users, isLoading } = useCollection<User>(usersQuery);
+    const { data: users, isLoading, error } = useCollection<User>(usersQuery);
 
     return (
         <div className="flex flex-col gap-8">
@@ -81,6 +81,15 @@ function UserManagement() {
                                         <div className="flex justify-center items-center gap-2 text-muted-foreground">
                                             <Loader2 className="h-5 w-5 animate-spin" />
                                             Cargando usuarios...
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ) : error ? (
+                                <TableRow>
+                                    <TableCell colSpan={7} className="h-24 text-center text-destructive">
+                                        <div className="flex flex-col items-center gap-2">
+                                            <AlertTriangle className="h-6 w-6" />
+                                            <span>Error al cargar usuarios: {error.message}</span>
                                         </div>
                                     </TableCell>
                                 </TableRow>
@@ -132,7 +141,6 @@ function AccessDenied() {
 export default function AdministracionPage() {
     const { userRole } = useAuth();
     
-    // During development, we can force superadmin. In production, this would be based on actual roles.
     if (userRole === 'superadmin') {
         return <UserManagement />;
     }
