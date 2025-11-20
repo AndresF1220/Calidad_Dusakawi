@@ -1,7 +1,8 @@
+
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -25,6 +26,8 @@ import AppSidebarNav from './app-sidebar-nav';
 import { Fragment, useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useArea, useProceso, useSubproceso } from '@/hooks/use-areas-data';
+import { getAuth, signOut } from 'firebase/auth';
+import { useFirebaseApp, useUser } from '@/firebase';
 
 const hardcodedTranslations: Record<string, string> = {
     inicio: "Inicio",
@@ -33,6 +36,7 @@ const hardcodedTranslations: Record<string, string> = {
     feedback: "Feedback",
     documentos: "Mapa de Procesos",
     account: "Cuenta",
+    administracion: "Administración",
     area: "Área",
     proceso: "Proceso",
     subproceso: "Subproceso",
@@ -64,31 +68,42 @@ function useBreadcrumbData(segments: string[]) {
 
 export default function AppHeader() {
   const pathname = usePathname();
+  const router = useRouter();
+  const app = useFirebaseApp();
+  const { user } = useUser();
   const pathSegments = pathname.split('/').filter(Boolean);
 
   const { isLoading, dataMap } = useBreadcrumbData(pathSegments);
+  
+  const handleLogout = () => {
+    const auth = getAuth(app);
+    signOut(auth).then(() => {
+        router.push('/');
+    })
+  }
 
   const breadcrumbItems = useMemo(() => {
     let accumulatedPath = '';
-    return pathSegments
-      .filter(segment => !['area', 'proceso', 'subproceso'].includes(segment))
-      .map((segment, index, arr) => {
-        accumulatedPath += `/${segment}`;
-        
-        // Find the original segment index to build the correct href
-        const originalSegmentIndex = pathSegments.indexOf(segment);
-        const href = `/${pathSegments.slice(0, originalSegmentIndex + 1).join('/')}`;
+    const relevantSegments = pathSegments.map((segment) =>
+        hardcodedTranslations[segment] ? segment : dataMap[segment] ? segment : null
+    ).filter(Boolean) as string[];
 
-        const isLast = index === arr.length - 1;
-        let label = hardcodedTranslations[segment] || dataMap[segment] || segment;
-        
-        if (isLast && isLoading) {
-            label = 'Cargando...';
+    return pathSegments.map((segment, index) => {
+        const isDynamic = !hardcodedTranslations[segment];
+        const label = hardcodedTranslations[segment] || dataMap[segment] || segment;
+
+        // Create href by joining segments up to the current one
+        const href = `/${pathSegments.slice(0, index + 1).join('/')}`;
+        const isLast = index === pathSegments.length - 1;
+
+        if (isLoading && isDynamic && isLast) {
+             return { href, label: 'Cargando...', isLast: true, isDynamic: true };
         }
-        
-        return { href, label, isLast };
+
+        return { href, label, isLast, isDynamic: isDynamic };
     });
-  }, [pathSegments, dataMap, isLoading]);
+}, [pathSegments, dataMap, isLoading]);
+
 
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
@@ -130,8 +145,8 @@ export default function AppHeader() {
         <DropdownMenuTrigger asChild>
           <Button variant="secondary" size="icon" className="rounded-full">
             <Avatar className="h-8 w-8">
-               <AvatarImage src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxwcm9maWxlfGVufDB8fHx8MTc2MTY0MDYwMXww&ixlib=rb-4.1.0&q=80&w=1080" alt="Dra. Ana Rodriguez" />
-               <AvatarFallback>AR</AvatarFallback>
+               <AvatarImage src={user?.photoURL || "https://images.unsplash.com/photo-1511367461989-f85a21fda167?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxwcm9maWxlfGVufDB8fHx8MTc2MTY0MDYwMXww&ixlib=rb-4.1.0&q=80&w=1080"} alt={user?.displayName || "Usuario"} />
+               <AvatarFallback>{user?.displayName?.charAt(0) || user?.email?.charAt(0) || 'U'}</AvatarFallback>
             </Avatar>
             <span className="sr-only">Alternar menú de usuario</span>
           </Button>
@@ -139,10 +154,10 @@ export default function AppHeader() {
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>Configuración</DropdownMenuItem>
-          <DropdownMenuItem>Soporte</DropdownMenuItem>
+           <DropdownMenuItem asChild><Link href="/inicio/account">Configuración</Link></DropdownMenuItem>
+          <DropdownMenuItem disabled>Soporte</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem asChild><Link href="/">Cerrar Sesión</Link></DropdownMenuItem>
+          <DropdownMenuItem onClick={handleLogout}>Cerrar Sesión</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </header>
