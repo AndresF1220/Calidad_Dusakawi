@@ -13,21 +13,16 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Rules for the users collection as a whole
+    // Rules for the users collection
     match /users/{userId} {
-        // Any authenticated user can read any profile (for development)
-        allow get: if request.auth != null;
-        // Any authenticated user can update any profile (for development)
+        // Allow any authenticated user to read any user document. This covers `get` and `list` query requirements.
+        allow read: if request.auth != null;
+        // Allow any authenticated user to update any profile (for development)
         allow update: if request.auth != null;
+        // A user can create their own document. isSuperAdmin can create any.
+        allow create: if isOwner(userId) || isSuperAdmin();
         // Superadmin can delete
         allow delete: if isSuperAdmin();
-        // A user can create their own document
-        allow create: if isOwner(userId);
-    }
-
-    match /users {
-      // Superadmin can list all users
-      allow list: if isSuperAdmin();
     }
     
     match /areas/{areaId} {
