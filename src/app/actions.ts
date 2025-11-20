@@ -1,9 +1,9 @@
 
-'use client';
+'use server';
 
 import { z } from 'zod';
 import { db, storage } from '@/firebase/client-config';
-import { collection, addDoc, doc, updateDoc, writeBatch, query, where, getDocs, deleteDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, writeBatch, query, where, getDocs, deleteDoc, serverTimestamp, setDoc, getDoc } from 'firebase/firestore';
 import { ref, deleteObject, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { slugify } from '@/lib/slug';
 import { SEED_AREAS } from '@/data/seed-map';
@@ -245,10 +245,10 @@ export async function updateEntityAction(
             if (responsable !== undefined) caracterizacionData.responsable = responsable;
 
             const caracterizacionRef = doc(db, 'caracterizaciones', caracterizacionId);
-            const caracterizacionSnap = await getDocs(query(collection(db, 'caracterizaciones'), where('__name__', '==', caracterizacionId)));
+            const caracterizacionSnap = await getDoc(caracterizacionRef);
 
 
-            if (!caracterizacionSnap.empty) {
+            if (caracterizacionSnap.exists()) {
                 batch.update(caracterizacionRef, caracterizacionData);
             } else {
                 batch.set(caracterizacionRef, caracterizacionData);
@@ -668,10 +668,12 @@ export async function deleteUserAction(
       }
     }
     
-    // Delete from Auth
+    // Dynamically import server-side modules
     const { getAuth } = await import('firebase-admin/auth');
     const { adminApp } = await import('@/firebase/server-config');
     const auth = getAuth(adminApp);
+    
+    // Delete from Auth
     await auth.deleteUser(userIdToDelete);
 
     // Delete from Firestore
@@ -689,7 +691,7 @@ export async function deleteUserAction(
         try {
             const userRef = doc(db, 'users', userIdToDelete);
             await deleteDoc(userRef);
-            return { success: true, message: 'Usuario eliminado de la base de datos (no se encontró en Auth).' };
+            return { success: true };
         } catch (dbError: any) {
             return { success: false, error: `Error eliminando de Firestore: ${dbError.message}` };
         }
@@ -697,3 +699,5 @@ export async function deleteUserAction(
     return { success: false, error: errorMessage };
   }
 }
+
+    
