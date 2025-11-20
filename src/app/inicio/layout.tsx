@@ -1,4 +1,3 @@
-
 'use client';
 
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
@@ -48,13 +47,13 @@ function LoadingScreen() {
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     const { isRoleLoading, isActive } = useAuth();
     
-    // First, handle the loading state. Show a full-screen loader.
+    // First, handle the loading state. Show a full-screen loader while we check auth and profile.
     if (isRoleLoading) {
         return <LoadingScreen />;
     }
 
     // After loading is complete, check if the user is active.
-    // If not active, show the isolated inactive screen.
+    // If not active, show the isolated inactive screen. This is now a reliable check.
     if (!isActive) {
         return <InactiveUserScreen />;
     }

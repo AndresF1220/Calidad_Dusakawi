@@ -25,16 +25,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [isRoleLoading, setIsRoleLoading] = useState<boolean>(true);
 
     useEffect(() => {
-        // If Firebase Auth is still loading, or there's no authenticated user,
-        // we are in a loading or logged-out state.
-        if (isAuthLoading || !firebaseUser) {
-            setIsRoleLoading(isAuthLoading);
-            setUserRole(null);
-            setIsActive(false);
+        // If Firebase Auth is loading, we wait.
+        if (isAuthLoading) {
+            setIsRoleLoading(true);
             return;
         }
 
-        // We have a Firebase user, now fetch their profile from Firestore.
+        // If there is no authenticated user, session ends.
+        if (!firebaseUser) {
+            setUserRole(null);
+            setIsActive(false);
+            setIsRoleLoading(false);
+            return;
+        }
+
+        // We have a user, now fetch their profile from Firestore.
+        // This will run whenever the firebaseUser object changes (e.g., on login/logout).
         setIsRoleLoading(true);
         const userDocRef = doc(firestore, 'users', firebaseUser.uid);
 
@@ -42,11 +48,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .then((docSnap) => {
                 if (docSnap.exists()) {
                     const userProfile = docSnap.data();
+                    // Log to console for debugging, as requested.
+                    console.log("Perfil Firestore:", userProfile);
                     setUserRole(userProfile.role || null);
+                    // The core logic: set active state based on Firestore data.
                     setIsActive(userProfile.status === 'active');
                 } else {
-                    // User exists in Auth but not in Firestore DB. Treat as unauthorized.
-                    console.warn(`User with UID ${firebaseUser.uid} not found in Firestore.`);
+                    // User is in Auth, but no document in Firestore. Treat as unauthorized.
+                    console.warn(`User with UID ${firebaseUser.uid} not found in Firestore. Access denied.`);
                     setUserRole(null);
                     setIsActive(false);
                 }
@@ -57,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setIsActive(false);
             })
             .finally(() => {
-                // Finished loading the profile data.
+                // Profile loading is complete.
                 setIsRoleLoading(false);
             });
 
@@ -66,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const authInfo: AuthContextType = {
         user: firebaseUser,
         userRole,
-        isRoleLoading,
+        isRoleLoading: isRoleLoading,
         isActive,
     };
 
