@@ -2,7 +2,7 @@
 'use client';
 
 import { collection } from 'firebase/firestore';
-import { useAuth } from '@/lib/auth.tsx';
+import { useAuth } from '@/lib/auth';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -12,6 +12,7 @@ import { PlusCircle, ShieldAlert, Loader2, AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
 import { CreateUserForm } from '@/components/dashboard/CreateUserForm';
 import { UserActionsDropdown } from '@/components/dashboard/UserActionsDropdown';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export type User = {
     id: string;
@@ -36,9 +37,7 @@ const translateRole = (role: User['role']) => {
 function UserManagement() {
     const firestore = useFirestore();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const { userRole } = useAuth();
     
-    // FIX: Memoize the query to prevent re-creating it on every render, which causes an infinite loop.
     const usersQuery = useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, [firestore]);
     const { data: users, isLoading, error } = useCollection<User>(usersQuery);
 
@@ -109,7 +108,7 @@ function UserManagement() {
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            {userRole === 'superadmin' && <UserActionsDropdown user={user} />}
+                                            <UserActionsDropdown user={user} />
                                         </TableCell>
                                     </TableRow>
                                 ))
@@ -138,9 +137,31 @@ function AccessDenied() {
     )
 }
 
+function LoadingPermissions() {
+    return (
+        <div className="flex flex-col gap-8">
+            <Skeleton className="h-12 w-1/3" />
+            <Skeleton className="h-8 w-1/4" />
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-8 w-1/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                </CardHeader>
+                <CardContent>
+                    <Skeleton className="h-48 w-full" />
+                </CardContent>
+            </Card>
+        </div>
+    )
+}
+
 export default function AdministracionPage() {
-    const { userRole } = useAuth();
+    const { userRole, isRoleLoading } = useAuth();
     
+    if (isRoleLoading) {
+        return <LoadingPermissions />;
+    }
+
     if (userRole === 'superadmin') {
         return <UserManagement />;
     }

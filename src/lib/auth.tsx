@@ -1,21 +1,51 @@
 
 'use client';
 
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useState, useEffect } from 'react';
+import { useDoc, useFirebase, useMemoFirebase } from '@/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
-type UserRole = 'superadmin' | 'admin' | 'viewer';
+export type UserRole = 'superadmin' | 'admin' | 'viewer';
+
+interface UserProfile {
+    role: UserRole;
+}
 
 interface AuthContextType {
-    userRole: UserRole;
+    user: ReturnType<typeof useFirebase>['user'];
+    userRole: UserRole | null;
+    isRoleLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+    const { user, firestore, isUserLoading } = useFirebase();
+    const [userRole, setUserRole] = useState<UserRole | null>(null);
+    const [isRoleLoading, setIsRoleLoading] = useState(true);
 
-    // For development, always return 'superadmin' to ensure all UI is accessible.
-    const authInfo = {
-        userRole: 'superadmin' as UserRole,
+    const userDocRef = useMemoFirebase(
+      () => (user?.uid && firestore) ? doc(firestore, 'users', user.uid) : null,
+      [user, firestore]
+    );
+
+    const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
+
+    useEffect(() => {
+        setIsRoleLoading(isUserLoading || isProfileLoading);
+        if (userProfile) {
+            setUserRole(userProfile.role);
+        } else if (!isUserLoading && !isProfileLoading) {
+            // User exists but has no profile, or is not logged in
+            setUserRole(null);
+        }
+
+    }, [user, userProfile, isUserLoading, isProfileLoading]);
+    
+    const authInfo: AuthContextType = {
+        user,
+        userRole,
+        isRoleLoading,
     };
 
     return (
