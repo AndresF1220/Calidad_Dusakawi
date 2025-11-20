@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useAuth } from '@/lib/auth';
+import { Skeleton } from './ui/skeleton';
 
 
 interface AppSidebarNavProps {
@@ -73,7 +74,13 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
 
       <SidebarContent className="p-4 flex flex-col justify-between">
         <SidebarMenu>
-          {menuItems
+          {isRoleLoading ? (
+            <div className="space-y-2 px-2">
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+            </div>
+          ) : menuItems
             .filter(item => !item.roles || (userRole && item.roles.includes(userRole)))
             .map((item) => (
             <SidebarMenuItem key={item.href}>

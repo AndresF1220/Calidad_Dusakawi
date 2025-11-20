@@ -13,6 +13,8 @@ import { useState } from 'react';
 import { CreateUserForm } from '@/components/dashboard/CreateUserForm';
 import { UserActionsDropdown } from '@/components/dashboard/UserActionsDropdown';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export type User = {
     id: string;
@@ -140,15 +142,24 @@ function AccessDenied() {
 function LoadingPermissions() {
     return (
         <div className="flex flex-col gap-8">
-            <Skeleton className="h-12 w-1/3" />
-            <Skeleton className="h-8 w-1/4" />
+            <div className="flex justify-between items-center">
+                <div>
+                    <Skeleton className="h-10 w-64" />
+                    <Skeleton className="h-5 w-80 mt-2" />
+                </div>
+                <Skeleton className="h-10 w-36" />
+            </div>
             <Card>
                 <CardHeader>
-                    <Skeleton className="h-8 w-1/4" />
-                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-8 w-48" />
+                    <Skeleton className="h-5 w-64 mt-2" />
                 </CardHeader>
                 <CardContent>
-                    <Skeleton className="h-48 w-full" />
+                    <div className="space-y-2 mt-4">
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                    </div>
                 </CardContent>
             </Card>
         </div>
@@ -157,14 +168,27 @@ function LoadingPermissions() {
 
 export default function AdministracionPage() {
     const { userRole, isRoleLoading } = useAuth();
+    const router = useRouter();
+
+    useEffect(() => {
+        // Una vez que la carga de roles ha terminado y el rol no es superadmin, redirigir.
+        if (!isRoleLoading && userRole !== 'superadmin') {
+            router.push('/inicio');
+        }
+    }, [isRoleLoading, userRole, router]);
     
+    // Mientras se carga la información del rol, mostrar un estado de carga.
     if (isRoleLoading) {
         return <LoadingPermissions />;
     }
 
+    // Si la carga ha terminado y el rol es superadmin, mostrar el contenido.
     if (userRole === 'superadmin') {
         return <UserManagement />;
     }
 
-    return <AccessDenied />;
+    // Si la carga ha terminado y el rol no es superadmin, se mostrará brevemente
+    // el loader antes de que el useEffect redirija. Devolver el loader para evitar
+    // mostrar "Access Denied" innecesariamente antes de la redirección.
+    return <LoadingPermissions />;
 }
