@@ -6,7 +6,7 @@ import AppHeader from '@/components/app-header';
 import { AuthProvider, useAuth } from '@/lib/auth.tsx';
 import { Button } from '@/components/ui/button';
 import { getAuth, signOut } from 'firebase/auth';
-import { useFirebase, useFirebaseApp } from '@/firebase';
+import { useFirebaseApp } from '@/firebase';
 import { Loader2, UserX, LogOut } from 'lucide-react';
 import React from 'react';
 import { useRouter } from 'next/navigation';
