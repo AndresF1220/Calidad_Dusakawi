@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useState, useEffect } from 'react';
 import { useFirebase } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 
 export type UserRole = 'superadmin' | 'admin' | 'viewer';
@@ -26,30 +26,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [isRoleLoading, setIsRoleLoading] = useState<boolean>(true);
 
     useEffect(() => {
-        // We start by assuming we are loading, until we have a definitive answer.
         setIsRoleLoading(true);
 
-        // If Firebase Auth is still loading, we wait. The effect will re-run when it's done.
         if (isAuthLoading) {
             return;
         }
 
-        // If Firebase Auth is done and there's no user, then the session is unauthenticated.
         if (!firebaseUser) {
             setUserRole(null);
             setIsActive(false);
-            setIsRoleLoading(false); // Loading is complete, there is no user.
+            setIsRoleLoading(false);
             return;
         }
 
-        // If we have a firebaseUser, fetch their profile from Firestore.
         const userDocRef = doc(firestore, 'users', firebaseUser.uid);
 
         getDoc(userDocRef)
-            .then((docSnap) => {
+            .then(async (docSnap) => {
+                let userProfile;
                 if (docSnap.exists()) {
-                    const userProfile = docSnap.data();
-                    console.log("Perfil Firestore:", userProfile); // Debugging log
+                    userProfile = docSnap.data();
+                } else {
+                    console.warn(`User with UID ${firebaseUser.uid} not found in Firestore. Creating default profile.`);
+                    
+                    const defaultProfile = {
+                        role: 'viewer' as UserRole,
+                        status: 'active' as UserStatus,
+                        fullName: firebaseUser.displayName || '',
+                        cedula: '',
+                        email: firebaseUser.email || '',
+                        tempPassword: '',
+                        createdAt: serverTimestamp(),
+                    };
+
+                    try {
+                        await setDoc(userDocRef, defaultProfile);
+                        userProfile = defaultProfile;
+                        console.log(`Default profile created for UID ${firebaseUser.uid}`);
+                    } catch (error) {
+                        console.error("Error creating default user profile:", error);
+                        setUserRole(null);
+                        setIsActive(false);
+                        setIsRoleLoading(false);
+                        return;
+                    }
+                }
+
+                if (userProfile) {
+                    console.log("Perfil Firestore:", userProfile);
                     
                     const role = userProfile.role as UserRole | null;
                     const status = userProfile.status as UserStatus | 'inactive';
@@ -57,8 +81,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     setUserRole(role);
                     setIsActive(status === 'active');
                 } else {
-                    // User exists in Auth but has no profile in Firestore.
-                    console.warn(`User with UID ${firebaseUser.uid} not found in Firestore. Denying access.`);
                     setUserRole(null);
                     setIsActive(false);
                 }
@@ -69,7 +91,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setIsActive(false);
             })
             .finally(() => {
-                // Whether we found a profile or not, the role/status check is complete.
                 setIsRoleLoading(false);
             });
 
@@ -78,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const authInfo: AuthContextType = {
         user: firebaseUser,
         userRole,
-        isRoleLoading, // This now accurately reflects the entire process
+        isRoleLoading: isRoleLoading,
         isActive,
     };
 
