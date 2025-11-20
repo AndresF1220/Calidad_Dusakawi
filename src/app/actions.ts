@@ -649,31 +649,18 @@ export async function deleteUserAction(
   }
 
   try {
-    const { db: serverDb } = await import('@/firebase/client-config');
+    // Dynamically import server-side modules only within the server action
     const { getAuth } = await import('firebase-admin/auth');
     const { adminApp } = await import('@/firebase/server-config');
     const auth = getAuth(adminApp);
 
-    const usersRef = collection(serverDb, 'users');
-    const userToDeleteDocSnapshot = await getDocs(query(usersRef, where('__name__', '==', userIdToDelete)));
-
-    if (userToDeleteDocSnapshot.empty) {
-      // User might not exist in Firestore but still in Auth, try deleting from Auth
-      try {
-        await auth.deleteUser(userIdToDelete);
-        return { success: true, message: 'Usuario eliminado de Auth (no encontrado en Firestore).' } as any;
-      } catch (authError: any) {
-         if (authError.code === 'auth/user-not-found') {
-            return { success: false, error: 'El usuario no existe ni en Firestore ni en Auth.' };
-         }
-         throw authError;
-      }
-    }
+    // Check if user is the last superadmin BEFORE any deletion
+    const { db: serverDb } = await import('@/firebase/client-config');
+    const userToDeleteDocRef = doc(serverDb, 'users', userIdToDelete);
+    const userToDeleteDocSnap = await getDoc(userToDeleteDocRef);
     
-    const userToDeleteData = userToDeleteDocSnapshot.docs[0].data();
-
-    // Prevent deletion of the last superadmin
-    if (userToDeleteData.role === 'superadmin') {
+    if (userToDeleteDocSnap.exists() && userToDeleteDocSnap.data().role === 'superadmin') {
+      const usersRef = collection(serverDb, 'users');
       const superAdminQuery = query(usersRef, where('role', '==', 'superadmin'));
       const superAdminSnapshot = await getDocs(superAdminQuery);
       if (superAdminSnapshot.size <= 1) {
@@ -681,31 +668,24 @@ export async function deleteUserAction(
       }
     }
 
-    // Delete from Auth
-    await auth.deleteUser(userIdToDelete);
-
-    // Delete from Firestore
-    const userRef = doc(serverDb, 'users', userIdToDelete);
-    await deleteDoc(userRef);
+    // 1. Delete from Auth
+    try {
+      await auth.deleteUser(userIdToDelete);
+    } catch (authError: any) {
+      // If user not found in Auth, we can still proceed to delete from Firestore
+      if (authError.code !== 'auth/user-not-found') {
+        throw authError; // Re-throw other auth errors
+      }
+    }
+    
+    // 2. Delete from Firestore
+    await deleteDoc(userToDeleteDocRef);
 
     return { success: true };
+
   } catch (e: any) {
     console.error('Error eliminando usuario:', e);
-    
-    let errorMessage = `No se pudo eliminar el usuario: ${e.message}`;
-     if (e.code === 'auth/user-not-found') {
-        errorMessage = 'El usuario no fue encontrado en Firebase Auth y no pudo ser eliminado. Se procederá a eliminar solo de la base de datos.';
-        // If user not in auth, we can still try to delete from firestore
-        try {
-            const { db: serverDb } = await import('@/firebase/client-config');
-            const userRef = doc(serverDb, 'users', userIdToDelete);
-            await deleteDoc(userRef);
-            return { success: true };
-        } catch (dbError: any) {
-            return { success: false, error: `Error eliminando de Firestore: ${dbError.message}` };
-        }
-    }
-    return { success: false, error: errorMessage };
+    return { success: false, error: `No se pudo eliminar el usuario: ${e.message}` };
   }
 }
     
