@@ -495,21 +495,21 @@ export async function uploadFileAndCreateDocument(formData: FormData): Promise<{
   }
 }
 
-const userSchema = {
-  fullName: z.string().min(3, 'El nombre completo es requerido.'),
+const userFormSchema = z.object({
+  fullName: z.string().min(1, 'El nombre completo es requerido.'),
   cedula: z.string().min(1, 'La cédula es requerida.'),
   email: z.string().email('El correo electrónico no es válido.'),
-  role: z.enum(['superadmin', 'admin', 'viewer']),
+  role: z.enum(['superadmin', 'admin', 'viewer'], { required_error: 'Debe seleccionar un rol.'}),
   status: z.enum(['active', 'inactive']),
   tempPassword: z.string().min(1, 'La contraseña temporal es requerida.'),
-};
+});
 
-const createUserSchema = z.object(userSchema);
+const createUserSchema = userFormSchema;
 
 export async function createUserAction(
   prevState: any,
   formData: FormData
-): Promise<{ message: string; error?: string }> {
+): Promise<{ message: string; error?: string, errors?: { [key: string]: string[] } }> {
   if (!db) return { message: 'Error', error: 'Firestore no está inicializado.' };
 
   const validatedFields = createUserSchema.safeParse({
@@ -522,9 +522,12 @@ export async function createUserAction(
   });
 
   if (!validatedFields.success) {
-    const errors = validatedFields.error.flatten().fieldErrors;
-    const errorMessages = Object.values(errors).flat().join(' ');
-    return { message: 'Error de validación', error: errorMessages };
+    const fieldErrors = validatedFields.error.flatten().fieldErrors;
+    return {
+        message: 'Error de validación',
+        error: "Por favor corrija los errores en el formulario.",
+        errors: fieldErrors,
+    };
   }
 
   try {
@@ -546,8 +549,7 @@ export async function createUserAction(
   }
 }
 
-const updateUserSchema = z.object({
-  ...userSchema,
+const updateUserSchema = userFormSchema.extend({
   userId: z.string().min(1, 'ID de usuario es requerido.'),
 });
 
@@ -557,7 +559,7 @@ export async function updateUserAction(
 ): Promise<{ message: string; error?: string, errors?: { [key: string]: string[] } }> {
   if (!db) return { message: 'Error', error: 'Firestore no está inicializado.' };
 
-  const validatedFields = updateUserSchema.safeParse({
+  const payload = {
     userId: formData.get('userId'),
     fullName: formData.get('fullName'),
     cedula: formData.get('cedula'),
@@ -565,14 +567,16 @@ export async function updateUserAction(
     role: formData.get('role'),
     status: formData.get('status'),
     tempPassword: formData.get('tempPassword'),
-  });
+  };
+  
+  const validatedFields = updateUserSchema.safeParse(payload);
   
   if (!validatedFields.success) {
     const fieldErrors = validatedFields.error.flatten().fieldErrors;
     return {
       message: 'Error de validación',
       errors: fieldErrors,
-      error: Object.values(fieldErrors).flat().join(' '),
+      error: "Por favor corrija los errores en el formulario.",
     };
   }
 
@@ -618,13 +622,12 @@ export async function deleteUserAction(
   try {
     const usersRef = collection(db, 'users');
     
-    // Check if the user to be deleted is the last superadmin
-    const userToDeleteDoc = await getDocs(query(usersRef, where('__name__', '==', userIdToDelete)));
+    const userToDeleteDocSnapshot = await getDocs(query(usersRef, where('__name__', '==', userIdToDelete)));
 
-    if (userToDeleteDoc.empty) {
+    if (userToDeleteDocSnapshot.empty) {
         return { success: false, error: 'El usuario no existe.' };
     }
-    const userToDeleteData = userToDeleteDoc.docs[0].data();
+    const userToDeleteData = userToDeleteDocSnapshot.docs[0].data();
 
     if (userToDeleteData.role === 'superadmin') {
       const superAdminQuery = query(usersRef, where('role', '==', 'superadmin'));
@@ -634,7 +637,6 @@ export async function deleteUserAction(
       }
     }
 
-    // Proceed with deletion
     const userRef = doc(db, 'users', userIdToDelete);
     await deleteDoc(userRef);
 

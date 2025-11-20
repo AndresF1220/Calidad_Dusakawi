@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useActionState, useEffect, useRef } from 'react';
+import { useActionState, useEffect, useRef, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { createUserAction } from '@/app/actions';
 import { Button } from '@/components/ui/button';
@@ -58,7 +58,8 @@ export function CreateUserForm({
 }: CreateUserFormProps) {
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
-  const [state, formAction] = useActionState(createUserAction, { message: '', error: undefined });
+  const [state, formAction] = useActionState(createUserAction, { message: '', errors: undefined, error: undefined });
+  const [isActive, setIsActive] = useState(true);
 
   useEffect(() => {
     if (state.message && !state.error) {
@@ -68,7 +69,7 @@ export function CreateUserForm({
       });
       onOpenChange(false);
     }
-    if (state.error) {
+    if (state.error && !state.errors) {
       toast({
         variant: 'destructive',
         title: 'Error al Crear Usuario',
@@ -78,36 +79,15 @@ export function CreateUserForm({
   }, [state, toast, onOpenChange]);
 
   useEffect(() => {
-    const form = formRef.current;
-    if (!form || !isOpen) return;
-
-    const statusSwitch = form.querySelector<HTMLButtonElement>('[name="status-switch"]');
-    const hiddenStatusInput = form.querySelector<HTMLInputElement>('[name="status"]');
-
-    if (!statusSwitch || !hiddenStatusInput) return;
-
-    // Set initial value
-    hiddenStatusInput.value = statusSwitch.dataset.state === 'checked' ? 'active' : 'inactive';
-
-    const observer = new MutationObserver((mutations) => {
-        for (const mutation of mutations) {
-            if (mutation.type === 'attributes' && mutation.attributeName === 'data-state') {
-                const state = (mutation.target as HTMLElement).dataset.state;
-                hiddenStatusInput.value = state === 'checked' ? 'active' : 'inactive';
-            }
-        }
-    });
-
-    observer.observe(statusSwitch, { attributes: true });
-
-    return () => observer.disconnect();
-  }, [isOpen]);
-
-  useEffect(() => {
     if (!isOpen) {
       formRef.current?.reset();
+      setIsActive(true);
+      // Reset action state when closing
+      formAction(new FormData()); 
     }
-  }, [isOpen]);
+  }, [isOpen, formAction]);
+  
+  const getError = (fieldName: string) => state.errors?.[fieldName]?.[0];
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -124,23 +104,27 @@ export function CreateUserForm({
         <form action={formAction} ref={formRef} className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="fullName">Nombre completo</Label>
-            <Input id="fullName" name="fullName" placeholder="John Doe" required />
+            <Input id="fullName" name="fullName" placeholder="John Doe" />
+            {getError('fullName') && <p className="text-xs text-destructive">{getError('fullName')}</p>}
           </div>
            <div className="grid gap-2">
             <Label htmlFor="cedula">Cédula</Label>
-            <Input id="cedula" name="cedula" placeholder="12345678" required />
+            <Input id="cedula" name="cedula" placeholder="12345678" />
+             {getError('cedula') && <p className="text-xs text-destructive">{getError('cedula')}</p>}
           </div>
           <div className="grid gap-2">
             <Label htmlFor="email">Correo electrónico</Label>
-            <Input id="email" name="email" type="email" placeholder="john.doe@example.com" required />
+            <Input id="email" name="email" type="email" placeholder="john.doe@example.com" />
+            {getError('email') && <p className="text-xs text-destructive">{getError('email')}</p>}
           </div>
            <div className="grid gap-2">
             <Label htmlFor="tempPassword">Contraseña Temporal</Label>
-            <Input id="tempPassword" name="tempPassword" required />
+            <Input id="tempPassword" name="tempPassword" />
+            {getError('tempPassword') && <p className="text-xs text-destructive">{getError('tempPassword')}</p>}
           </div>
           <div className="grid gap-2">
             <Label htmlFor="role">Rol</Label>
-            <Select name="role" defaultValue="viewer" required>
+            <Select name="role" defaultValue="viewer">
               <SelectTrigger id="role">
                 <SelectValue placeholder="Seleccione un rol" />
               </SelectTrigger>
@@ -150,18 +134,23 @@ export function CreateUserForm({
                 ))}
               </SelectContent>
             </Select>
+            {getError('role') && <p className="text-xs text-destructive">{getError('role')}</p>}
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="status-switch">Estado</Label>
+            <Label>Estado</Label>
              <div className="flex items-center space-x-2">
-                 <Switch id="status-switch" name="status-switch" defaultChecked={true} />
+                 <Switch 
+                    id="status-switch" 
+                    checked={isActive}
+                    onCheckedChange={setIsActive}
+                 />
                 <Label htmlFor="status-switch" className="text-sm font-normal">
-                    {/* Hidden input to submit the actual value */}
-                    <input type="hidden" name="status" value={'active'} />
-                    Activo
+                    {isActive ? 'Activo' : 'Inactivo'}
                 </Label>
+                <input type="hidden" name="status" value={isActive ? 'active' : 'inactive'} />
             </div>
              <p className="text-xs text-muted-foreground">Los usuarios inactivos no podrán iniciar sesión.</p>
+             {getError('status') && <p className="text-xs text-destructive">{getError('status')}</p>}
           </div>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
