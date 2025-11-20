@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, ReactNode, useState, useEffect } from 'react';
@@ -56,5 +55,3 @@ export function useAppSettings() {
     }
     return context;
 }
-
-    
