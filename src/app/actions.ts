@@ -529,9 +529,9 @@ export async function createUserAction(
     };
   }
 
-  const { fullName, email, role, status, cedula, tempPassword } = validatedFields.data;
-
   try {
+    const { fullName, email, role, status, cedula, tempPassword } = validatedFields.data;
+    
     // Dynamic imports for server-side code
     const { getAuth } = await import('firebase-admin/auth');
     const { adminApp } = await import('@/firebase/server-config');

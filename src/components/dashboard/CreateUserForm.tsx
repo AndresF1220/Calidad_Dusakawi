@@ -51,7 +51,7 @@ const roleTranslations: Record<string, string> = {
 
 const roleOptions = Object.keys(roleTranslations);
 
-const initialState = {
+const initialState: { message: string; error?: string; errors?: { [key: string]: string[] } } = {
   message: '',
   errors: {},
   error: undefined,
@@ -64,19 +64,30 @@ export function CreateUserForm({
 }: CreateUserFormProps) {
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
-  const [state, formAction, isPending] = useActionState(createUserAction, initialState);
+  const [state, formAction] = useActionState(createUserAction, initialState);
   const [isActive, setIsActive] = useState(true);
 
   useEffect(() => {
-    if (!state) return;
+    if (!isOpen) {
+      // Reset form and state when dialog is closed
+      formRef.current?.reset();
+      setIsActive(true);
+      // Directly manipulating state is not ideal, but `useActionState` lacks a reset function.
+      // A better approach would be to remount the component by changing its key.
+      initialState.errors = {};
+      initialState.error = undefined;
+      initialState.message = '';
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
     if (state.message && !state.error) {
       toast({
         title: '¡Éxito!',
         description: state.message,
       });
       onOpenChange(false);
-    }
-    if (state.error) { // Show error regardless of whether it has field-specific errors
+    } else if (state.error) {
       toast({
         variant: 'destructive',
         title: 'Error al Crear Usuario',
@@ -84,16 +95,10 @@ export function CreateUserForm({
       });
     }
   }, [state, toast, onOpenChange]);
-
-  useEffect(() => {
-    if (!isOpen) {
-      formRef.current?.reset();
-      setIsActive(true);
-      // We might need a way to reset the action state if the dialog is closed manually
-    }
-  }, [isOpen]);
   
-  const getError = (fieldName: string) => state?.errors?.[fieldName]?.[0];
+  const getError = (fieldName: keyof typeof state.errors) => {
+    return state.errors?.[fieldName]?.[0];
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
