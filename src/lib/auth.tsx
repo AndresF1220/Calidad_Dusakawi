@@ -26,8 +26,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
     const { user, firestore, isUserLoading } = useFirebase();
     const [userRole, setUserRole] = useState<UserRole | null>(null);
-    const [isActive, setIsActive] = useState(false);
-    const [isRoleLoading, setIsRoleLoading] = useState(true);
+    const [isActive, setIsActive] = useState<boolean>(false);
+    const [isRoleLoading, setIsRoleLoading] = useState<boolean>(true);
 
     const userDocRef = useMemoFirebase(
       () => (user?.uid && firestore) ? doc(firestore, 'users', user.uid) : null,
@@ -37,16 +37,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
     useEffect(() => {
-        const totalLoading = isUserLoading || (user && isProfileLoading);
-        setIsRoleLoading(totalLoading);
+        // Determine if we are still in a loading state.
+        // We are loading if the user auth state is loading, OR if we have a user but their profile hasn't loaded yet.
+        const isLoading = isUserLoading || (user != null && isProfileLoading);
+        setIsRoleLoading(isLoading);
+        
+        if (isLoading) {
+            // While loading, ensure default non-privileged state.
+            setUserRole(null);
+            setIsActive(false);
+            return;
+        }
 
-        if (totalLoading) return;
-
+        // Once loading is complete, determine the role and status.
         if (user && userProfile) {
             setUserRole(userProfile.role);
             setIsActive(userProfile.status === 'active');
         } else {
-            // User is not logged in, or has no profile.
+            // If there's no user or no profile, they have no role and are not active.
             setUserRole(null);
             setIsActive(false);
         }
