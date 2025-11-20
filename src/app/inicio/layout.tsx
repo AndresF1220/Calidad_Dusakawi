@@ -8,28 +8,30 @@ import { AuthProvider, useAuth } from '@/lib/auth.tsx';
 import { Button } from '@/components/ui/button';
 import { getAuth, signOut } from 'firebase/auth';
 import { useFirebase, useFirebaseApp } from '@/firebase';
-import { Loader2, UserX } from 'lucide-react';
+import { Loader2, UserX, LogOut } from 'lucide-react';
 import React from 'react';
 import { useRouter } from 'next/navigation';
 
 function InactiveUserScreen() {
-    const { auth } = useFirebase();
+    const app = useFirebaseApp();
     const router = useRouter();
 
     const handleLogoutAndRedirect = () => {
+        const auth = getAuth(app);
         signOut(auth).then(() => {
             router.push('/');
         });
     };
 
-    // This screen is now simplified, but we add a logout button
-    // so the user is not completely stuck.
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-background text-center p-4">
             <UserX className="h-16 w-16 text-destructive mb-4" />
             <h1 className="text-2xl font-bold font-headline mb-2">Tu usuario está inactivo</h1>
             <p className="text-muted-foreground mb-6">No tienes permiso para acceder al sistema. Por favor, contacta al administrador.</p>
-            <Button onClick={handleLogoutAndRedirect}>Cerrar Sesión</Button>
+            <Button onClick={handleLogoutAndRedirect}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Volver al inicio
+            </Button>
         </div>
     );
 }
@@ -50,13 +52,10 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
         return <LoadingScreen />;
     }
 
-    // If the user is determined to be inactive, show the dedicated screen.
-    // This now happens *outside* of the main app layout.
     if (!isActive) {
         return <InactiveUserScreen />;
     }
     
-    // Only active users get the full application layout.
     return (
         <SidebarProvider>
             <AppSidebar />

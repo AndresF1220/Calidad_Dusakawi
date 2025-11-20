@@ -4,6 +4,7 @@
 import React, { createContext, useContext, ReactNode, useState, useEffect } from 'react';
 import { useDoc, useFirebase, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { User } from 'firebase/auth';
 
 export type UserRole = 'superadmin' | 'admin' | 'viewer';
 export type UserStatus = 'active' | 'inactive';
@@ -14,7 +15,7 @@ interface UserProfile {
 }
 
 interface AuthContextType {
-    user: ReturnType<typeof useFirebase>['user'];
+    user: User | null;
     userRole: UserRole | null;
     isRoleLoading: boolean;
     isActive: boolean;
@@ -36,19 +37,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
     useEffect(() => {
-        const totalLoading = isUserLoading || isProfileLoading;
+        const totalLoading = isUserLoading || (user && isProfileLoading);
         setIsRoleLoading(totalLoading);
 
-        if (!totalLoading) {
-            if (userProfile) {
-                setUserRole(userProfile.role);
-                setIsActive(userProfile.status === 'active');
-            } else {
-                // User is authenticated but has no profile, or is not logged in at all.
-                // In either case, they are not considered 'active'.
-                setUserRole(null);
-                setIsActive(false);
-            }
+        if (totalLoading) return;
+
+        if (user && userProfile) {
+            setUserRole(userProfile.role);
+            setIsActive(userProfile.status === 'active');
+        } else {
+            // User is not logged in, or has no profile.
+            setUserRole(null);
+            setIsActive(false);
         }
     }, [user, userProfile, isUserLoading, isProfileLoading]);
     
