@@ -9,9 +9,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, ShieldAlert, Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useActionState, useEffect } from 'react';
 import { CreateUserForm } from '@/components/dashboard/CreateUserForm';
 import { UserActionsDropdown } from '@/components/dashboard/UserActionsDropdown';
+import { createUserAction } from '@/app/actions';
 
 export type User = {
     id: string;
@@ -37,7 +38,7 @@ function UserManagement() {
     const firestore = useFirestore();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const { userRole } = useAuth();
-
+    
     const usersQuery = useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, [firestore]);
     const { data: users, isLoading } = useCollection<User>(usersQuery);
 
@@ -87,7 +88,7 @@ function UserManagement() {
                                 users.map((user) => (
                                     <TableRow key={user.id}>
                                         <TableCell className="font-medium">{user.fullName || 'N/A'}</TableCell>
-                                        <TableCell>{user.cedula}</TableCell>
+                                        <TableCell>{user.cedula || 'N/A'}</TableCell>
                                         <TableCell>{user.email}</TableCell>
                                         <TableCell className="font-mono text-xs">{user.tempPassword || 'N/A'}</TableCell>
                                         <TableCell>
