@@ -120,7 +120,7 @@ export function EditUserForm({
             <Edit /> Editar Usuario
           </DialogTitle>
           <DialogDescription>
-            Modifique los detalles del usuario.
+            Modifique los detalles del usuario. La contraseña temporal solo se actualizará en Firebase Auth si se cambia.
           </DialogDescription>
         </DialogHeader>
         <form action={formAction} ref={formRef} className="grid gap-4 py-4" key={user.id}>

@@ -605,29 +605,47 @@ export async function updateUserAction(
 
     const { userId, ...userData } = validatedFields.data;
     const { db: adminDb, adminApp } = await import('@/firebase/server-config');
+    const auth = (await import('firebase-admin/auth')).getAuth(adminApp);
     const userRef = doc(adminDb, 'users', userId);
     
+    // Fetch current user data to see what changed
+    const currentUserSnap = await getDoc(userRef);
+    if (!currentUserSnap.exists()) {
+        return { message: 'Error', error: 'El usuario que intenta actualizar no existe.' };
+    }
+    const currentUserData = currentUserSnap.data();
+    
+    // Update Firestore
     await updateDoc(userRef, {
         ...userData,
         updatedAt: serverTimestamp(),
     });
     
-     // Also update email in Firebase Auth if it has changed
-    const { getAuth } = await import('firebase-admin/auth');
-    const auth = getAuth(adminApp);
-    const userRecord = await auth.getUser(userId);
+    // Conditionally update Firebase Auth
+    const authUpdates: { email?: string; password?: string, displayName?:string } = {};
 
-    if (userRecord.email !== userData.email) {
-        await auth.updateUser(userId, { email: userData.email });
+    if (currentUserData.email !== userData.email) {
+        authUpdates.email = userData.email;
     }
-    if(userRecord.displayName !== userData.fullName){
-        await auth.updateUser(userId, { displayName: userData.fullName });
+    if (userData.tempPassword && currentUserData.tempPassword !== userData.tempPassword) {
+        authUpdates.password = userData.tempPassword;
+    }
+    if(currentUserData.fullName !== userData.fullName){
+        authUpdates.displayName = userData.fullName;
+    }
+
+    if (Object.keys(authUpdates).length > 0) {
+        await auth.updateUser(userId, authUpdates);
     }
 
     return { message: 'Usuario actualizado con éxito.' };
   } catch (e: any) {
     console.error('Error actualizando usuario:', e);
-    return { message: 'Error', error: `No se pudo actualizar el usuario: ${e.message}` };
+    let errorMessage = `No se pudo actualizar el usuario: ${e.message}`;
+     if (e.code === 'auth/email-already-exists') {
+        errorMessage = 'El correo electrónico ya está en uso por otro usuario.';
+    }
+    return { message: 'Error', error: errorMessage };
   }
 }
 
