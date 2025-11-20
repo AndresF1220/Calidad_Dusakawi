@@ -8,16 +8,8 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'superadmin';
     }
 
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
-    }
-
     match /users/{userId} {
-      // El superadmin puede ver y gestionar todos los usuarios
       allow read, write: if isSuperAdmin();
-
-      // Un usuario normal solo puede leer/actualizar su propio registro
-      allow read, update: if isOwner(userId);
     }
     
     match /areas/{areaId} {
