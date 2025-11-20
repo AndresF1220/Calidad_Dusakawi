@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useParams, notFound } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import CaracterizacionPanel from '@/components/dashboard/CaracterizacionPanel';
 import RepoEmbed from '@/components/dashboard/RepoEmbed';
 import { useSubproceso, useProceso, useArea } from '@/hooks/use-areas-data';
@@ -10,7 +10,7 @@ import { EntityOptionsDropdown } from '@/components/dashboard/EntityOptionsDropd
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import { useAuth } from '@/lib/auth.tsx';
+import { useAuth } from '@/lib/auth';
 
 export default function SubprocesoIdPage() {
   const params = useParams();

@@ -9,7 +9,7 @@ import { Skeleton } from '../ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import React from 'react';
 import { EntityOptionsDropdown } from './EntityOptionsDropdown';
-import { useAuth } from '@/lib/auth.tsx';
+import { useAuth } from '@/lib/auth';
 
 interface ProcesoCardsProps {
     areaId: string;
@@ -68,6 +68,7 @@ const ItemCard = ({ item, linkHref, entityType, parentId, grandParentId }: { ite
 
 
 export default function ProcesoCards({ areaId, procesoId }: ProcesoCardsProps) {
+    const { userRole } = useAuth();
     
     if (procesoId) {
         // Logic to display sub-processes
@@ -84,7 +85,7 @@ export default function ProcesoCards({ areaId, procesoId }: ProcesoCardsProps) {
         if (subprocesos?.length === 0) {
             return (
                 <div className="col-span-full text-center text-muted-foreground mt-8">
-                    <p>No hay sub-procesos definidos para este proceso.</p>
+                    <p>{userRole === 'superadmin' ? 'No hay sub-procesos definidos para este proceso. Agregue uno para comenzar.' : 'No hay sub-procesos definidos para este proceso.'}</p>
                 </div>
             );
         }
@@ -119,7 +120,7 @@ export default function ProcesoCards({ areaId, procesoId }: ProcesoCardsProps) {
     if (procesos?.length === 0) {
         return (
             <div className="col-span-full text-center text-muted-foreground mt-8">
-                <p>No hay procesos definidos para esta área todavía. Agregue uno para comenzar.</p>
+                <p>{userRole === 'superadmin' ? 'No hay procesos definidos para esta área todavía. Agregue uno para comenzar.' : 'No hay procesos definidos para esta área.'}</p>
             </div>
         );
     }

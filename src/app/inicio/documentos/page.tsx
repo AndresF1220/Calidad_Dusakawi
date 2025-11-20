@@ -11,7 +11,7 @@ import { AddEntityForm } from '@/components/dashboard/AddEntityForm';
 import { useToast } from '@/hooks/use-toast';
 import { seedProcessMapAction } from '@/app/actions';
 import { EntityOptionsDropdown } from '@/components/dashboard/EntityOptionsDropdown';
-import { useAuth } from '@/lib/auth.tsx';
+import { useAuth } from '@/lib/auth';
 
 const iconMap: { [key: string]: React.ElementType } = {
     'direccion-administrativa-y-financiera': Building,
@@ -77,14 +77,15 @@ const AreaCard = ({ area }: { area: any }) => {
 export default function RepositoryAreasPage() {
   const { areas, isLoading } = useAreas();
   const [isAdding, setIsAdding] = useState(false);
-  const [isSeeding, setIsSeeding] = useState(false);
+  const [isSeeding, setIsSeeding]_ = useState(false); // Renamed to avoid confusion
+  const [isSeedingAction, setIsSeedingAction] = useState(false); // New state for action
   const { toast } = useToast();
   const { userRole } = useAuth();
 
   useEffect(() => {
     const ensureSeeded = async () => {
-        if (!isLoading && areas && areas.length === 0 && userRole === 'superadmin') {
-            setIsSeeding(true);
+        if (!isLoading && areas && areas.length === 0 && userRole === 'superadmin' && !isSeedingAction) {
+            setIsSeedingAction(true); // Prevent re-triggering
             toast({
                 title: "Restaurando mapa de procesos...",
                 description: "La base de datos está vacía. Se restaurarán los datos predeterminados.",
@@ -102,12 +103,14 @@ export default function RepositoryAreasPage() {
                     description: result.message,
                 });
             }
-            setIsSeeding(false);
+            setIsSeedingAction(false);
         }
     };
     ensureSeeded();
-  }, [isLoading, areas, toast, userRole]);
+  }, [isLoading, areas, toast, userRole, isSeedingAction]);
 
+
+  const showLoadingState = isLoading || isSeedingAction;
 
   return (
     <div className="flex flex-col gap-8">
@@ -131,17 +134,18 @@ export default function RepositoryAreasPage() {
       </div>
 
        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-4">
-        {(isLoading || isSeeding) && Array.from({ length: 6 }).map((_, i) => (
+        {showLoadingState && Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="h-48 w-full" />
         ))}
-        {!isSeeding && areas?.map((area) => (
+        {!showLoadingState && areas?.map((area) => (
             <AreaCard key={area.id} area={area} />
         ))}
       </div>
-       {!isLoading && !isSeeding && areas?.length === 0 && (
+       {!showLoadingState && areas?.length === 0 && (
             <div className="col-span-full text-center py-10">
-                <Loader2 className="mx-auto h-12 w-12 animate-spin text-muted-foreground" />
-                <p className="mt-4 text-center text-muted-foreground">No hay áreas creadas. Comience por agregar una o espere la restauración automática.</p>
+                <p className="mt-4 text-center text-muted-foreground">
+                    {userRole === 'superadmin' ? 'No hay áreas creadas. Comience por agregar una.' : 'No hay áreas disponibles.'}
+                </p>
             </div>
        )}
     </div>

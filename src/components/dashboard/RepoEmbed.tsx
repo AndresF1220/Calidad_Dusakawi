@@ -47,7 +47,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from '@/hooks/use-toast';
 import { RenameFolderForm } from './RenameFolderForm';
 import { UploadFileForm } from './UploadFileForm';
-import { useAuth } from '@/lib/auth.tsx';
+import { useAuth } from '@/lib/auth';
 
 
 interface RepoEmbedProps {
@@ -311,6 +311,8 @@ export default function RepoEmbed({
         </Button>
     )
   }
+  
+  const canUpload = userRole === 'superadmin' || userRole === 'admin';
 
   return (
     <>
@@ -370,7 +372,7 @@ export default function RepoEmbed({
                 Documentos en esta carpeta.
               </CardDescription>
             </div>
-             {userRole === 'superadmin' && (
+             {canUpload && (
                  <UploadFileForm 
                     isOpen={isUploading} 
                     onOpenChange={setIsUploading}
@@ -435,7 +437,7 @@ export default function RepoEmbed({
                       colSpan={5}
                       className="h-24 text-center text-muted-foreground"
                     >
-                       {selectedFolder ? "Esta carpeta está vacía. Use ‘Subir Archivo’ para agregar documentos." : "Seleccione una carpeta para ver sus archivos."}
+                       {selectedFolder ? (canUpload ? "Esta carpeta está vacía. Use ‘Subir Archivo’ para agregar documentos." : "Esta carpeta está vacía.") : "Seleccione una carpeta para ver sus archivos."}
                     </TableCell>
                   </TableRow>
                 )}
@@ -445,7 +447,7 @@ export default function RepoEmbed({
         </Card>
       </div>
       
-      {folderToEdit && (
+      {folderToEdit && userRole === 'superadmin' && (
         <RenameFolderForm
             isOpen={isRenamingFolder}
             onOpenChange={setIsRenamingFolder}

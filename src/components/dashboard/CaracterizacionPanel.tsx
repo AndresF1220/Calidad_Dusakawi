@@ -5,8 +5,6 @@ import { useState, useEffect } from 'react';
 import { useFirestore } from '@/firebase';
 import {
   doc,
-  setDoc,
-  serverTimestamp,
   onSnapshot,
 } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,7 +26,7 @@ import {
   Loader,
 } from 'lucide-react';
 import CaracterizacionEditor from './CaracterizacionEditor';
-import { useAuth } from '@/lib/auth.tsx';
+import { useAuth } from '@/lib/auth';
 
 interface CaracterizacionPanelProps {
   idEntidad: string;

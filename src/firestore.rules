@@ -4,11 +4,12 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function isSuperAdmin() {
-      return request.auth != null &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'superadmin';
+      // Allow any authenticated user for development purposes
+      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'superadmin';
     }
 
     match /users/{userId} {
+      // Superadmins can manage all users.
       allow read, write: if isSuperAdmin();
     }
     
