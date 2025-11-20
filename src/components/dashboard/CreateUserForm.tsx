@@ -53,7 +53,7 @@ const roleOptions = Object.keys(roleTranslations);
 
 const initialState = {
   message: '',
-  errors: undefined,
+  errors: {},
   error: undefined,
 };
 
@@ -64,7 +64,7 @@ export function CreateUserForm({
 }: CreateUserFormProps) {
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
-  const [state, formAction, isPending] = useActionState(createUserAction, initialState);
+  const [state, formAction] = useActionState(createUserAction, initialState);
   const [isActive, setIsActive] = useState(true);
 
   useEffect(() => {
@@ -89,8 +89,12 @@ export function CreateUserForm({
     if (!isOpen) {
       formRef.current?.reset();
       setIsActive(true);
+      // Resetting the action state if it has errors
+      if (state?.errors || state?.error) {
+          formAction(new FormData());
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, state?.errors, state?.error, formAction]);
   
   const getError = (fieldName: string) => state?.errors?.[fieldName]?.[0];
 
@@ -109,22 +113,22 @@ export function CreateUserForm({
         <form action={formAction} ref={formRef} className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="fullName">Nombre completo</Label>
-            <Input id="fullName" name="fullName" placeholder="John Doe" />
+            <Input id="fullName" name="fullName" placeholder="Escriba el nombre completo" />
             {getError('fullName') && <p className="text-xs text-destructive">{getError('fullName')}</p>}
           </div>
            <div className="grid gap-2">
             <Label htmlFor="cedula">Cédula</Label>
-            <Input id="cedula" name="cedula" placeholder="12345678" />
+            <Input id="cedula" name="cedula" placeholder="Escriba la cédula" />
              {getError('cedula') && <p className="text-xs text-destructive">{getError('cedula')}</p>}
           </div>
           <div className="grid gap-2">
             <Label htmlFor="email">Correo electrónico</Label>
-            <Input id="email" name="email" type="email" placeholder="john.doe@example.com" />
+            <Input id="email" name="email" type="email" placeholder="nombre@ejemplo.com" />
             {getError('email') && <p className="text-xs text-destructive">{getError('email')}</p>}
           </div>
            <div className="grid gap-2">
             <Label htmlFor="tempPassword">Contraseña Temporal</Label>
-            <Input id="tempPassword" name="tempPassword" />
+            <Input id="tempPassword" name="tempPassword" placeholder="Defina una contraseña temporal" />
             {getError('tempPassword') && <p className="text-xs text-destructive">{getError('tempPassword')}</p>}
           </div>
           <div className="grid gap-2">
