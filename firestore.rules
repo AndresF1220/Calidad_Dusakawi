@@ -7,33 +7,27 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == userId;
     }
     
-    function getUserRole() {
-      // Returns null if the document does not exist
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
-    }
-    
     function isSuperAdmin() {
-      // For development: default to true if no user/role is found
-      let role = getUserRole();
-      return request.auth == null || role == null || role == 'superadmin';
+      // For development purposes, grant superadmin access if the user is authenticated.
+      // This will be secured properly later.
+      return request.auth != null;
     }
 
-    // Rules for individual user documents
-    match /users/{userId} {
-      // A user can read their own profile. A superadmin can read any profile.
-      allow get: if isOwner(userId) || isSuperAdmin();
-      // A user can update their own profile. A superadmin can update any profile.
-      allow update: if isOwner(userId) || isSuperAdmin();
-      // Only a superadmin can delete a user.
-      allow delete: if isSuperAdmin();
-    }
-    
     // Rules for the users collection as a whole
+    match /users/{userId} {
+        // Any authenticated user can read any profile (for development)
+        allow get: if request.auth != null;
+        // Any authenticated user can update any profile (for development)
+        allow update: if request.auth != null;
+        // Superadmin can delete
+        allow delete: if isSuperAdmin();
+        // A user can create their own document
+        allow create: if isOwner(userId);
+    }
+
     match /users {
-        // A superadmin can list all users.
-        allow list: if isSuperAdmin();
-        // Any authenticated user can create their own user document.
-        allow create: if request.auth != null;
+      // Superadmin can list all users
+      allow list: if isSuperAdmin();
     }
     
     match /areas/{areaId} {
