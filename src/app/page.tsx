@@ -59,12 +59,16 @@ export default function LoginPage() {
       const auth = getAuth();
       await signInWithEmailAndPassword(auth, email, password);
       
+      // On successful login, Firebase's onAuthStateChanged listener will trigger
+      // the redirection via the AuthProvider and AuthenticatedLayout.
+      // So, we can just wait for that to happen.
       router.push('/inicio');
 
     } catch (error: any) {
       console.error("Authentication failed:", error);
       let errorMessage = 'Error desconocido. Por favor intente de nuevo.';
       
+      // This error code is common for wrong password, user not found in Auth, etc.
       if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
           errorMessage = 'Cédula o contraseña incorrectos, o el usuario está inactivo.';
       }
@@ -129,5 +133,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    

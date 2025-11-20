@@ -683,14 +683,17 @@ export async function deleteUserAction(
       }
     }
 
+    // Attempt to delete from Auth first, but don't fail if already deleted
     try {
       await auth.deleteUser(userIdToDelete);
     } catch (authError: any) {
+      // If the user is not found in Auth, we can proceed to delete from Firestore.
       if (authError.code !== 'auth/user-not-found') {
         console.error("Error deleting user from Auth, but will proceed to delete from Firestore:", authError);
       }
     }
 
+    // Delete from Firestore
     await deleteDoc(userToDeleteDocRef);
 
     return { success: true };
@@ -699,6 +702,4 @@ export async function deleteUserAction(
     return { success: false, error: `No se pudo eliminar el usuario: ${e.message}` };
   }
 }
-    
-
     
