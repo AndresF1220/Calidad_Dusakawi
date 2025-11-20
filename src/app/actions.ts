@@ -3,7 +3,7 @@
 
 import { z } from 'zod';
 import { db, storage } from '@/firebase/client-config';
-import { collection, addDoc, doc, updateDoc, writeBatch, query, where, getDocs, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, writeBatch, query, where, getDocs, deleteDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { ref, deleteObject, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { slugify } from '@/lib/slug';
 import { SEED_AREAS } from '@/data/seed-map';
@@ -501,7 +501,7 @@ const userFormSchema = z.object({
   email: z.string().email('El correo electrónico no es válido.'),
   role: z.enum(['superadmin', 'admin', 'viewer'], { required_error: 'Debe seleccionar un rol.'}),
   status: z.enum(['active', 'inactive']),
-  tempPassword: z.string().min(1, 'La contraseña temporal es requerida.'),
+  tempPassword: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres.'),
 });
 
 const createUserSchema = userFormSchema;
@@ -510,8 +510,7 @@ export async function createUserAction(
   prevState: any,
   formData: FormData
 ): Promise<{ message: string; error?: string, errors?: { [key: string]: string[] } }> {
-  if (!db) return { message: 'Error', error: 'Firestore no está inicializado.' };
-
+  
   const validatedFields = createUserSchema.safeParse({
     fullName: formData.get('fullName'),
     cedula: formData.get('cedula'),
@@ -530,22 +529,46 @@ export async function createUserAction(
     };
   }
 
+  const { fullName, email, role, status, cedula, tempPassword } = validatedFields.data;
+
   try {
-    const { fullName, email, role, status, cedula, tempPassword } = validatedFields.data;
-    await addDoc(collection(db, 'users'), {
+    const { getAuth } = await import('firebase-admin/auth');
+    const { adminApp } = await import('@/firebase/server-config');
+    const auth = getAuth(adminApp);
+    
+    // 1. Create user in Firebase Auth
+    const userRecord = await auth.createUser({
+      email: email,
+      password: tempPassword,
+      displayName: fullName,
+    });
+    
+    // 2. Create user document in Firestore with the same UID
+    if (!db) throw new Error('Firestore no está inicializado.');
+    
+    const userDocRef = doc(db, 'users', userRecord.uid);
+    await setDoc(userDocRef, {
       fullName,
       email,
       cedula,
       role,
       status,
-      tempPassword,
+      tempPassword, // It can be useful for admins to see the initial password
       createdAt: serverTimestamp(),
     });
 
-    return { message: 'Usuario creado con éxito.' };
+    return { message: 'Usuario creado con éxito en Auth y Firestore.' };
   } catch (e: any) {
     console.error('Error creando usuario:', e);
-    return { message: 'Error', error: `No se pudo crear el usuario: ${e.message}` };
+    
+    let errorMessage = `No se pudo crear el usuario: ${e.message}`;
+    if (e.code === 'auth/email-already-exists') {
+        errorMessage = 'El correo electrónico ya está en uso por otro usuario.';
+    } else if (e.code === 'auth/invalid-password') {
+        errorMessage = 'La contraseña no es válida. Debe tener al menos 6 caracteres.';
+    }
+
+    return { message: 'Error', error: errorMessage };
   }
 }
 
@@ -618,20 +641,22 @@ export async function deleteUserAction(
   currentUserId: string | null,
   userIdToDelete: string
 ): Promise<{ success: boolean; error?: string }> {
-  if (!db) return { success: false, error: 'Firestore no está inicializado.' };
-  if (!currentUserId) return { success: false, error: 'No se pudo identificar al usuario actual.' };
-  if (currentUserId === userIdToDelete) {
-      return { success: false, error: 'No se puede eliminar a sí mismo.' };
+  if (!currentUserId) {
+    return { success: false, error: 'No se pudo identificar al usuario actual.' };
   }
-
+  if (currentUserId === userIdToDelete) {
+    return { success: false, error: 'No se puede eliminar a sí mismo.' };
+  }
+  if (!db) {
+     return { success: false, error: 'Firestore no está inicializado.' };
+  }
 
   try {
     const usersRef = collection(db, 'users');
-    
     const userToDeleteDocSnapshot = await getDocs(query(usersRef, where('__name__', '==', userIdToDelete)));
 
     if (userToDeleteDocSnapshot.empty) {
-        return { success: false, error: 'El usuario no existe.' };
+      return { success: false, error: 'El usuario no existe.' };
     }
     const userToDeleteData = userToDeleteDocSnapshot.docs[0].data();
 
@@ -642,13 +667,33 @@ export async function deleteUserAction(
         return { success: false, error: 'No se puede eliminar al último superadministrador.' };
       }
     }
+    
+    // Delete from Auth
+    const { getAuth } = await import('firebase-admin/auth');
+    const { adminApp } = await import('@/firebase/server-config');
+    const auth = getAuth(adminApp);
+    await auth.deleteUser(userIdToDelete);
 
+    // Delete from Firestore
     const userRef = doc(db, 'users', userIdToDelete);
     await deleteDoc(userRef);
 
     return { success: true };
   } catch (e: any) {
     console.error('Error eliminando usuario:', e);
-    return { success: false, error: `No se pudo eliminar el usuario: ${e.message}` };
+    
+    let errorMessage = `No se pudo eliminar el usuario: ${e.message}`;
+     if (e.code === 'auth/user-not-found') {
+        errorMessage = 'El usuario no fue encontrado en Firebase Auth y no pudo ser eliminado. Se procederá a eliminar solo de la base de datos.';
+        // If user not in auth, we can still try to delete from firestore
+        try {
+            const userRef = doc(db, 'users', userIdToDelete);
+            await deleteDoc(userRef);
+            return { success: true, message: 'Usuario eliminado de la base de datos (no se encontró en Auth).' };
+        } catch (dbError: any) {
+            return { success: false, error: `Error eliminando de Firestore: ${dbError.message}` };
+        }
+    }
+    return { success: false, error: errorMessage };
   }
 }

@@ -26,26 +26,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [isRoleLoading, setIsRoleLoading] = useState<boolean>(true);
 
     useEffect(() => {
-        setIsRoleLoading(true);
+        const fetchOrSetUserProfile = async () => {
+            if (isAuthLoading) {
+                return;
+            }
 
-        if (isAuthLoading) {
-            return;
-        }
+            if (!firebaseUser) {
+                setUserRole(null);
+                setIsActive(false);
+                setIsRoleLoading(false);
+                return;
+            }
 
-        if (!firebaseUser) {
-            setUserRole(null);
-            setIsActive(false);
-            setIsRoleLoading(false);
-            return;
-        }
+            setIsRoleLoading(true);
 
-        const userDocRef = doc(firestore, 'users', firebaseUser.uid);
-
-        getDoc(userDocRef)
-            .then(async (docSnap) => {
+            const userDocRef = doc(firestore, 'users', firebaseUser.uid);
+            
+            try {
+                const docSnap = await getDoc(userDocRef);
                 let userProfile;
+
                 if (docSnap.exists()) {
                     userProfile = docSnap.data();
+                    console.log("Perfil Firestore:", userProfile);
                 } else {
                     console.warn(`User with UID ${firebaseUser.uid} not found in Firestore. Creating default profile.`);
                     
@@ -59,40 +62,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         createdAt: serverTimestamp(),
                     };
 
-                    try {
-                        await setDoc(userDocRef, defaultProfile);
-                        userProfile = defaultProfile;
-                        console.log(`Default profile created for UID ${firebaseUser.uid}`);
-                    } catch (error) {
-                        console.error("Error creating default user profile:", error);
-                        setUserRole(null);
-                        setIsActive(false);
-                        setIsRoleLoading(false);
-                        return;
-                    }
+                    await setDoc(userDocRef, defaultProfile);
+                    userProfile = defaultProfile;
+                    console.log(`Default profile created for UID ${firebaseUser.uid}`);
                 }
-
+                
                 if (userProfile) {
-                    console.log("Perfil Firestore:", userProfile);
-                    
                     const role = userProfile.role as UserRole | null;
                     const status = userProfile.status as UserStatus | 'inactive';
-
+                    
                     setUserRole(role);
                     setIsActive(status === 'active');
                 } else {
-                    setUserRole(null);
-                    setIsActive(false);
+                     setUserRole(null);
+                     setIsActive(false);
                 }
-            })
-            .catch((error) => {
-                console.error("Error fetching user profile:", error);
+
+            } catch (error) {
+                console.error("Error fetching/creating user profile:", error);
                 setUserRole(null);
                 setIsActive(false);
-            })
-            .finally(() => {
+            } finally {
                 setIsRoleLoading(false);
-            });
+            }
+        };
+
+        fetchOrSetUserProfile();
 
     }, [firebaseUser, isAuthLoading, firestore]);
     

@@ -21,7 +21,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Edit, Trash2, ToggleRight, ToggleLeft, Loader2, Info } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, ToggleRight, ToggleLeft, Loader2 } from 'lucide-react';
 import type { User } from '@/app/inicio/administracion/page';
 import { EditUserForm } from './EditUserForm';
 import { toggleUserStatusAction, deleteUserAction } from '@/app/actions';
@@ -39,7 +39,6 @@ export function UserActionsDropdown({ user, currentUserId }: UserActionsDropdown
   const [isDeleting, setIsDeleting] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
-  const { user: authUser } = useAuth();
   const isCurrentUser = user.id === currentUserId;
 
   const handleToggleStatus = () => {
@@ -77,7 +76,7 @@ export function UserActionsDropdown({ user, currentUserId }: UserActionsDropdown
     }
     
     startTransition(async () => {
-        const result = await deleteUserAction(authUser?.uid ?? null, user.id);
+        const result = await deleteUserAction(currentUserId, user.id);
         if(result.success) {
             toast({ title: '¡Éxito!', description: 'Usuario eliminado correctamente.' });
             setIsDeleting(false);
@@ -129,7 +128,7 @@ export function UserActionsDropdown({ user, currentUserId }: UserActionsDropdown
           <AlertDialogHeader>
             <AlertDialogTitle>¿Está seguro de eliminar a este usuario?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. Se eliminará permanentemente el usuario "{user.fullName}".
+              Esta acción no se puede deshacer. Se eliminará permanentemente el usuario "{user.fullName}" de Firestore y de Firebase Authentication.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

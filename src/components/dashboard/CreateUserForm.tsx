@@ -76,7 +76,7 @@ export function CreateUserForm({
       });
       onOpenChange(false);
     }
-    if (state.error && !state.errors) {
+    if (state.error) { // Show error regardless of whether it has field-specific errors
       toast({
         variant: 'destructive',
         title: 'Error al Crear Usuario',
@@ -89,6 +89,7 @@ export function CreateUserForm({
     if (!isOpen) {
       formRef.current?.reset();
       setIsActive(true);
+      // We might need a way to reset the action state if the dialog is closed manually
     }
   }, [isOpen]);
   
@@ -124,7 +125,7 @@ export function CreateUserForm({
           </div>
            <div className="grid gap-2">
             <Label htmlFor="tempPassword">Contraseña Temporal</Label>
-            <Input id="tempPassword" name="tempPassword" placeholder="Defina una contraseña temporal" />
+            <Input id="tempPassword" name="tempPassword" placeholder="Mínimo 6 caracteres" />
             {getError('tempPassword') && <p className="text-xs text-destructive">{getError('tempPassword')}</p>}
           </div>
           <div className="grid gap-2">
