@@ -14,16 +14,16 @@ import { useRouter } from "next/navigation";
 import { useAppSettings } from "@/hooks/use-app-settings";
 
 export default function AccountPage() {
-    const { user } = useAuth();
+    const { user, setIsLoggingOut } = useAuth();
     const { settings, isLoading } = useAppSettings();
     const app = useFirebaseApp();
     const router = useRouter();
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
         const auth = getAuth(app);
-        signOut(auth).then(() => {
-            router.push('/');
-        });
+        if (setIsLoggingOut) setIsLoggingOut(true);
+        await signOut(auth);
+        router.replace('/');
     };
     
     const displayUser = {
@@ -71,5 +71,3 @@ export default function AccountPage() {
         </div>
     );
 }
-
-    

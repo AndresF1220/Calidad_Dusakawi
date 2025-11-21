@@ -27,7 +27,8 @@ import { Fragment, useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useArea, useProceso, useSubproceso } from '@/hooks/use-areas-data';
 import { getAuth, signOut } from 'firebase/auth';
-import { useFirebaseApp, useUser } from '@/firebase';
+import { useFirebaseApp } from '@/firebase';
+import { useAuth } from '@/lib/auth';
 
 const hardcodedTranslations: Record<string, string> = {
     inicio: "Inicio",
@@ -70,16 +71,16 @@ export default function AppHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const app = useFirebaseApp();
-  const { user } = useUser();
+  const { user, setIsLoggingOut } = useAuth();
   const pathSegments = pathname.split('/').filter(Boolean);
 
   const { isLoading, dataMap } = useBreadcrumbData(pathSegments);
   
-  const handleLogout = () => {
+  const handleLogout = async () => {
     const auth = getAuth(app);
-    signOut(auth).then(() => {
-        router.push('/');
-    })
+    if (setIsLoggingOut) setIsLoggingOut(true);
+    await signOut(auth);
+    router.replace('/');
   }
 
   const breadcrumbItems = useMemo(() => {

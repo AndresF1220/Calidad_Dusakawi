@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { createContext, useContext, ReactNode, useState, useEffect } from 'react';
+import React, { createContext, useContext, ReactNode, useState, useEffect, Dispatch, SetStateAction } from 'react';
 import { useFirebase } from '@/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
@@ -14,6 +14,8 @@ interface AuthContextType {
     userRole: UserRole | null;
     isRoleLoading: boolean;
     isActive: boolean;
+    isLoggingOut: boolean;
+    setIsLoggingOut?: Dispatch<SetStateAction<boolean>>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,8 +26,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [userRole, setUserRole] = useState<UserRole | null>(null);
     const [isActive, setIsActive] = useState<boolean>(false);
     const [isRoleLoading, setIsRoleLoading] = useState<boolean>(true);
+    const [isLoggingOut, setIsLoggingOut] = useState<boolean>(false);
 
     useEffect(() => {
+        // When logout starts, clear local user state immediately
+        if (isLoggingOut) {
+            setUserRole(null);
+            setIsActive(false);
+            return;
+        }
+        
+        // Reset logging out state when auth state stabilizes
+        if (!isAuthLoading) {
+            setIsLoggingOut(false);
+        }
+
         const fetchOrSetUserProfile = async () => {
             if (isAuthLoading) {
                 setIsRoleLoading(true);
@@ -89,13 +104,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         fetchOrSetUserProfile();
 
-    }, [firebaseUser, isAuthLoading, firestore]);
+    }, [firebaseUser, isAuthLoading, firestore, isLoggingOut]);
     
     const authInfo: AuthContextType = {
         user: firebaseUser,
         userRole,
-        isRoleLoading: isAuthLoading || isRoleLoading, // Overall loading is true if either auth or role is loading
+        isRoleLoading: isAuthLoading || isRoleLoading,
         isActive,
+        isLoggingOut,
+        setIsLoggingOut,
     };
 
     return (
@@ -112,5 +129,3 @@ export function useAuth() {
     }
     return context;
 }
-
-    

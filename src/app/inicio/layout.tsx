@@ -15,14 +15,15 @@ import { AppSettingsProvider, useAppSettings } from '@/hooks/use-app-settings';
 import { useEffect } from 'react';
 
 function InactiveUserScreen() {
+    const { setIsLoggingOut } = useAuth();
     const app = useFirebaseApp();
     const router = useRouter();
 
-    const handleLogoutAndRedirect = () => {
+    const handleLogoutAndRedirect = async () => {
         const auth = getAuth(app);
-        signOut(auth).then(() => {
-            router.push('/');
-        });
+        if (setIsLoggingOut) setIsLoggingOut(true);
+        await signOut(auth);
+        router.replace('/');
     };
 
     return (
@@ -51,10 +52,11 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
     const { settings, isLoading: isSettingsLoading } = useAppSettings();
 
     useEffect(() => {
-        if (!isSettingsLoading) {
+        if (!isSettingsLoading && settings.appName && settings.companyName) {
             document.title = `${settings.appName} | ${settings.companyName}`;
         }
     }, [settings, isSettingsLoading]);
+    
 
     return (
         <SidebarProvider>
@@ -70,20 +72,16 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
 }
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
-    const { isRoleLoading, isActive } = useAuth();
+    const { isRoleLoading, isActive, isLoggingOut } = useAuth();
     
-    // First, handle the loading state. Show a full-screen loader while we check auth and profile.
-    if (isRoleLoading) {
+    if (isRoleLoading || isLoggingOut) {
         return <LoadingScreen />;
     }
 
-    // After loading is complete, check if the user is active.
-    // If not active, show the isolated inactive screen. This is now a reliable check.
     if (!isActive) {
         return <InactiveUserScreen />;
     }
     
-    // If loading is complete and the user is active, render the full app layout.
     return <InnerLayout>{children}</InnerLayout>;
 }
 
