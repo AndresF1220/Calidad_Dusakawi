@@ -2,11 +2,13 @@
 'use server';
 
 import { z } from 'zod';
-import { db as clientDb, storage } from '@/firebase/client-config';
+import { adminApp, db as adminDb } from '@/firebase/server-config';
+import { getAuth } from 'firebase-admin/auth';
 import { collection, addDoc, doc, updateDoc, writeBatch, query, where, getDocs, deleteDoc, serverTimestamp, setDoc, getDoc } from 'firebase/firestore';
 import { ref, deleteObject, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { slugify } from '@/lib/slug';
 import { SEED_AREAS } from '@/data/seed-map';
+import { db as clientDb, storage } from '@/firebase/client-config';
 
 
 const createSchema = z.object({
@@ -532,29 +534,23 @@ export async function createUserAction(
 
     const { fullName, email, role, status, cedula, tempPassword } = validatedFields.data;
     
-    // Dynamic imports for server-side code
-    const { getAuth } = await import('firebase-admin/auth');
-    const { adminApp, db: adminDb } = await import('@/firebase/server-config');
-    
     const auth = getAuth(adminApp);
     
-    // 1. Create user in Firebase Auth
     const userRecord = await auth.createUser({
       email: email,
       password: tempPassword,
       displayName: fullName,
     });
     
-    // 2. Create user document in Firestore with the same UID
-    const userDocRef = doc(adminDb, 'users', userRecord.uid);
-    await setDoc(userDocRef, {
+    const userDocRef = adminDb.collection('users').doc(userRecord.uid);
+    await userDocRef.set({
       fullName,
       email,
       cedula,
       role,
       status,
       tempPassword,
-      createdAt: serverTimestamp(),
+      createdAt: adminDb.FieldValue.serverTimestamp(),
     });
 
     return { message: 'Usuario creado con éxito en Auth y Firestore.' };
@@ -604,33 +600,29 @@ export async function updateUserAction(
     }
 
     const { userId, ...userData } = validatedFields.data;
-    const { db: adminDb, adminApp } = await import('@/firebase/server-config');
-    const auth = (await import('firebase-admin/auth')).getAuth(adminApp);
-    const userRef = doc(adminDb, 'users', userId);
+    const auth = getAuth(adminApp);
+    const userRef = adminDb.collection('users').doc(userId);
     
-    // Fetch current user data to see what changed
-    const currentUserSnap = await getDoc(userRef);
-    if (!currentUserSnap.exists()) {
+    const currentUserSnap = await userRef.get();
+    if (!currentUserSnap.exists) {
         return { message: 'Error', error: 'El usuario que intenta actualizar no existe.' };
     }
     const currentUserData = currentUserSnap.data();
     
-    // Update Firestore
-    await updateDoc(userRef, {
+    await userRef.update({
         ...userData,
-        updatedAt: serverTimestamp(),
+        updatedAt: adminDb.FieldValue.serverTimestamp(),
     });
     
-    // Conditionally update Firebase Auth
     const authUpdates: { email?: string; password?: string, displayName?:string } = {};
 
-    if (currentUserData.email !== userData.email) {
+    if (currentUserData?.email !== userData.email) {
         authUpdates.email = userData.email;
     }
-    if (userData.tempPassword && currentUserData.tempPassword !== userData.tempPassword) {
+    if (userData.tempPassword && currentUserData?.tempPassword !== userData.tempPassword) {
         authUpdates.password = userData.tempPassword;
     }
-    if(currentUserData.fullName !== userData.fullName){
+    if(currentUserData?.fullName !== userData.fullName){
         authUpdates.displayName = userData.fullName;
     }
 
@@ -671,43 +663,41 @@ export async function deleteUserAction(
   currentUserId: string | null,
   userIdToDelete: string
 ): Promise<{ success: boolean; error?: string }> {
+  
+  if (!adminDb) {
+    return { success: false, error: 'Firestore Admin no está inicializado.' };
+  }
+  if (!currentUserId) {
+    return { success: false, error: 'No se pudo identificar al usuario actual.' };
+  }
+  if (currentUserId === userIdToDelete) {
+    return { success: false, error: 'No se puede eliminar a sí mismo.' };
+  }
+
   try {
-    const { getAuth } = await import('firebase-admin/auth');
-    const { adminApp, db: adminDb } = await import('@/firebase/server-config');
-
-    if (!currentUserId) {
-      return { success: false, error: 'No se pudo identificar al usuario actual.' };
-    }
-    if (currentUserId === userIdToDelete) {
-      return { success: false, error: 'No se puede eliminar a sí mismo.' };
-    }
-    
     const auth = getAuth(adminApp);
-    const userToDeleteDocRef = doc(adminDb, 'users', userIdToDelete);
-    const userToDeleteDocSnap = await getDoc(userToDeleteDocRef);
+    const userToDeleteDocRef = adminDb.collection('users').doc(userIdToDelete);
+    const userToDeleteDocSnap = await userToDeleteDocRef.get();
 
-    if (userToDeleteDocSnap.exists() && userToDeleteDocSnap.data().role === 'superadmin') {
-      const usersRef = collection(adminDb, 'users');
-      const superAdminQuery = query(usersRef, where('role', '==', 'superadmin'));
-      const superAdminSnapshot = await getDocs(superAdminQuery);
+    if (userToDeleteDocSnap.exists && userToDeleteDocSnap.data()?.role === 'superadmin') {
+      const usersRef = adminDb.collection('users');
+      const superAdminQuery = usersRef.where('role', '==', 'superadmin');
+      const superAdminSnapshot = await superAdminQuery.get();
 
       if (superAdminSnapshot.size <= 1) {
         return { success: false, error: 'No se puede eliminar al último superadministrador.' };
       }
     }
 
-    // Attempt to delete from Auth first.
     try {
       await auth.deleteUser(userIdToDelete);
     } catch (authError: any) {
-      // If the user is not found in Auth, we can proceed to delete from Firestore.
       if (authError.code !== 'auth/user-not-found') {
-        console.error("Error deleting user from Auth, but will proceed to delete from Firestore:", authError);
+        console.warn("Error deleting user from Auth, but will proceed to delete from Firestore:", authError.message);
       }
     }
 
-    // Delete from Firestore
-    await deleteDoc(userToDeleteDocRef);
+    await userToDeleteDocRef.delete();
 
     return { success: true };
   } catch (e: any) {
@@ -715,4 +705,68 @@ export async function deleteUserAction(
     return { success: false, error: `No se pudo eliminar el usuario: ${e.message}` };
   }
 }
-    
+
+const loginSchema = z.object({
+  cedula: z.string().min(1, "La cédula es requerida."),
+  password: z.string().min(1, "La contraseña es requerida."),
+});
+
+type LoginState = {
+  status: "idle" | "success" | "error";
+  error?: string;
+  data?: {
+    email: string;
+    tempPassword: any;
+  };
+};
+
+export async function loginAction(
+  prevState: LoginState,
+  formData: FormData
+): Promise<LoginState> {
+  try {
+    const validatedFields = loginSchema.safeParse({
+      cedula: formData.get("cedula"),
+      password: formData.get("password"),
+    });
+
+    if (!validatedFields.success) {
+      return { status: "error", error: "Cédula y contraseña son requeridos." };
+    }
+
+    const { cedula, password } = validatedFields.data;
+
+    const usersRef = adminDb.collection("users");
+    const q = usersRef.where("cedula", "==", cedula);
+    const querySnapshot = await q.get();
+
+    if (querySnapshot.empty) {
+      return { status: "error", error: "Cédula o contraseña incorrectos, o el usuario está inactivo." };
+    }
+
+    const userDoc = querySnapshot.docs[0];
+    const userData = userDoc.data();
+
+    if (userData.status !== "active") {
+      return { status: "error", error: "El usuario está inactivo." };
+    }
+
+    if (userData.tempPassword !== password) {
+      return { status: "error", error: "Cédula o contraseña incorrectos, o el usuario está inactivo." };
+    }
+
+    return {
+      status: "success",
+      data: {
+        email: userData.email,
+        tempPassword: userData.tempPassword,
+      },
+    };
+  } catch (e: any) {
+    console.error("Error en loginAction:", e);
+    return {
+      status: "error",
+      error: "Ocurrió un error en el servidor. Por favor, inténtelo de nuevo.",
+    };
+  }
+}

@@ -5,144 +5,97 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import React, { useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useFirebase } from '@/firebase';
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { collection, query, where, getDocs, setDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { useActionState } from 'react';
+import { loginAction } from './actions';
+
+const initialState = {
+  status: "idle" as "idle" | "success" | "error",
+  error: undefined,
+  data: undefined,
+};
 
 export default function LoginPage() {
   const { firestore } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
-  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setIsLoading(true);
-    console.log("Login process started...");
+  const [state, formAction, isPending] = useActionState(loginAction, initialState);
 
-    if (!firestore) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'No se pudo conectar a la base de datos.',
-      });
-      setIsLoading(false);
-      return;
-    }
-    
-    const formData = new FormData(event.currentTarget);
-    const cedula = formData.get('cedula') as string;
-    const password = formData.get('password') as string;
-
-    try {
-      // 1. Query Firestore for the user by 'cedula'
-      const usersRef = collection(firestore, 'users');
-      const q = query(usersRef, where('cedula', '==', cedula));
-      const querySnapshot = await getDocs(q);
-
-      if (querySnapshot.empty) {
-        console.log("No user document found for cedula:", cedula);
+  useEffect(() => {
+    const handleLoginFlow = async () => {
+      if (state.status === "error") {
         toast({
           variant: 'destructive',
           title: 'Error de acceso',
-          description: 'Cédula o contraseña incorrectos, o el usuario está inactivo.',
+          description: state.error,
         });
-        setIsLoading(false);
-        return;
       }
 
-      const userDoc = querySnapshot.docs[0];
-      const userData = userDoc.data();
-      console.log("User document found:", userData);
-      
-      // 2. Validate status and tempPassword locally
-      if (userData.status !== 'active') {
-        console.log("User is inactive.");
-        toast({
-          variant: 'destructive',
-          title: 'Error de acceso',
-          description: 'El usuario está inactivo.',
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      if (userData.tempPassword !== password) {
-        console.log("Local password check failed.");
-        toast({
-          variant: 'destructive',
-          title: 'Error de acceso',
-          description: 'Cédula o contraseña incorrectos, o el usuario está inactivo.',
-        });
-        setIsLoading(false);
-        return;
-      }
-      
-      console.log("Local validation successful. Attempting Firebase Auth sign-in...");
-      const auth = getAuth();
-      const email = userData.email;
-
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
-        console.log("Firebase Auth sign-in successful.");
-        router.push('/inicio');
-
-      } catch (error: any) {
-        console.error("Firebase Auth error:", error.code, error.message);
+      if (state.status === "success" && state.data) {
+        const auth = getAuth();
+        const { email, tempPassword } = state.data;
         
-        // 3. If user not found in Auth, create them
-        if (error.code === 'auth/user-not-found') {
-          console.log("User not found in Auth, attempting to create...");
-          try {
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            console.log("User created in Auth successfully.");
-            
-            // It's crucial to set the document with the new UID
-            const userDocRef = doc(firestore, 'users', userCredential.user.uid);
-            // Overwrite the old doc with the new UID
-            await setDoc(userDocRef, { ...userData, createdAt: serverTimestamp() });
-             
-            // We don't need to sign in again, createUserWithEmailAndPassword already signs the user in.
-            router.push('/inicio');
-
-          } catch (creationError: any) {
-             console.error("Error creating user in Auth:", creationError);
-             toast({
-                variant: 'destructive',
-                title: 'Error de Registro Automático',
-                description: `No se pudo crear su cuenta: ${creationError.message}`,
-             });
+        try {
+          console.log("Attempting Firebase Auth sign-in...");
+          await signInWithEmailAndPassword(auth, email, tempPassword);
+          console.log("Firebase Auth sign-in successful.");
+          router.push('/inicio');
+        } catch (error: any) {
+          console.error("Firebase Auth error:", error.code, error.message);
+          
+          if (error.code === 'auth/user-not-found') {
+            console.log("User not found in Auth, attempting to create...");
+            try {
+              if (!firestore) {
+                  throw new Error("Firestore not available for user creation.");
+              }
+              const userCredential = await createUserWithEmailAndPassword(auth, email, tempPassword);
+              console.log("User created in Auth successfully.");
+              
+              const userDocRef = doc(firestore, 'users', userCredential.user.uid);
+              await setDoc(userDocRef, { 
+                  // This is a simplified user profile. Consider fetching full profile from server action if needed.
+                  email: email, 
+                  tempPassword: tempPassword,
+                  createdAt: serverTimestamp(),
+               }, { merge: true });
+              
+              router.push('/inicio');
+            } catch (creationError: any) {
+               console.error("Error creating user in Auth:", creationError);
+               toast({
+                  variant: 'destructive',
+                  title: 'Error de Registro Automático',
+                  description: `No se pudo crear su cuenta: ${creationError.message}`,
+               });
+            }
+          } else if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+               toast({
+                  variant: 'destructive',
+                  title: 'Error de acceso',
+                  description: 'Cédula o contraseña incorrectos, o el usuario está inactivo.',
+               });
+          } else {
+               toast({
+                  variant: 'destructive',
+                  title: 'Error de autenticación',
+                  description: error.message,
+               });
           }
-        } else if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-             toast({
-                variant: 'destructive',
-                title: 'Error de acceso',
-                description: 'Cédula o contraseña incorrectos, o el usuario está inactivo.',
-             });
-        } else {
-             toast({
-                variant: 'destructive',
-                title: 'Error de autenticación',
-                description: error.message,
-             });
         }
       }
+    };
 
-    } catch (error: any) {
-      console.error("General login error:", error);
-      toast({
-          variant: 'destructive',
-          title: 'Error de acceso',
-          description: 'Ocurrió un error inesperado. Por favor intente de nuevo.',
-      });
-    } finally {
-        setIsLoading(false);
-    }
-  };
+    handleLoginFlow();
+  }, [state, router, toast, firestore]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
@@ -165,7 +118,7 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-8">
-            <form onSubmit={handleLogin}>
+            <form action={formAction} ref={formRef}>
               <div className="grid gap-6">
                 <div className="grid gap-2">
                   <Label htmlFor="cedula">Número de identificación</Label>
@@ -175,15 +128,15 @@ export default function LoginPage() {
                     type="text"
                     placeholder="Escriba su cédula"
                     required
-                    disabled={isLoading}
+                    disabled={isPending}
                   />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="password">Contraseña</Label>
-                  <Input id="password" name="password" type="password" required disabled={isLoading}/>
+                  <Input id="password" name="password" type="password" required disabled={isPending} />
                 </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Button type="submit" className="w-full" disabled={isPending}>
+                   {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Entrar
                 </Button>
               </div>
