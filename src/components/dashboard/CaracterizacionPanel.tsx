@@ -55,7 +55,7 @@ export default function CaracterizacionPanel({
   if (tipo === 'proceso') {
       docId = `process-${idEntidad}`;
   } else if (tipo === 'subproceso') {
-      docId = `subproceso-${idEntidad}`;
+      docId = `subprocess-${idEntidad}`;
   }
 
 
@@ -173,3 +173,5 @@ export default function CaracterizacionPanel({
     </Card>
   );
 }
+
+    

@@ -176,3 +176,5 @@ export default function CaracterizacionEditor({ idEntidad, tipo, onSaved }: Cara
     </Form>
   );
 }
+
+    
