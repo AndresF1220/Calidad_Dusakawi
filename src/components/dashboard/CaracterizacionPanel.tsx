@@ -30,7 +30,7 @@ import { useAuth } from '@/lib/auth';
 
 interface CaracterizacionPanelProps {
   idEntidad: string;
-  tipo: 'area' | 'proceso' | 'subprocess';
+  tipo: 'area' | 'proceso' | 'subproceso';
 }
 
 interface CaracterizacionData {
@@ -54,8 +54,8 @@ export default function CaracterizacionPanel({
   let docId = `area-${idEntidad}`;
   if (tipo === 'proceso') {
       docId = `process-${idEntidad}`;
-  } else if (tipo === 'subprocess') {
-      docId = `subprocess-${idEntidad}`;
+  } else if (tipo === 'subproceso') {
+      docId = `subproceso-${idEntidad}`;
   }
 
 
