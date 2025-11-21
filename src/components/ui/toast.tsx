@@ -8,9 +8,7 @@ import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-const ToastProvider = (props: React.ComponentProps<typeof ToastPrimitives.Provider>) => {
-    return <ToastPrimitives.Provider {...props} label="Notificaciones" />;
-}
+const ToastProvider = ToastPrimitives.Provider;
 
 const ToastViewport = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Viewport>,
