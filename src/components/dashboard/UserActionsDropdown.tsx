@@ -21,13 +21,11 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Edit, Trash2, ToggleRight, ToggleLeft, Loader2 } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, Loader2 } from 'lucide-react';
 import type { User } from '@/app/inicio/administracion/page';
 import { EditUserForm } from './EditUserForm';
-import { toggleUserStatusAction, deleteUserAction } from '@/app/actions';
+import { deleteUserAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
-import { useAuth } from '@/lib/auth';
 
 interface UserActionsDropdownProps {
   user: User;
@@ -40,29 +38,6 @@ export function UserActionsDropdown({ user, currentUserId }: UserActionsDropdown
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const isCurrentUser = user.id === currentUserId;
-
-  const handleToggleStatus = () => {
-    if (isCurrentUser) {
-        toast({
-            variant: 'destructive',
-            title: 'Acción no permitida',
-            description: 'No puede cambiar su propio estado.',
-        });
-        return;
-    }
-    
-    const confirmation = confirm(`¿Está seguro de que desea ${user.status === 'active' ? 'desactivar' : 'activar'} a este usuario?`);
-    if (!confirmation) return;
-    
-    startTransition(async () => {
-      const result = await toggleUserStatusAction(user.id, user.status);
-      if (result.success) {
-        toast({ title: '¡Éxito!', description: `El estado del usuario ha sido actualizado.` });
-      } else {
-        toast({ variant: 'destructive', title: 'Error', description: result.error });
-      }
-    });
-  };
 
   const handleDelete = () => {
      if (isCurrentUser) {
@@ -101,10 +76,6 @@ export function UserActionsDropdown({ user, currentUserId }: UserActionsDropdown
           <DropdownMenuItem onSelect={() => setIsEditing(true)}>
             <Edit className="mr-2 h-4 w-4" />
             <span>Editar usuario</span>
-          </DropdownMenuItem>
-           <DropdownMenuItem onSelect={handleToggleStatus} disabled={isCurrentUser}>
-             {user.status === 'active' ? <ToggleLeft className="mr-2 h-4 w-4" /> : <ToggleRight className="mr-2 h-4 w-4" />}
-            <span>{user.status === 'active' ? 'Desactivar' : 'Activar'}</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => setIsDeleting(true)} className="text-destructive focus:text-destructive" disabled={isCurrentUser}>

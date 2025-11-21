@@ -641,26 +641,6 @@ export async function updateUserAction(
   }
 }
 
-
-export async function toggleUserStatusAction(
-  userId: string,
-  currentStatus: 'active' | 'inactive'
-): Promise<{ success: boolean; error?: string }> {
-  if (!db) {
-    return { success: false, error: 'Firestore Admin no está inicializado.' };
-  }
-
-  try {
-    const userRef = doc(db, 'users', userId);
-    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
-    await updateDoc(userRef, { status: newStatus });
-    return { success: true };
-  } catch (e: any) {
-    console.error('Error cambiando estado de usuario:', e);
-    return { success: false, error: `No se pudo cambiar el estado: ${e.message}` };
-  }
-}
-
 export async function deleteUserAction(
   currentUserId: string | null,
   userIdToDelete: string
