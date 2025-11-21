@@ -2,13 +2,13 @@
 'use server';
 
 import { z } from 'zod';
-import { adminApp, db } from '@/firebase/server-config';
+import { adminApp, db as adminDb } from '@/firebase/server-config';
 import { getAuth } from 'firebase-admin/auth';
 import { collection, addDoc, doc, updateDoc, writeBatch, query, where, getDocs, deleteDoc, serverTimestamp, setDoc, getDoc } from 'firebase/firestore';
 import { ref, deleteObject, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { slugify } from '@/lib/slug';
 import { SEED_AREAS } from '@/data/seed-map';
-import { db as clientDb, storage } from '@/firebase/client-config';
+import { db, storage } from '@/firebase/client-config';
 
 
 const createSchema = z.object({
@@ -25,7 +25,7 @@ export async function createEntityAction(
   prevState: any,
   formData: FormData
 ): Promise<{ message: string; error?: string }> {
-    if (!clientDb) return { message: 'Error', error: 'Firestore no está inicializado.' };
+    if (!db) return { message: 'Error', error: 'Firestore no está inicializado.' };
 
     const s = (v: any) => (typeof v === 'string' ? v.trim() : '');
     
@@ -50,7 +50,7 @@ export async function createEntityAction(
     const { name, objetivo, alcance, responsable, type, parentId, grandParentId } = validatedFields.data;
 
     try {
-        const batch = writeBatch(clientDb);
+        const batch = writeBatch(db);
 
         const entityData: any = {
             nombre: name,
@@ -58,20 +58,20 @@ export async function createEntityAction(
             createdAt: serverTimestamp(),
         };
         
-        const newEntityRef = doc(collection(clientDb, 'temp')); // Generate ID upfront
+        const newEntityRef = doc(collection(db, 'temp')); // Generate ID upfront
         entityData.id = newEntityRef.id;
 
         let finalEntityRef;
         let caracterizacionId = '';
 
         if (type === 'area') {
-            finalEntityRef = doc(clientDb, 'areas', newEntityRef.id);
+            finalEntityRef = doc(db, 'areas', newEntityRef.id);
             caracterizacionId = `area-${newEntityRef.id}`;
         } else if (type === 'process' && parentId) {
-            finalEntityRef = doc(clientDb, 'areas', parentId, 'procesos', newEntityRef.id);
+            finalEntityRef = doc(db, 'areas', parentId, 'procesos', newEntityRef.id);
             caracterizacionId = `process-${newEntityRef.id}`;
         } else if (type === 'subprocess' && parentId && grandParentId) {
-            finalEntityRef = doc(clientDb, 'areas', grandParentId, 'procesos', parentId, 'subprocesos', newEntityRef.id);
+            finalEntityRef = doc(db, 'areas', grandParentId, 'procesos', parentId, 'subprocesos', newEntityRef.id);
             caracterizacionId = `subprocess-${newEntityRef.id}`;
         } else {
             return { message: 'Error', error: 'Parámetros inválidos para la creación.' };
@@ -79,7 +79,7 @@ export async function createEntityAction(
         
         batch.set(finalEntityRef, entityData);
 
-        const caracterizacionRef = doc(clientDb, 'caracterizaciones', caracterizacionId);
+        const caracterizacionRef = doc(db, 'caracterizaciones', caracterizacionId);
         batch.set(caracterizacionRef, {
             objetivo,
             alcance,
@@ -102,7 +102,7 @@ export async function deleteEntityAction(
   prevState: any,
   formData: FormData
 ): Promise<{ message: string; error?: string }> {
-    if (!clientDb) return { message: 'Error', error: 'Firestore no está inicializado.' };
+    if (!db) return { message: 'Error', error: 'Firestore no está inicializado.' };
 
   const entityId = formData.get('entityId') as string;
   const entityType = formData.get('entityType') as 'area' | 'process' | 'subprocess';
@@ -110,29 +110,29 @@ export async function deleteEntityAction(
   const grandParentId = formData.get('grandParentId') as string | undefined;
 
   try {
-    const batch = writeBatch(clientDb);
+    const batch = writeBatch(db);
 
     switch (entityType) {
         case 'area':
             if (!entityId) throw new Error("Parámetros de eliminación inválidos (falta entityId).");
             
-            const areaRef = doc(clientDb, 'areas', entityId);
-            const procesosQuery = collection(clientDb, 'areas', entityId, 'procesos');
+            const areaRef = doc(db, 'areas', entityId);
+            const procesosQuery = collection(db, 'areas', entityId, 'procesos');
             const procesosSnap = await getDocs(procesosQuery);
 
             for (const procesoDoc of procesosSnap.docs) {
                 const subprocesosQuery = collection(procesoDoc.ref, 'subprocesos');
                 const subprocesosSnap = await getDocs(subprocesosQuery);
                 for (const subDoc of subprocesosSnap.docs) {
-                    const caracterizacionSubRef = doc(clientDb, 'caracterizaciones', `subprocess-${subDoc.id}`);
+                    const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${subDoc.id}`);
                     batch.delete(caracterizacionSubRef);
                     batch.delete(subDoc.ref);
                 }
-                const caracterizacionProcRef = doc(clientDb, 'caracterizaciones', `process-${procesoDoc.id}`);
+                const caracterizacionProcRef = doc(db, 'caracterizaciones', `process-${procesoDoc.id}`);
                 batch.delete(caracterizacionProcRef);
                 batch.delete(procesoDoc.ref);
             }
-            const caracterizacionAreaRef = doc(clientDb, 'caracterizaciones', `area-${entityId}`);
+            const caracterizacionAreaRef = doc(db, 'caracterizaciones', `area-${entityId}`);
             batch.delete(caracterizacionAreaRef);
             batch.delete(areaRef);
             break;
@@ -140,16 +140,16 @@ export async function deleteEntityAction(
         case 'process':
             if (!entityId || !parentId) throw new Error("Parámetros de eliminación inválidos (falta entityId o parentId).");
 
-            const processRef = doc(clientDb, 'areas', parentId, 'procesos', entityId);
+            const processRef = doc(db, 'areas', parentId, 'procesos', entityId);
             const subprocesosProcQuery = collection(processRef, 'subprocesos');
             const subprocesosProcSnap = await getDocs(subprocesosProcQuery);
 
             for (const subDoc of subprocesosProcSnap.docs) {
-                const caracterizacionSubRef = doc(clientDb, 'caracterizaciones', `subprocess-${subDoc.id}`);
+                const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${subDoc.id}`);
                 batch.delete(caracterizacionSubRef);
                 batch.delete(subDoc.ref);
             }
-            const caracterizacionProcRef = doc(clientDb, 'caracterizaciones', `process-${entityId}`);
+            const caracterizacionProcRef = doc(db, 'caracterizaciones', `process-${entityId}`);
             batch.delete(caracterizacionProcRef);
             batch.delete(processRef);
             break;
@@ -157,8 +157,8 @@ export async function deleteEntityAction(
         case 'subprocess':
             if (!entityId || !parentId || !grandParentId) throw new Error("Parámetros de eliminación inválidos (falta entityId, parentId o grandParentId).");
             
-            const subProcessRef = doc(clientDb, 'areas', grandParentId, 'procesos', parentId, 'subprocesos', entityId);
-            const caracterizacionSubRef = doc(clientDb, 'caracterizaciones', `subprocess-${entityId}`);
+            const subProcessRef = doc(db, 'areas', grandParentId, 'procesos', parentId, 'subprocesos', entityId);
+            const caracterizacionSubRef = doc(db, 'caracterizaciones', `subprocess-${entityId}`);
             batch.delete(caracterizacionSubRef);
             batch.delete(subProcessRef);
             break;
@@ -192,7 +192,7 @@ export async function updateEntityAction(
   prevState: any,
   formData: FormData
 ): Promise<{ message: string; error?: string }> {
-    if (!clientDb) return { message: 'Error', error: 'Firestore no está inicializado.' };
+    if (!db) return { message: 'Error', error: 'Firestore no está inicializado.' };
 
     const s = (v: any) => (v === null || v === undefined ? undefined : String(v));
 
@@ -217,16 +217,16 @@ export async function updateEntityAction(
     const { entityId, entityType, parentId, grandParentId, name, objetivo, alcance, responsable } = validatedFields.data;
 
     try {
-        const batch = writeBatch(clientDb);
+        const batch = writeBatch(db);
 
         let entityRef;
 
         if (entityType === 'area') {
-            entityRef = doc(clientDb, 'areas', entityId);
+            entityRef = doc(db, 'areas', entityId);
         } else if (entityType === 'process' && parentId) {
-            entityRef = doc(clientDb, 'areas', parentId, 'procesos', entityId);
+            entityRef = doc(db, 'areas', parentId, 'procesos', entityId);
         } else if (entityType === 'subprocess' && parentId && grandParentId) {
-            entityRef = doc(clientDb, 'areas', grandParentId, 'procesos', parentId, 'subprocesos', entityId);
+            entityRef = doc(db, 'areas', grandParentId, 'procesos', parentId, 'subprocesos', entityId);
         } else {
             return { message: 'Error', error: 'Parámetros inválidos para la actualización.' };
         }
@@ -246,7 +246,7 @@ export async function updateEntityAction(
             if (alcance !== undefined) caracterizacionData.alcance = alcance;
             if (responsable !== undefined) caracterizacionData.responsable = responsable;
 
-            const caracterizacionRef = doc(clientDb, 'caracterizaciones', caracterizacionId);
+            const caracterizacionRef = doc(db, 'caracterizaciones', caracterizacionId);
             const caracterizacionSnap = await getDoc(caracterizacionRef);
 
 
@@ -272,7 +272,7 @@ export async function renameFolderAction(
   prevState: any,
   formData: FormData
 ): Promise<{ message: string; error?: string }> {
-  if (!clientDb) return { message: 'Error', error: 'Firestore no está inicializado.' };
+  if (!db) return { message: 'Error', error: 'Firestore no está inicializado.' };
   
   const newName = formData.get('newName') as string;
   const folderId = formData.get('folderId') as string;
@@ -285,7 +285,7 @@ export async function renameFolderAction(
   }
 
   try {
-    const folderRef = doc(clientDb, 'folders', folderId);
+    const folderRef = doc(db, 'folders', folderId);
     await updateDoc(folderRef, { name: newName });
     return { message: 'Carpeta renombrada con éxito.' };
   } catch (e: any) {
@@ -295,11 +295,11 @@ export async function renameFolderAction(
 }
 
 export async function seedProcessMapAction(): Promise<{ message: string; error?: string }> {
-    if (!clientDb) return { message: 'Error', error: 'Firestore no está inicializado.' };
+    if (!db) return { message: 'Error', error: 'Firestore no está inicializado.' };
 
     try {
-        const batch = writeBatch(clientDb);
-        const areasCollection = collection(clientDb, 'areas');
+        const batch = writeBatch(db);
+        const areasCollection = collection(db, 'areas');
 
         for (const area of SEED_AREAS) {
             const newAreaRef = doc(areasCollection);
@@ -370,7 +370,7 @@ export async function suggestAdditionalDataAction(prevState: any, formData: Form
 }
 
 export async function createFolderAction(prevState: any, formData: FormData): Promise<{ message: string; error?: string }> {
-  if (!clientDb) return { message: 'Error', error: 'Firestore no está inicializado.' };
+  if (!db) return { message: 'Error', error: 'Firestore no está inicializado.' };
   
   const name = formData.get('name') as string;
   const parentId = formData.get('parentId') || null;
@@ -401,7 +401,7 @@ export async function createFolderAction(prevState: any, formData: FormData): Pr
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
-    await addDoc(collection(clientDb, 'folders'), docData);
+    await addDoc(collection(db, 'folders'), docData);
     return { message: 'Carpeta creada con éxito.' };
   } catch (e: any) {
     console.error("Error creating folder:", e);
@@ -410,14 +410,14 @@ export async function createFolderAction(prevState: any, formData: FormData): Pr
 }
 
 export async function deleteFolderAction(folderId: string): Promise<{ success: boolean, error?: string }> {
-  if (!clientDb || !storage) {
+  if (!db || !storage) {
     return { success: false, error: 'Firebase no está inicializado.' };
   }
 
   try {
-    const batch = writeBatch(clientDb);
+    const batch = writeBatch(db);
 
-    const filesQuery = query(collection(clientDb, 'documents'), where('folderId', '==', folderId));
+    const filesQuery = query(collection(db, 'documents'), where('folderId', '==', folderId));
     const filesSnap = await getDocs(filesQuery);
     
     for (const fileDoc of filesSnap.docs) {
@@ -435,7 +435,7 @@ export async function deleteFolderAction(folderId: string): Promise<{ success: b
       batch.delete(fileDoc.ref);
     }
     
-    const folderRef = doc(clientDb, 'folders', folderId);
+    const folderRef = doc(db, 'folders', folderId);
     batch.delete(folderRef);
     
     await batch.commit();
@@ -448,7 +448,7 @@ export async function deleteFolderAction(folderId: string): Promise<{ success: b
 }
 
 export async function uploadFileAndCreateDocument(formData: FormData): Promise<{ success: boolean; error?: string }> {
-  if (!clientDb || !storage) {
+  if (!db || !storage) {
     return { success: false, error: 'Firebase no está inicializado.' };
   }
 
@@ -488,7 +488,7 @@ export async function uploadFileAndCreateDocument(formData: FormData): Promise<{
       updatedAt: serverTimestamp(),
     };
 
-    await addDoc(collection(clientDb, 'documents'), docData);
+    await addDoc(collection(db, 'documents'), docData);
 
     return { success: true };
   } catch (e: any) {
@@ -542,7 +542,7 @@ export async function createUserAction(
       displayName: fullName,
     });
     
-    const userDocRef = db.collection('users').doc(userRecord.uid);
+    const userDocRef = adminDb.collection('users').doc(userRecord.uid);
     await userDocRef.set({
       fullName,
       email,
@@ -601,7 +601,7 @@ export async function updateUserAction(
 
     const { userId, ...userData } = validatedFields.data;
     const auth = getAuth(adminApp);
-    const userRef = db.collection('users').doc(userId);
+    const userRef = adminDb.collection('users').doc(userId);
     
     const currentUserSnap = await userRef.get();
     if (!currentUserSnap.exists) {
@@ -646,7 +646,7 @@ export async function deleteUserAction(
   userIdToDelete: string
 ): Promise<{ success: boolean; error?: string }> {
   
-  if (!db) {
+  if (!adminDb) {
     return { success: false, error: 'Firestore Admin no está inicializado.' };
   }
   if (!currentUserId) {
@@ -658,11 +658,11 @@ export async function deleteUserAction(
 
   try {
     const auth = getAuth(adminApp);
-    const userToDeleteDocRef = db.collection('users').doc(userIdToDelete);
+    const userToDeleteDocRef = adminDb.collection('users').doc(userIdToDelete);
     const userToDeleteDocSnap = await userToDeleteDocRef.get();
 
     if (userToDeleteDocSnap.exists && userToDeleteDocSnap.data()?.role === 'superadmin') {
-      const usersRef = db.collection('users');
+      const usersRef = adminDb.collection('users');
       const superAdminQuery = usersRef.where('role', '==', 'superadmin');
       const superAdminSnapshot = await superAdminQuery.get();
 
@@ -718,7 +718,7 @@ export async function loginAction(
 
     const { cedula, password } = validatedFields.data;
 
-    const usersRef = db.collection("users");
+    const usersRef = adminDb.collection("users");
     const q = usersRef.where("cedula", "==", cedula);
     const querySnapshot = await q.get();
 
