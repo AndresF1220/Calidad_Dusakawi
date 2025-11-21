@@ -70,7 +70,7 @@ export async function createEntityAction(
             caracterizacionId = `process-${tempRef.id}`;
         } else if (type === 'subprocess' && parentId && grandParentId) {
             finalEntityRef = adminDb.doc(`areas/${grandParentId}/procesos/${parentId}/subprocesos/${tempRef.id}`);
-            caracterizacionId = `subprocess-${tempRef.id}`;
+            caracterizacionId = `subproceso-${tempRef.id}`;
         } else {
             return { message: 'Error', error: 'Parámetros inválidos para la creación.' };
         }
@@ -123,7 +123,7 @@ export async function deleteEntityAction(
                 const subprocesosQuery = procesoDoc.ref.collection('subprocesos');
                 const subprocesosSnap = await subprocesosQuery.get();
                 for (const subDoc of subprocesosSnap.docs) {
-                    const caracterizacionSubRef = adminDb.doc(`caracterizaciones/subprocess-${subDoc.id}`);
+                    const caracterizacionSubRef = adminDb.doc(`caracterizaciones/subproceso-${subDoc.id}`);
                     batch.delete(caracterizacionSubRef);
                     batch.delete(subDoc.ref);
                 }
@@ -144,7 +144,7 @@ export async function deleteEntityAction(
             const subprocesosProcSnap = await subprocesosProcQuery.get();
 
             for (const subDoc of subprocesosProcSnap.docs) {
-                const caracterizacionSubRef = adminDb.doc(`caracterizaciones/subprocess-${subDoc.id}`);
+                const caracterizacionSubRef = adminDb.doc(`caracterizaciones/subproceso-${subDoc.id}`);
                 batch.delete(caracterizacionSubRef);
                 batch.delete(subDoc.ref);
             }
@@ -157,7 +157,7 @@ export async function deleteEntityAction(
             if (!entityId || !parentId || !grandParentId) throw new Error("Parámetros de eliminación inválidos (falta entityId, parentId o grandParentId).");
             
             const subProcessRef = adminDb.doc(`areas/${grandParentId}/procesos/${parentId}/subprocesos/${entityId}`);
-            const caracterizacionSubRef = adminDb.doc(`caracterizaciones/subprocess-${entityId}`);
+            const caracterizacionSubRef = adminDb.doc(`caracterizaciones/subproceso-${entityId}`);
             batch.delete(caracterizacionSubRef);
             batch.delete(subProcessRef);
             break;
@@ -238,7 +238,7 @@ export async function updateEntityAction(
             if (entityType === 'process') {
                 caracterizacionId = `process-${entityId}`;
             } else if (entityType === 'subprocess') {
-               caracterizacionId = `subprocess-${entityId}`;
+               caracterizacionId = `subproceso-${entityId}`;
             }
             
             const caracterizacionData: any = { fechaActualizacion: new Date() };
@@ -753,3 +753,5 @@ export async function loginAction(
     };
   }
 }
+
+    
