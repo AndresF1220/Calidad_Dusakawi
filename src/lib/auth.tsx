@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, ReactNode, useState, useEffect, Dispatch, SetStateAction } from 'react';
@@ -29,15 +28,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [isLoggingOut, setIsLoggingOut] = useState<boolean>(false);
 
     useEffect(() => {
-        // When logout starts, clear local user state immediately
-        if (isLoggingOut) {
-            setUserRole(null);
-            setIsActive(false);
-            return;
-        }
+        // When logout starts, the isLoggingOut state will handle the UI.
+        // We don't need to clear state here as the user will become null anyway,
+        // which will trigger the necessary state updates below.
         
-        // Reset logging out state when auth state stabilizes
-        if (!isAuthLoading) {
+        // Reset logging out state when auth state stabilizes and user is gone.
+        if (!isAuthLoading && !firebaseUser) {
             setIsLoggingOut(false);
         }
 
@@ -104,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         fetchOrSetUserProfile();
 
-    }, [firebaseUser, isAuthLoading, firestore, isLoggingOut]);
+    }, [firebaseUser, isAuthLoading, firestore]);
     
     const authInfo: AuthContextType = {
         user: firebaseUser,
