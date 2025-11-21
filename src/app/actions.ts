@@ -370,38 +370,38 @@ export async function suggestAdditionalDataAction(prevState: any, formData: Form
 }
 
 export async function createFolderAction(prevState: any, formData: FormData): Promise<{ message: string; error?: string }> {
-  if (!db) return { message: 'Error', error: 'Firestore no está inicializado.' };
-  
+  if (!adminDb) return { message: 'Error', error: 'Firestore Admin no está inicializado.' };
+
   const name = formData.get('name') as string;
-  const parentId = formData.get('parentId') || null;
   const areaId = formData.get('areaId') as string | null;
-  
+
   const getOrNull = (key: string) => {
     const value = formData.get(key);
     return value === '' ? null : value as string | null;
   };
 
+  const parentId = getOrNull('parentId');
   const procesoId = getOrNull('procesoId');
   const subprocesoId = getOrNull('subprocesoId');
 
   if (!name || name.length < 3) {
     return { message: 'Error', error: 'El nombre debe tener al menos 3 caracteres.' };
   }
-   if (!areaId) {
+  if (!areaId) {
     return { message: 'Error', error: 'El ID del área es requerido.' };
   }
 
   try {
     const docData = {
       name,
-      parentId: parentId,
+      parentId,
       areaId,
-      procesoId: procesoId,
-      subprocesoId: subprocesoId,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      procesoId,
+      subprocesoId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
-    await addDoc(collection(db, 'folders'), docData);
+    await adminDb.collection('folders').add(docData);
     return { message: 'Carpeta creada con éxito.' };
   } catch (e: any) {
     console.error("Error creating folder:", e);
@@ -409,33 +409,25 @@ export async function createFolderAction(prevState: any, formData: FormData): Pr
   }
 }
 
-export async function deleteFolderAction(folderId: string): Promise<{ success: boolean, error?: string }> {
-  if (!db || !storage) {
-    return { success: false, error: 'Firebase no está inicializado.' };
+export async function deleteFolderAction(folderId: string): Promise<{ success: boolean; error?: string }> {
+  if (!adminDb) {
+    return { success: false, error: 'Firebase Admin no está inicializado.' };
   }
 
   try {
-    const batch = writeBatch(db);
+    const batch = adminDb.batch();
 
-    const filesQuery = query(collection(db, 'documents'), where('folderId', '==', folderId));
-    const filesSnap = await getDocs(filesQuery);
+    const filesQuery = adminDb.collection('documents').where('folderId', '==', folderId);
+    const filesSnap = await filesQuery.get();
+    
+    // Note: Deleting from Storage is not included here as storage is a client-side SDK instance.
+    // This would require a separate setup for admin storage access.
     
     for (const fileDoc of filesSnap.docs) {
-      const fileData = fileDoc.data();
-      if (fileData.path) {
-        const fileStorageRef = ref(storage, fileData.path);
-        try {
-          await deleteObject(fileStorageRef);
-        } catch (storageError: any) {
-          if (storageError.code !== 'storage/object-not-found') {
-            throw storageError; 
-          }
-        }
-      }
       batch.delete(fileDoc.ref);
     }
     
-    const folderRef = doc(db, 'folders', folderId);
+    const folderRef = adminDb.collection('folders').doc(folderId);
     batch.delete(folderRef);
     
     await batch.commit();
@@ -446,6 +438,7 @@ export async function deleteFolderAction(folderId: string): Promise<{ success: b
     return { success: false, error: e.message };
   }
 }
+
 
 export async function uploadFileAndCreateDocument(formData: FormData): Promise<{ success: boolean; error?: string }> {
   if (!db || !storage) {
