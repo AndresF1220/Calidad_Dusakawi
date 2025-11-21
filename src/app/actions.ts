@@ -4,11 +4,11 @@
 import { z } from 'zod';
 import { adminApp, db as adminDb } from '@/firebase/server-config';
 import { getAuth } from 'firebase-admin/auth';
-import { collection, addDoc, doc, updateDoc, writeBatch, query, where, getDocs, deleteDoc, serverTimestamp, setDoc, getDoc } from 'firebase/firestore';
-import { ref, deleteObject, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { slugify } from '@/lib/slug';
 import { SEED_AREAS } from '@/data/seed-map';
 import { db, storage } from '@/firebase/client-config';
+import { collection, addDoc, doc, updateDoc, writeBatch, query, where, getDocs, deleteDoc, serverTimestamp, setDoc, getDoc } from 'firebase/firestore';
+import { ref, deleteObject, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 
 const createSchema = z.object({
@@ -370,6 +370,7 @@ export async function suggestAdditionalDataAction(prevState: any, formData: Form
 }
 
 export async function createFolderAction(prevState: any, formData: FormData): Promise<{ message: string; error?: string }> {
+  const { db: adminDb } = await import('@/firebase/server-config');
   if (!adminDb) return { message: 'Error', error: 'Firestore Admin no está inicializado.' };
 
   const name = formData.get('name') as string;
@@ -410,6 +411,7 @@ export async function createFolderAction(prevState: any, formData: FormData): Pr
 }
 
 export async function deleteFolderAction(folderId: string): Promise<{ success: boolean; error?: string }> {
+  const { db: adminDb } = await import('@/firebase/server-config');
   if (!adminDb) {
     return { success: false, error: 'Firebase Admin no está inicializado.' };
   }
@@ -441,7 +443,8 @@ export async function deleteFolderAction(folderId: string): Promise<{ success: b
 
 
 export async function uploadFileAndCreateDocument(formData: FormData): Promise<{ success: boolean; error?: string }> {
-  if (!db || !storage) {
+  const { db: adminDb } = await import('@/firebase/server-config');
+  if (!db || !storage || !adminDb) {
     return { success: false, error: 'Firebase no está inicializado.' };
   }
 
@@ -481,7 +484,7 @@ export async function uploadFileAndCreateDocument(formData: FormData): Promise<{
       updatedAt: serverTimestamp(),
     };
 
-    await addDoc(collection(db, 'documents'), docData);
+    await addDoc(collection(adminDb, 'documents'), docData);
 
     return { success: true };
   } catch (e: any) {
@@ -507,6 +510,7 @@ export async function createUserAction(
 ): Promise<{ message: string; error?: string, errors?: { [key: string]: string[] } }> {
   
   try {
+    const { db: adminDb } = await import('@/firebase/server-config');
     const validatedFields = createUserSchema.safeParse({
       fullName: formData.get('fullName'),
       cedula: formData.get('cedula'),
@@ -571,6 +575,7 @@ export async function updateUserAction(
 ): Promise<{ message: string; error?: string, errors?: { [key: string]: string[] } }> {
 
   try {
+    const { db: adminDb } = await import('@/firebase/server-config');
     const payload = {
       userId: formData.get('userId'),
       fullName: formData.get('fullName'),
@@ -638,7 +643,7 @@ export async function deleteUserAction(
   currentUserId: string | null,
   userIdToDelete: string
 ): Promise<{ success: boolean; error?: string }> {
-  
+  const { db: adminDb } = await import('@/firebase/server-config');
   if (!adminDb) {
     return { success: false, error: 'Firestore Admin no está inicializado.' };
   }
@@ -700,6 +705,7 @@ export async function loginAction(
   formData: FormData
 ): Promise<LoginState> {
   try {
+    const { db: adminDb } = await import('@/firebase/server-config');
     const validatedFields = loginSchema.safeParse({
       cedula: formData.get("cedula"),
       password: formData.get("password"),
@@ -745,5 +751,3 @@ export async function loginAction(
     };
   }
 }
-
-    
