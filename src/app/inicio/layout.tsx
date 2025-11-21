@@ -1,3 +1,4 @@
+
 'use client';
 
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
@@ -46,17 +47,31 @@ function LoadingScreen() {
     )
 }
 
-function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
-    const { isRoleLoading, isActive } = useAuth();
+function InnerLayout({ children }: { children: React.ReactNode }) {
     const { settings, isLoading: isSettingsLoading } = useAppSettings();
-    
+
     useEffect(() => {
         if (!isSettingsLoading) {
             document.title = `${settings.appName} | ${settings.companyName}`;
         }
     }, [settings, isSettingsLoading]);
 
+    return (
+        <SidebarProvider>
+            <AppSidebar />
+            <SidebarInset>
+                <AppHeader />
+                <main className="p-4 sm:p-6 lg:p-8 bg-background">
+                    {children}
+                </main>
+            </SidebarInset>
+        </SidebarProvider>
+    );
+}
 
+function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
+    const { isRoleLoading, isActive } = useAuth();
+    
     // First, handle the loading state. Show a full-screen loader while we check auth and profile.
     if (isRoleLoading) {
         return <LoadingScreen />;
@@ -69,17 +84,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     }
     
     // If loading is complete and the user is active, render the full app layout.
-    return (
-        <SidebarProvider>
-            <AppSidebar />
-            <SidebarInset>
-                <AppHeader />
-                <main className="p-4 sm:p-6 lg:p-8 bg-background">
-                    {children}
-                </main>
-            </SidebarInset>
-        </SidebarProvider>
-    );
+    return <InnerLayout>{children}</InnerLayout>;
 }
 
 
