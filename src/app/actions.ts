@@ -232,8 +232,11 @@ export async function updateEntityAction(
         }
 
         batch.update(entityRef, { nombre: name, slug: slugify(name) });
+        
+        const allCaracterizacionFieldsEmpty = !objetivo && !alcance && !responsable;
+        const hasCaracterizacionData = objetivo !== undefined || alcance !== undefined || responsable !== undefined;
 
-        if (objetivo !== undefined || alcance !== undefined || responsable !== undefined) {
+        if (hasCaracterizacionData) {
             let caracterizacionId = `area-${entityId}`;
             if (entityType === 'process') {
                 caracterizacionId = `process-${entityId}`;
@@ -241,18 +244,22 @@ export async function updateEntityAction(
                caracterizacionId = `subprocess-${entityId}`;
             }
             
-            const caracterizacionData: any = { fechaActualizacion: new Date() };
-            if (objetivo !== undefined) caracterizacionData.objetivo = objetivo;
-            if (alcance !== undefined) caracterizacionData.alcance = alcance;
-            if (responsable !== undefined) caracterizacionData.responsable = responsable;
-
             const caracterizacionRef = adminDb.doc(`caracterizaciones/${caracterizacionId}`);
-            const caracterizacionSnap = await caracterizacionRef.get();
 
-            if (caracterizacionSnap.exists) {
-                batch.update(caracterizacionRef, caracterizacionData);
+            if (allCaracterizacionFieldsEmpty) {
+                 batch.delete(caracterizacionRef);
             } else {
-                batch.set(caracterizacionRef, caracterizacionData);
+                const caracterizacionData: any = { fechaActualizacion: new Date() };
+                if (objetivo !== undefined) caracterizacionData.objetivo = objetivo;
+                if (alcance !== undefined) caracterizacionData.alcance = alcance;
+                if (responsable !== undefined) caracterizacionData.responsable = responsable;
+                
+                const caracterizacionSnap = await caracterizacionRef.get();
+                 if (caracterizacionSnap.exists) {
+                    batch.update(caracterizacionRef, caracterizacionData);
+                } else {
+                    batch.set(caracterizacionRef, caracterizacionData);
+                }
             }
         }
 
