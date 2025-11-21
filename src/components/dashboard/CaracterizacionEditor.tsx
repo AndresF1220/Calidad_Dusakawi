@@ -26,7 +26,7 @@ import { updateEntityAction } from '@/app/actions';
 
 interface CaracterizacionEditorProps {
   entityId: string;
-  entityType: 'area' | 'process' | 'subprocess';
+  entityType: 'area' | 'process' | 'subprocess' | 'proceso' | 'subproceso';
   onSaved: () => void;
   initialData: {
     objetivo?: string;
@@ -83,9 +83,11 @@ export default function CaracterizacionEditor({ entityId, entityType, onSaved, i
             caracterizacionId = `area-${entityId}`;
             break;
         case 'process':
+        case 'proceso':
             caracterizacionId = `process-${entityId}`;
             break;
         case 'subprocess':
+        case 'subproceso':
             caracterizacionId = `subprocess-${entityId}`;
             break;
         default:
@@ -215,4 +217,3 @@ export default function CaracterizacionEditor({ entityId, entityType, onSaved, i
     </Form>
   );
 }
-
