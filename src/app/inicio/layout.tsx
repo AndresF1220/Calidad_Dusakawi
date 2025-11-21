@@ -72,20 +72,25 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
 }
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
-    const { isRoleLoading, isActive, isLoggingOut } = useAuth();
+    const { user, isRoleLoading, isActive, isLoggingOut } = useAuth();
     
-    // The loading screen has the highest priority. It shows if auth state is loading
-    // OR if a logout operation is in progress.
+    // Show loading screen while auth state is resolving or a logout is in progress.
     if (isRoleLoading || isLoggingOut) {
         return <LoadingScreen />;
     }
 
-    // Only after loading is complete, we check if the user is active.
-    if (!isActive) {
+    // If there is no user, it means we are logged out or in the process of being redirected.
+    // Show a loader to prevent any flicker of other content.
+    if (!user) {
+        return <LoadingScreen />;
+    }
+
+    // If there is a user, but they are inactive, show the inactive screen.
+    if (user && !isActive) {
         return <InactiveUserScreen />;
     }
     
-    // If loading is done and user is active, show the main layout.
+    // If we have an active user, show the main application layout.
     return <InnerLayout>{children}</InnerLayout>;
 }
 
