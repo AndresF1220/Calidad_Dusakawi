@@ -2,7 +2,7 @@
 'use server';
 
 import { z } from 'zod';
-import { adminApp, db as adminDb } from '@/firebase/server-config';
+import { adminApp, db } from '@/firebase/server-config';
 import { getAuth } from 'firebase-admin/auth';
 import { collection, addDoc, doc, updateDoc, writeBatch, query, where, getDocs, deleteDoc, serverTimestamp, setDoc, getDoc } from 'firebase/firestore';
 import { ref, deleteObject, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -542,7 +542,7 @@ export async function createUserAction(
       displayName: fullName,
     });
     
-    const userDocRef = adminDb.collection('users').doc(userRecord.uid);
+    const userDocRef = db.collection('users').doc(userRecord.uid);
     await userDocRef.set({
       fullName,
       email,
@@ -550,7 +550,7 @@ export async function createUserAction(
       role,
       status,
       tempPassword,
-      createdAt: adminDb.FieldValue.serverTimestamp(),
+      createdAt: new Date(),
     });
 
     return { message: 'Usuario creado con éxito en Auth y Firestore.' };
@@ -601,7 +601,7 @@ export async function updateUserAction(
 
     const { userId, ...userData } = validatedFields.data;
     const auth = getAuth(adminApp);
-    const userRef = adminDb.collection('users').doc(userId);
+    const userRef = db.collection('users').doc(userId);
     
     const currentUserSnap = await userRef.get();
     if (!currentUserSnap.exists) {
@@ -611,7 +611,7 @@ export async function updateUserAction(
     
     await userRef.update({
         ...userData,
-        updatedAt: adminDb.FieldValue.serverTimestamp(),
+        updatedAt: new Date(),
     });
     
     const authUpdates: { email?: string; password?: string, displayName?:string } = {};
@@ -664,7 +664,7 @@ export async function deleteUserAction(
   userIdToDelete: string
 ): Promise<{ success: boolean; error?: string }> {
   
-  if (!adminDb) {
+  if (!db) {
     return { success: false, error: 'Firestore Admin no está inicializado.' };
   }
   if (!currentUserId) {
@@ -676,11 +676,11 @@ export async function deleteUserAction(
 
   try {
     const auth = getAuth(adminApp);
-    const userToDeleteDocRef = adminDb.collection('users').doc(userIdToDelete);
+    const userToDeleteDocRef = db.collection('users').doc(userIdToDelete);
     const userToDeleteDocSnap = await userToDeleteDocRef.get();
 
     if (userToDeleteDocSnap.exists && userToDeleteDocSnap.data()?.role === 'superadmin') {
-      const usersRef = adminDb.collection('users');
+      const usersRef = db.collection('users');
       const superAdminQuery = usersRef.where('role', '==', 'superadmin');
       const superAdminSnapshot = await superAdminQuery.get();
 
@@ -736,7 +736,7 @@ export async function loginAction(
 
     const { cedula, password } = validatedFields.data;
 
-    const usersRef = adminDb.collection("users");
+    const usersRef = db.collection("users");
     const q = usersRef.where("cedula", "==", cedula);
     const querySnapshot = await q.get();
 
