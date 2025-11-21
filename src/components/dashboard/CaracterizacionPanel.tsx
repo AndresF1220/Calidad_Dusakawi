@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import CaracterizacionEditor from './CaracterizacionEditor';
 import { useAuth } from '@/lib/auth';
+import { useCaracterizacion } from '@/hooks/use-areas-data';
 
 interface CaracterizacionPanelProps {
   idEntidad: string;
@@ -46,46 +47,18 @@ export default function CaracterizacionPanel({
 }: CaracterizacionPanelProps) {
   const firestore = useFirestore();
   const { userRole } = useAuth();
-  const [caracterizacion, setCaracterizacion] =
-    useState<CaracterizacionData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   
-  let docId = `area-${idEntidad}`;
-  if (tipo === 'proceso') {
-      docId = `process-${idEntidad}`;
+  let docId: string | null = null;
+  if (tipo === 'area') {
+    docId = `area-${idEntidad}`;
+  } else if (tipo === 'proceso') {
+    docId = `process-${idEntidad}`;
   } else if (tipo === 'subproceso') {
-      docId = `subprocess-${idEntidad}`;
+    docId = `subprocess-${idEntidad}`;
   }
 
-
-  useEffect(() => {
-    if (!firestore || !idEntidad) {
-        setLoading(false); // If firestore is not ready, stop loading
-        return;
-    };
-
-    setLoading(true);
-    const docRef = doc(firestore, 'caracterizaciones', docId);
-    const unsubscribe = onSnapshot(
-      docRef,
-      async (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data() as CaracterizacionData;
-          setCaracterizacion(data);
-        } else {
-          setCaracterizacion(null);
-        }
-        setLoading(false);
-      },
-      (error) => {
-        console.error('Error fetching caracterizacion:', error);
-        setLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
-  }, [firestore, idEntidad, tipo, docId]);
+  const { caracterizacion, isLoading: loading } = useCaracterizacion(docId);
   
   const isDataEmpty = !caracterizacion || (!caracterizacion.objetivo && !caracterizacion.alcance && !caracterizacion.responsable);
 
@@ -118,9 +91,14 @@ export default function CaracterizacionPanel({
                     </DialogDescription>
                 </DialogHeader>
                 <CaracterizacionEditor 
-                    idEntidad={idEntidad}
-                    tipo={tipo}
+                    entityId={idEntidad}
+                    entityType={tipo}
                     onSaved={() => setIsEditorOpen(false)}
+                    initialData={{
+                      objetivo: caracterizacion?.objetivo || '',
+                      alcance: caracterizacion?.alcance || '',
+                      responsable: caracterizacion?.responsable || '',
+                    }}
                 />
             </DialogContent>
           </Dialog>
@@ -173,5 +151,3 @@ export default function CaracterizacionPanel({
     </Card>
   );
 }
-
-    
