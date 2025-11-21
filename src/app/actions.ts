@@ -646,10 +646,12 @@ export async function toggleUserStatusAction(
   userId: string,
   currentStatus: 'active' | 'inactive'
 ): Promise<{ success: boolean; error?: string }> {
-  if (!clientDb) return { success: false, error: 'Firestore no está inicializado.' };
+  if (!db) {
+    return { success: false, error: 'Firestore Admin no está inicializado.' };
+  }
 
   try {
-    const userRef = doc(clientDb, 'users', userId);
+    const userRef = doc(db, 'users', userId);
     const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
     await updateDoc(userRef, { status: newStatus });
     return { success: true };
