@@ -671,19 +671,18 @@ export async function deleteUserAction(
   currentUserId: string | null,
   userIdToDelete: string
 ): Promise<{ success: boolean; error?: string }> {
-  
-  if (!currentUserId) {
-    return { success: false, error: 'No se pudo identificar al usuario actual.' };
-  }
-  if (currentUserId === userIdToDelete) {
-    return { success: false, error: 'No se puede eliminar a sí mismo.' };
-  }
-
   try {
     const { getAuth } = await import('firebase-admin/auth');
     const { adminApp, db: adminDb } = await import('@/firebase/server-config');
-    const auth = getAuth(adminApp);
 
+    if (!currentUserId) {
+      return { success: false, error: 'No se pudo identificar al usuario actual.' };
+    }
+    if (currentUserId === userIdToDelete) {
+      return { success: false, error: 'No se puede eliminar a sí mismo.' };
+    }
+    
+    const auth = getAuth(adminApp);
     const userToDeleteDocRef = doc(adminDb, 'users', userIdToDelete);
     const userToDeleteDocSnap = await getDoc(userToDeleteDocRef);
 

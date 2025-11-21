@@ -7,8 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import React, { useState } from 'react';
 import { useFirebase } from '@/firebase';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { collection, query, where, getDocs, setDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
@@ -22,6 +22,7 @@ export default function LoginPage() {
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
+    console.log("Login process started...");
 
     if (!firestore) {
       toast({
@@ -38,11 +39,13 @@ export default function LoginPage() {
     const password = formData.get('password') as string;
 
     try {
+      // 1. Query Firestore for the user by 'cedula'
       const usersRef = collection(firestore, 'users');
-      const q = query(usersRef, where('cedula', '==', cedula), where('status', '==', 'active'));
+      const q = query(usersRef, where('cedula', '==', cedula));
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
+        console.log("No user document found for cedula:", cedula);
         toast({
           variant: 'destructive',
           title: 'Error de acceso',
@@ -54,25 +57,87 @@ export default function LoginPage() {
 
       const userDoc = querySnapshot.docs[0];
       const userData = userDoc.data();
-      const email = userData.email;
+      console.log("User document found:", userData);
       
-      const auth = getAuth();
-      await signInWithEmailAndPassword(auth, email, password);
-      
-      router.push('/inicio');
-
-    } catch (error: any) {
-      console.error("Authentication failed:", error);
-      let errorMessage = 'Error desconocido. Por favor intente de nuevo.';
-      
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
-          errorMessage = 'Cédula o contraseña incorrectos, o el usuario está inactivo.';
+      // 2. Validate status and tempPassword locally
+      if (userData.status !== 'active') {
+        console.log("User is inactive.");
+        toast({
+          variant: 'destructive',
+          title: 'Error de acceso',
+          description: 'El usuario está inactivo.',
+        });
+        setIsLoading(false);
+        return;
       }
 
+      if (userData.tempPassword !== password) {
+        console.log("Local password check failed.");
+        toast({
+          variant: 'destructive',
+          title: 'Error de acceso',
+          description: 'Cédula o contraseña incorrectos, o el usuario está inactivo.',
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      console.log("Local validation successful. Attempting Firebase Auth sign-in...");
+      const auth = getAuth();
+      const email = userData.email;
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        console.log("Firebase Auth sign-in successful.");
+        router.push('/inicio');
+
+      } catch (error: any) {
+        console.error("Firebase Auth error:", error.code, error.message);
+        
+        // 3. If user not found in Auth, create them
+        if (error.code === 'auth/user-not-found') {
+          console.log("User not found in Auth, attempting to create...");
+          try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            console.log("User created in Auth successfully.");
+            
+            // It's crucial to set the document with the new UID
+            const userDocRef = doc(firestore, 'users', userCredential.user.uid);
+            // Overwrite the old doc with the new UID
+            await setDoc(userDocRef, { ...userData, createdAt: serverTimestamp() });
+             
+            // We don't need to sign in again, createUserWithEmailAndPassword already signs the user in.
+            router.push('/inicio');
+
+          } catch (creationError: any) {
+             console.error("Error creating user in Auth:", creationError);
+             toast({
+                variant: 'destructive',
+                title: 'Error de Registro Automático',
+                description: `No se pudo crear su cuenta: ${creationError.message}`,
+             });
+          }
+        } else if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+             toast({
+                variant: 'destructive',
+                title: 'Error de acceso',
+                description: 'Cédula o contraseña incorrectos, o el usuario está inactivo.',
+             });
+        } else {
+             toast({
+                variant: 'destructive',
+                title: 'Error de autenticación',
+                description: error.message,
+             });
+        }
+      }
+
+    } catch (error: any) {
+      console.error("General login error:", error);
       toast({
           variant: 'destructive',
           title: 'Error de acceso',
-          description: errorMessage,
+          description: 'Ocurrió un error inesperado. Por favor intente de nuevo.',
       });
     } finally {
         setIsLoading(false);
