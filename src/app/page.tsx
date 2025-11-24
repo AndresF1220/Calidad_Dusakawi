@@ -31,16 +31,39 @@ export default function LoginPage() {
 
   useEffect(() => {
     const handleLoginFlow = async () => {
-      if (state.status === "error") {
-        toast({
-          variant: 'destructive',
-          title: 'Error de acceso',
-          description: state.error,
-        });
-      }
+        const auth = getAuth();
+        if (!formRef.current) return;
+
+        const formData = new FormData(formRef.current);
+        const password = formData.get("password") as string;
+        
+        if (state.status === "error") {
+            if (state.data?.email && password) {
+                 // The server-side check failed, but we have an email.
+                 // This could mean the user has updated their password in Auth but not in Firestore.
+                 // Let's try to sign in with the provided password directly.
+                 try {
+                    await signInWithEmailAndPassword(auth, state.data.email, password);
+                    router.push('/inicio');
+                 } catch (directAuthError: any) {
+                     // If this also fails, then the credentials are truly wrong.
+                     toast({
+                         variant: 'destructive',
+                         title: 'Error de acceso',
+                         description: state.error,
+                     });
+                 }
+            } else {
+                // If we don't even have an email from the server action, the user likely doesn't exist.
+                toast({
+                    variant: 'destructive',
+                    title: 'Error de acceso',
+                    description: state.error,
+                });
+            }
+        }
 
       if (state.status === "success" && state.data) {
-        const auth = getAuth();
         const { email, tempPassword } = state.data;
         
         try {
@@ -62,7 +85,6 @@ export default function LoginPage() {
               
               const userDocRef = doc(firestore, 'users', userCredential.user.uid);
               await setDoc(userDocRef, { 
-                  // This is a simplified user profile. Consider fetching full profile from server action if needed.
                   email: email, 
                   tempPassword: tempPassword,
                   createdAt: serverTimestamp(),

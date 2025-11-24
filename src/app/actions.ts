@@ -705,7 +705,7 @@ type LoginState = {
   error?: string;
   data?: {
     email: string;
-    tempPassword: any;
+    tempPassword?: any;
   };
 };
 
@@ -742,7 +742,15 @@ export async function loginAction(
     }
 
     if (userData.tempPassword !== password) {
-      return { status: "error", error: "Cédula o contraseña incorrectos, o el usuario está inactivo." };
+       // Even if tempPassword doesn't match, we return the user's email.
+       // The client will then try to sign in with the provided password against Firebase Auth.
+       return {
+        status: "error", 
+        error: "Cédula o contraseña incorrectos, o el usuario está inactivo.",
+        data: {
+          email: userData.email,
+        }
+      };
     }
 
     return {
@@ -760,5 +768,3 @@ export async function loginAction(
     };
   }
 }
-
-    
