@@ -36,7 +36,7 @@ body {
     --radius: 0.5rem;
 
     /* New unified sidebar theme */
-    --sidebar-background: 210 20% 97%; /* Different from main background */
+    --sidebar-background: 215 28% 93%;
     --sidebar-foreground: 224 71% 4%;
     --sidebar-primary: 221 83% 53%;
     --sidebar-primary-foreground: 210 40% 98%;

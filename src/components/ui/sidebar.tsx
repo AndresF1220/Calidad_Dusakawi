@@ -177,14 +177,12 @@ const Sidebar = React.forwardRef<
     ref
   ) => {
     const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
-    const isSidebarVariant = variant === "sidebar"
 
     if (collapsible === "none") {
       return (
         <div
           className={cn(
-            "flex h-full w-[--sidebar-width] flex-col",
-            isSidebarVariant ? "bg-sidebar text-sidebar-foreground" : "bg-background text-foreground",
+            "flex h-full w-[--sidebar-width] flex-col bg-sidebar text-sidebar-foreground",
             className
           )}
           ref={ref}
@@ -202,7 +200,7 @@ const Sidebar = React.forwardRef<
             data-sidebar="sidebar"
             data-mobile="true"
             className={cn("w-[--sidebar-width] p-0 [&>button]:hidden",
-               isSidebarVariant ? "bg-sidebar text-sidebar-foreground" : "bg-background text-foreground"
+               "bg-sidebar text-sidebar-foreground"
             )}
             style={
               {
@@ -220,7 +218,7 @@ const Sidebar = React.forwardRef<
     return (
       <div
         ref={ref}
-        className={cn("group peer hidden md:block", isSidebarVariant ? "text-sidebar-foreground" : "text-foreground")}
+        className={cn("group peer hidden md:block", "bg-sidebar text-sidebar-foreground")}
         data-state={state}
         data-collapsible={state === "collapsed" ? collapsible : ""}
         data-variant={variant}
@@ -257,7 +255,7 @@ const Sidebar = React.forwardRef<
             data-sidebar="sidebar"
             className={cn("flex h-full w-full flex-col", 
               "group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow",
-              isSidebarVariant ? "bg-sidebar" : "bg-background"
+              "bg-sidebar"
             )}
           >
             {children}
