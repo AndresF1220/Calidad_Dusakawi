@@ -6,8 +6,8 @@ import { cn } from '@/lib/utils';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
-  title: 'Quality Central',
-  description: 'Quality Management System',
+  title: 'Atlas SGI',
+  description: 'Sistema de Gestión Integrado',
 };
 
 export default function RootLayout({

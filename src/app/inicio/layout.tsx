@@ -79,8 +79,6 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     }
 
     if (!user) {
-        // This will be caught during the auth loading phase or after logout.
-        // It prevents flashing the InactiveUserScreen.
         return <LoadingScreen />;
     }
 

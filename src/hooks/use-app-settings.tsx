@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, ReactNode, useState, useEffect } from 'react';
@@ -15,8 +16,8 @@ interface AppSettingsContextType {
 }
 
 const defaultSettings: AppSettings = {
-    appName: 'Sistema de Gestión',
-    companyName: 'Empresa',
+    appName: 'Atlas SGI',
+    companyName: 'Atlas',
 };
 
 const AppSettingsContext = createContext<AppSettingsContextType | undefined>(undefined);

@@ -136,7 +136,7 @@ export default function LoginPage() {
           <CardHeader className="text-center">
             <CardTitle className="font-headline text-3xl">Bienvenido</CardTitle>
             <CardDescription>
-              Ingrese a Quality Central para continuar.
+              Ingrese a Atlas SGI para continuar.
             </CardDescription>
           </CardHeader>
           <CardContent className="p-8">
