@@ -1,10 +1,8 @@
-
 'use client';
 
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FolderKanban } from 'lucide-react';
-import AnalyticsTool from '@/components/dashboard/analytics-tool';
 
 export default function InicioPage() {
   return (
@@ -28,10 +26,6 @@ export default function InicioPage() {
             </CardContent>
           </Card>
         </Link>
-      </div>
-
-      <div className="mt-8">
-        <AnalyticsTool />
       </div>
 
     </div>
