@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Folder } from 'lucide-react';
 import { useProcesos, useSubprocesos } from '@/hooks/use-areas-data';
 import { Skeleton } from '../ui/skeleton';
@@ -21,7 +21,6 @@ const ItemCard = ({ item, linkHref, entityType, parentId, grandParentId }: { ite
     const { userRole } = useAuth();
 
     const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-        // Stop navigation if the click is on the dropdown menu or its trigger
         if ((e.target as HTMLElement).closest('[data-radix-dropdown-menu-trigger]')) {
              e.preventDefault();
              e.stopPropagation();
@@ -42,7 +41,10 @@ const ItemCard = ({ item, linkHref, entityType, parentId, grandParentId }: { ite
     
     return (
         <div className="relative group">
-            <Card className="h-full flex flex-col items-center justify-center text-center p-6 transition-colors hover:bg-muted/50 cursor-pointer" onClick={handleClick}>
+            <Card 
+                className="h-full flex flex-col items-center justify-center text-center p-6 transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-1 cursor-pointer"
+                onClick={handleClick}
+            >
                 <Folder className="h-16 w-16 text-primary mb-4" />
                 <CardHeader className="p-0">
                     <CardTitle className="font-headline text-lg">{item?.nombre || 'Elemento inválido'}</CardTitle>
@@ -77,16 +79,19 @@ export default function ProcesoCards({ areaId, procesoId }: ProcesoCardsProps) {
         if (isLoading) {
             return (
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-40 w-full" />)}
+                    {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-48 w-full" />)}
                  </div>
             )
         }
         
         if (subprocesos?.length === 0) {
             return (
-                <div className="col-span-full text-center text-muted-foreground mt-8">
-                    <p>{userRole === 'superadmin' ? 'No hay sub-procesos definidos para este proceso. Agregue uno para comenzar.' : 'No hay sub-procesos definidos para este proceso.'}</p>
-                </div>
+                <Card className="col-span-full text-center text-muted-foreground p-8 shadow-md">
+                     <p className="font-medium">No hay sub-procesos</p>
+                    <p className="mt-1 text-sm">
+                        {userRole === 'superadmin' ? 'Agregue un sub-proceso para comenzar a organizar esta sección.' : 'No hay sub-procesos definidos para este proceso.'}
+                    </p>
+                </Card>
             );
         }
 
@@ -112,16 +117,19 @@ export default function ProcesoCards({ areaId, procesoId }: ProcesoCardsProps) {
     if (isLoading) {
         return (
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-40 w-full" />)}
+                {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-48 w-full" />)}
              </div>
         )
     }
     
     if (procesos?.length === 0) {
         return (
-            <div className="col-span-full text-center text-muted-foreground mt-8">
-                <p>{userRole === 'superadmin' ? 'No hay procesos definidos para esta área todavía. Agregue uno para comenzar.' : 'No hay procesos definidos para esta área.'}</p>
-            </div>
+             <Card className="col-span-full text-center text-muted-foreground p-8 shadow-md">
+                 <p className="font-medium">No hay procesos</p>
+                 <p className="mt-1 text-sm">
+                    {userRole === 'superadmin' ? 'Agregue un proceso para comenzar a organizar esta área.' : 'No hay procesos definidos para esta área.'}
+                </p>
+            </Card>
         );
     }
     

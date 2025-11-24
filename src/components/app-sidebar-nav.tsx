@@ -9,6 +9,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { DusakawiLogo } from './icons';
 import {
@@ -54,33 +55,34 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
 
   return (
     <>
-      <SidebarHeader>
-        <div className="flex items-center gap-2.5 p-4">
+      <SidebarHeader className="border-b">
+        <div className="flex items-center gap-2.5 p-4 h-16">
           <DusakawiLogo className="h-8 w-8 text-sidebar-primary" />
-          <span className="text-lg font-headline font-semibold text-sidebar-foreground">
-            {isSettingsLoading ? <Skeleton className="h-5 w-24" /> : settings.appName}
+          <span className="text-lg font-headline font-semibold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
+            {isSettingsLoading ? <Skeleton className="h-5 w-24 bg-muted-foreground/20" /> : settings.appName}
           </span>
         </div>
       </SidebarHeader>
       
-      <div className="flex flex-col items-center gap-2 p-4 border-y border-sidebar-border">
-        <Avatar className="h-16 w-16">
+      <div className="flex flex-col items-center gap-2 p-4 group-data-[collapsible=icon]:py-4 group-data-[collapsible=icon]:px-2">
+        <Avatar className="h-16 w-16 group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10 transition-all">
             <AvatarImage src={user?.photoURL || "https://images.unsplash.com/photo-1511367461989-f85a21fda167?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxwcm9maWxlfGVufDB8fHx8MTc2MTY0MDYwMXww&ixlib=rb-4.1.0&q=80&w=1080"} alt={user?.displayName || 'Usuario'} />
             <AvatarFallback>{userInitial}</AvatarFallback>
         </Avatar>
-        <div className="text-center">
+        <div className="text-center group-data-[collapsible=icon]:hidden">
             <h3 className="font-semibold text-base text-sidebar-foreground truncate max-w-36">{user?.displayName || user?.email || 'Usuario'}</h3>
             <p className="text-sm text-sidebar-foreground/70">{isSettingsLoading ? '...' : settings.companyName}</p>
         </div>
       </div>
+      <SidebarSeparator className="group-data-[collapsible=icon]:hidden" />
 
-      <SidebarContent className="p-4 flex flex-col justify-between">
+      <SidebarContent className="p-2 flex-1">
         <SidebarMenu>
           {isRoleLoading ? (
             <div className="space-y-2 px-2">
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full bg-muted-foreground/20" />
+              <Skeleton className="h-8 w-full bg-muted-foreground/20" />
+              <Skeleton className="h-8 w-full bg-muted-foreground/20" />
             </div>
           ) : menuItems
             .filter(item => !item.roles || (userRole && item.roles.includes(userRole)))
@@ -93,15 +95,20 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
               >
                 <Link href={item.href}>
                   <item.icon />
-                  <span>{item.label}</span>
+                  <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
+      </SidebarContent>
+
+      <SidebarSeparator />
+      
+      <SidebarContent className="p-2 flex-none">
         <SidebarMenu>
             {isRoleLoading ? (
-                <div className="flex items-center justify-center text-xs text-sidebar-foreground/70 gap-2 p-2">
+                <div className="flex items-center justify-center text-xs text-sidebar-foreground/70 gap-2 p-2 group-data-[collapsible=icon]:hidden">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span>Verificando...</span>
                 </div>
@@ -116,7 +123,7 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
                     >
                         <Link href={item.href}>
                         <item.icon />
-                        <span>{item.label}</span>
+                        <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
                         </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -126,5 +133,3 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
     </>
   );
 }
-
-    

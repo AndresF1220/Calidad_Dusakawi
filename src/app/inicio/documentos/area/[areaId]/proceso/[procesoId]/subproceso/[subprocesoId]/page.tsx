@@ -56,7 +56,7 @@ export default function SubprocesoIdPage() {
   return (
     <div className="flex flex-col gap-8">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold font-headline capitalize">{subproceso.nombre}</h1>
+        <h1 className="text-3xl font-bold tracking-tight font-headline capitalize">{subproceso.nombre}</h1>
         {userRole === 'superadmin' && (
             <EntityOptionsDropdown
                 entityId={subproceso.id}

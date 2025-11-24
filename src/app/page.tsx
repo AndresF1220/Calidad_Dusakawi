@@ -120,7 +120,7 @@ export default function LoginPage() {
   }, [state, router, toast, firestore]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm mx-auto">
         <div className="flex justify-center mb-8">
            <Image 
@@ -132,7 +132,7 @@ export default function LoginPage() {
               style={{ width: "auto", height: "auto" }}
             />
         </div>
-        <Card className="w-full border-0 shadow-lg">
+        <Card className="w-full shadow-lg">
           <CardHeader className="text-center">
             <CardTitle className="font-headline text-3xl">Bienvenido</CardTitle>
             <CardDescription>

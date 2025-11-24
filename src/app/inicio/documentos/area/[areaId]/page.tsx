@@ -56,7 +56,7 @@ export default function AreaIdPage() {
   return (
     <div className="flex flex-col gap-8">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold font-headline">{area.nombre}</h1>
+        <h1 className="text-3xl font-bold tracking-tight font-headline">{area.nombre}</h1>
          <div className="flex items-center gap-2">
             {userRole === 'superadmin' && (
                 <AddEntityForm 
@@ -85,7 +85,7 @@ export default function AreaIdPage() {
       <CaracterizacionPanel idEntidad={area.id} tipo="area" />
 
        <div className="flex flex-col gap-4">
-          <h2 className="text-2xl font-bold font-headline">Procesos</h2>
+          <h2 className="text-2xl font-bold tracking-tight font-headline">Procesos</h2>
           <ProcesoCards areaId={area.id} />
        </div>
        

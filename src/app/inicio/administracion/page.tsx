@@ -48,7 +48,7 @@ function UserManagement() {
         <div className="flex flex-col gap-8">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold font-headline">Gestión de usuarios</h1>
+                    <h1 className="text-3xl font-bold tracking-tight font-headline">Gestión de Usuarios</h1>
                     <p className="text-muted-foreground">Aquí se administran los usuarios del sistema.</p>
                 </div>
                 <CreateUserForm isOpen={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
@@ -58,7 +58,7 @@ function UserManagement() {
                     </Button>
                 </CreateUserForm>
             </div>
-            <Card>
+            <Card className="shadow-md">
                 <CardHeader>
                     <CardTitle>Lista de Usuarios</CardTitle>
                     <CardDescription>Usuarios registrados en el sistema.</CardDescription>
@@ -171,28 +171,22 @@ function LoadingPermissions() {
 }
 
 export default function AdministracionPage() {
-    const { userRole, isRoleLoading } = useAuth();
+    const { user, userRole, isRoleLoading } = useAuth();
     const router = useRouter();
 
     useEffect(() => {
-        // Once role loading is complete and the role is not superadmin, redirect.
         if (!isRoleLoading && userRole !== 'superadmin') {
             router.push('/inicio');
         }
-    }, [isRoleLoading, userRole, router]);
+    }, [isRoleLoading, userRole, router, user]);
     
-    // While loading role information, show a loading state.
-    if (isRoleLoading) {
+    if (isRoleLoading || !user) {
         return <LoadingPermissions />;
     }
 
-    // If loading is complete and the role is superadmin, show the content.
     if (userRole === 'superadmin') {
         return <UserManagement />;
     }
 
-    // If loading is complete and the role is not superadmin, the loader will be shown briefly
-    // before the useEffect redirects. Return the loader to avoid
-    // flashing "Access Denied" unnecessarily before the redirect.
     return <LoadingPermissions />;
 }

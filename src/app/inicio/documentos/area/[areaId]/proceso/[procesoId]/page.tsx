@@ -59,7 +59,7 @@ export default function ProcesoIdPage() {
   return (
     <div className="flex flex-col gap-8">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold font-headline">{proceso.nombre}</h1>
+        <h1 className="text-3xl font-bold tracking-tight font-headline">{proceso.nombre}</h1>
         <div className="flex items-center gap-2">
             {userRole === 'superadmin' && (
                 <AddEntityForm 
@@ -90,7 +90,7 @@ export default function ProcesoIdPage() {
       <CaracterizacionPanel idEntidad={proceso.id} tipo="proceso" />
 
       <div className="flex flex-col gap-4">
-        <h2 className="text-2xl font-bold font-headline">Sub-procesos</h2>
+        <h2 className="text-2xl font-bold tracking-tight font-headline">Sub-procesos</h2>
         <ProcesoCards areaId={areaId} procesoId={procesoId} />
       </div>
 

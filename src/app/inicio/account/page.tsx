@@ -36,11 +36,11 @@ export default function AccountPage() {
     return (
         <div className="flex flex-col gap-8">
             <div>
-                <h1 className="text-3xl font-bold font-headline">Cuenta</h1>
+                <h1 className="text-3xl font-bold tracking-tight font-headline">Cuenta</h1>
                 <p className="text-muted-foreground">Administre la configuración de su cuenta.</p>
             </div>
 
-            <Card className="max-w-2xl mx-auto w-full">
+            <Card className="max-w-2xl mx-auto w-full shadow-md">
                 <CardHeader className="text-center">
                     <div className="flex justify-center">
                         <Avatar className="h-24 w-24 mb-4">
