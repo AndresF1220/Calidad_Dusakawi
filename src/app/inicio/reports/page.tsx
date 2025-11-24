@@ -12,7 +12,7 @@ import { recentReportsData, overviewChartData } from '@/lib/data';
 import { Calendar as CalendarIcon, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts"
 
 export default function ReportsPage() {
     const [dateRange, setDateRange] = useState({ from: new Date(2023, 0, 1), to: new Date() });
