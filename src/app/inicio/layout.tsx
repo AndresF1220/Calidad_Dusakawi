@@ -52,6 +52,8 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
     const { settings, isLoading: isSettingsLoading } = useAppSettings();
 
     useEffect(() => {
+        // Set a default title immediately, then update when settings load.
+        document.title = 'Atlas SGI';
         if (!isSettingsLoading && settings.appName && settings.companyName) {
             document.title = `${settings.appName} | ${settings.companyName}`;
         }
@@ -78,14 +80,18 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
         return <LoadingScreen />;
     }
 
+    // If there is no user, it means we are logged out or session expired.
+    // The router.replace should handle redirection, but as a fallback, we show a loader.
     if (!user) {
         return <LoadingScreen />;
     }
 
+    // If there IS a user, but they are inactive, show the inactive screen.
     if (user && !isActive) {
         return <InactiveUserScreen />;
     }
     
+    // Only if the user is present and active, render the main layout.
     return (
         <AppSettingsProvider>
             <InnerLayout>{children}</InnerLayout>
