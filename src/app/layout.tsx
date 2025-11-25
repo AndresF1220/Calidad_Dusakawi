@@ -9,11 +9,8 @@ export const metadata: Metadata = {
   title: 'Atlas SGI',
   description: 'Sistema de Gestión Integrado',
   icons: {
-    icon: [
-      { url: '/Imagenes/favicon.png', type: 'image/png', sizes: '48x48' },
-      { url: '/Imagenes/favicon.png', type: 'image/png', sizes: '32x32' },
-      { url: '/favicon.ico', rel: 'icon', type: 'image/x-icon', sizes: 'any' }
-    ],
+    icon: '/favicon.ico',
+    apple: '/Imagenes/favicon.png',
   },
 };
 
@@ -31,6 +28,8 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=PT+Sans:wght@400;700&display=swap"
           rel="stylesheet"
         />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/Imagenes/favicon.png" type="image/png" />
       </head>
       <body
         className={cn(
