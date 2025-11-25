@@ -123,12 +123,12 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm mx-auto">
         <div className="flex justify-center mb-8">
-           <div className="relative h-48 w-48 rounded-full overflow-hidden border shadow-md bg-white flex items-center justify-center">
+           <div className="relative h-56 w-56 rounded-full overflow-hidden border shadow-md bg-white flex items-center justify-center">
             <Image
                 src="/Imagenes/Logo Atlas.png"
                 alt="Logo Atlas SGI"
-                width={192}
-                height={192}
+                width={224}
+                height={224}
                 className="object-contain"
                 priority
             />
