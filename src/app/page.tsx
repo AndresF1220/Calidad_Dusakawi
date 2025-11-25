@@ -124,10 +124,10 @@ export default function LoginPage() {
       <div className="w-full max-w-sm mx-auto">
         <div className="flex justify-center mb-8">
            <Image 
-              src="/Imagenes/DSK.png" 
-              alt="Logo DSK" 
-              width={300} 
-              height={150}
+              src="/Imagenes/Logo Atlas.png" 
+              alt="Logo Atlas SGI" 
+              width={180} 
+              height={100}
               priority
               style={{ width: "auto", height: "auto" }}
             />
