@@ -72,6 +72,7 @@ body {
     --chart-4: 25 80% 65%;
     --chart-5: 340 75% 65%;
 
+    /* Dark mode sidebar theme */
     --sidebar-background: 220 15% 12%; /* Darker pastel blue */
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 210 40% 98%;
