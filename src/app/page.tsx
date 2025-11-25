@@ -123,14 +123,16 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm mx-auto">
         <div className="flex justify-center mb-8">
-           <Image 
-              src="/Imagenes/Logo Atlas.png" 
-              alt="Logo Atlas SGI" 
-              width={180} 
-              height={100}
-              priority
-              style={{ width: "auto", height: "auto" }}
+           <div className="relative h-40 w-40 rounded-full overflow-hidden border shadow-md bg-white flex items-center justify-center">
+            <Image
+                src="/Imagenes/Logo Atlas.png"
+                alt="Logo Atlas SGI"
+                width={160}
+                height={160}
+                className="object-contain"
+                priority
             />
+           </div>
         </div>
         <Card className="w-full shadow-lg">
           <CardHeader className="text-center">
@@ -169,3 +171,4 @@ export default function LoginPage() {
     </div>
   );
 }
+
