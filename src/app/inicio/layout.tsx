@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { getAuth, signOut } from 'firebase/auth';
 import { useFirebaseApp } from '@/firebase';
 import { Loader2, UserX, LogOut } from 'lucide-react';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppSettingsProvider } from '@/hooks/use-app-settings';
 
