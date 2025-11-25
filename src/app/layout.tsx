@@ -9,7 +9,11 @@ export const metadata: Metadata = {
   title: 'Atlas SGI',
   description: 'Sistema de Gestión Integrado',
   icons: {
-    icon: '/Imagenes/favicon.png',
+    icon: [
+      { url: '/Imagenes/favicon.png', type: 'image/png', sizes: '48x48' },
+      { url: '/Imagenes/favicon.png', type: 'image/png', sizes: '32x32' },
+      { url: '/favicon.ico', rel: 'icon', type: 'image/x-icon', sizes: 'any' }
+    ],
   },
 };
 
