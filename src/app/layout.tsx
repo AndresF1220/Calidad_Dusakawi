@@ -8,6 +8,9 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 export const metadata: Metadata = {
   title: 'Atlas SGI',
   description: 'Sistema de Gestión Integrado',
+  icons: {
+    icon: '/Imagenes/favicon.png',
+  },
 };
 
 export default function RootLayout({
