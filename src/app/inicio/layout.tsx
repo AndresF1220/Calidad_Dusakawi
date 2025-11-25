@@ -11,8 +11,7 @@ import { useFirebaseApp } from '@/firebase';
 import { Loader2, UserX, LogOut } from 'lucide-react';
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { AppSettingsProvider, useAppSettings } from '@/hooks/use-app-settings';
-import { useEffect } from 'react';
+import { AppSettingsProvider } from '@/hooks/use-app-settings';
 
 function InactiveUserScreen() {
     const { setIsLoggingOut } = useAuth();
@@ -49,17 +48,6 @@ function LoadingScreen() {
 }
 
 function InnerLayout({ children }: { children: React.ReactNode }) {
-    const { settings, isLoading: isSettingsLoading } = useAppSettings();
-
-    useEffect(() => {
-        // Set a default title immediately, then update when settings load.
-        document.title = 'Atlas SGI';
-        if (!isSettingsLoading && settings.appName && settings.companyName) {
-            document.title = `${settings.appName} | ${settings.companyName}`;
-        }
-    }, [settings, isSettingsLoading]);
-    
-
     return (
         <SidebarProvider>
             <AppSidebar />
