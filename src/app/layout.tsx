@@ -9,9 +9,9 @@ export const metadata: Metadata = {
   title: 'Atlas SGI',
   description: 'Sistema de Gestión Integrado',
   icons: {
-    icon: [{ url: "/Imagenes/favicon.png", sizes: "48x48", type: "image/png" }],
-    shortcut: ["/Imagenes/favicon.png"],
-    apple: ["/Imagenes/favicon.png"],
+    icon: [{ url: "/Imagenes/favicon-v2.png", sizes: "48x48", type: "image/png" }],
+    shortcut: ["/Imagenes/favicon-v2.png"],
+    apple: ["/Imagenes/favicon-v2.png"],
   },
 };
 
