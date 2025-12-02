@@ -138,17 +138,14 @@ export default function LoginPage() {
                     id="cedula"
                     name="cedula"
                     type="text"
-                    className="peer h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-transparent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pr-10 pt-4 [box-shadow:0_0_0_1000px_hsl(var(--background))_inset!important]"
+                    className="peer h-10 w-full rounded-md border border-input bg-background px-3 pt-5 pb-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pr-10"
                     placeholder=" "
                     required
                     disabled={isPending}
                   />
                   <Label
                     htmlFor="cedula"
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground transition-all duration-300 pointer-events-none 
-                               peer-focus:-top-4 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:text-primary 
-                               peer-not-placeholder-shown:-top-4 peer-not-placeholder-shown:translate-y-0 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-primary 
-                               peer-valid:-top-4 peer-valid:translate-y-0 peer-valid:text-xs peer-valid:text-primary"
+                    className="pointer-events-none absolute left-3 bg-background px-1 text-xs text-muted-foreground transition-all duration-300 top-1/2 -translate-y-1/2 peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:-top-3 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:text-primary peer-not-placeholder-shown:-top-3 peer-not-placeholder-shown:translate-y-0 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-primary peer-valid:-top-3 peer-valid:translate-y-0 peer-valid:text-xs peer-valid:text-primary"
                   >
                     Número de identificación
                   </Label>
@@ -159,17 +156,14 @@ export default function LoginPage() {
                     id="password"
                     name="password"
                     type={showPassword ? 'text' : 'password'}
-                    className="peer h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-transparent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pr-10 pt-4 [box-shadow:0_0_0_1000px_hsl(var(--background))_inset!important]"
+                    className="peer h-10 w-full rounded-md border border-input bg-background px-3 pt-5 pb-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pr-10"
                     placeholder=" "
                     required
                     disabled={isPending}
                   />
                   <Label
                     htmlFor="password"
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground transition-all duration-300 pointer-events-none
-                               peer-focus:-top-4 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:text-primary 
-                               peer-not-placeholder-shown:-top-4 peer-not-placeholder-shown:translate-y-0 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-primary 
-                               peer-valid:-top-4 peer-valid:translate-y-0 peer-valid:text-xs peer-valid:text-primary"
+                    className="pointer-events-none absolute left-3 bg-background px-1 text-xs text-muted-foreground transition-all duration-300 top-1/2 -translate-y-1/2 peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:-top-3 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:text-primary peer-not-placeholder-shown:-top-3 peer-not-placeholder-shown:translate-y-0 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-primary peer-valid:-top-3 peer-valid:translate-y-0 peer-valid:text-xs peer-valid:text-primary"
                   >
                     Contraseña
                   </Label>
