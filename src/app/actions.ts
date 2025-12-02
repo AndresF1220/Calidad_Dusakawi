@@ -481,6 +481,8 @@ const userFormSchema = z.object({
   role: z.enum(['superadmin', 'admin', 'viewer'], { required_error: 'Debe seleccionar un rol.'}),
   status: z.enum(['active', 'inactive']),
   tempPassword: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres.'),
+  areaId: z.string().min(1, 'Debe seleccionar un área.'),
+  areaNombre: z.string().min(1, 'El nombre del área es requerido.')
 });
 
 const createUserSchema = userFormSchema;
@@ -499,6 +501,8 @@ export async function createUserAction(
       role: formData.get('role'),
       status: formData.get('status'),
       tempPassword: formData.get('tempPassword'),
+      areaId: formData.get('areaId'),
+      areaNombre: formData.get('areaNombre'),
     });
 
     if (!validatedFields.success) {
@@ -510,7 +514,7 @@ export async function createUserAction(
       };
     }
 
-    const { fullName, email, role, status, cedula, tempPassword } = validatedFields.data;
+    const { fullName, email, role, status, cedula, tempPassword, areaId, areaNombre } = validatedFields.data;
     
     const auth = getAuth(adminApp);
     
@@ -528,6 +532,8 @@ export async function createUserAction(
       role,
       status,
       tempPassword,
+      areaId,
+      areaNombre,
       createdAt: new Date(),
     });
 
@@ -565,6 +571,8 @@ export async function updateUserAction(
       role: formData.get('role'),
       status: formData.get('status'),
       tempPassword: formData.get('tempPassword'),
+      areaId: formData.get('areaId'),
+      areaNombre: formData.get('areaNombre'),
     };
     
     const validatedFields = updateUserSchema.safeParse(payload);
@@ -740,3 +748,5 @@ export async function loginAction(
     };
   }
 }
+
+    

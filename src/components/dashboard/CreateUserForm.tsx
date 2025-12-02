@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { useAreas } from '@/hooks/use-areas-data';
 
 interface CreateUserFormProps {
   isOpen: boolean;
@@ -66,12 +67,16 @@ export function CreateUserForm({
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction] = useActionState(createUserAction, initialState);
   const [isActive, setIsActive] = useState(true);
+  const [selectedAreaName, setSelectedAreaName] = useState('');
+
+  const { areas, isLoading: isLoadingAreas } = useAreas();
 
   useEffect(() => {
     if (!isOpen) {
       // Reset form and state when dialog is closed
       formRef.current?.reset();
       setIsActive(true);
+      setSelectedAreaName('');
       // Directly manipulating state is not ideal, but `useActionState` lacks a reset function.
       // A better approach would be to remount the component by changing its key.
       initialState.errors = {};
@@ -99,6 +104,11 @@ export function CreateUserForm({
   const getError = (fieldName: keyof typeof state.errors) => {
     return state.errors?.[fieldName]?.[0];
   };
+
+  const handleAreaChange = (areaId: string) => {
+    const area = areas?.find(a => a.id === areaId);
+    setSelectedAreaName(area?.nombre || '');
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -132,6 +142,21 @@ export function CreateUserForm({
             <Label htmlFor="tempPassword">Contraseña Temporal</Label>
             <Input id="tempPassword" name="tempPassword" placeholder="Mínimo 6 caracteres" />
             {getError('tempPassword') && <p className="text-xs text-destructive">{getError('tempPassword')}</p>}
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="areaId">Área</Label>
+            <Select name="areaId" onValueChange={handleAreaChange}>
+              <SelectTrigger id="areaId" disabled={isLoadingAreas}>
+                <SelectValue placeholder={isLoadingAreas ? "Cargando áreas..." : "Seleccione un área"} />
+              </SelectTrigger>
+              <SelectContent>
+                {areas?.map(area => (
+                    <SelectItem key={area.id} value={area.id}>{area.nombre}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {getError('areaId') && <p className="text-xs text-destructive">{getError('areaId')}</p>}
+            <input type="hidden" name="areaNombre" value={selectedAreaName} />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="role">Rol</Label>
@@ -174,3 +199,5 @@ export function CreateUserForm({
     </Dialog>
   );
 }
+
+    

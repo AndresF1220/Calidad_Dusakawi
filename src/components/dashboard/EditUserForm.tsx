@@ -28,6 +28,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import type { User } from '@/app/inicio/administracion/page';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { useAreas } from '@/hooks/use-areas-data';
 
 interface EditUserFormProps {
   user: User;
@@ -75,6 +76,8 @@ export function EditUserForm({
   const [isActive, setIsActive] = useState(user.status === 'active');
   const isCurrentUser = user.id === currentUserId;
 
+  const { areas, isLoading: isLoadingAreas } = useAreas();
+  const [selectedAreaName, setSelectedAreaName] = useState(user.areaNombre || '');
 
   useEffect(() => {
     if (!state) return;
@@ -97,18 +100,25 @@ export function EditUserForm({
   useEffect(() => {
     if (isOpen) {
         setIsActive(user.status === 'active');
+        setSelectedAreaName(user.areaNombre || '');
     }
   }, [isOpen, user]);
 
   const getError = (fieldName: string) => state?.errors?.[fieldName]?.[0];
   
+  const handleAreaChange = (areaId: string) => {
+    const area = areas?.find(a => a.id === areaId);
+    setSelectedAreaName(area?.nombre || '');
+  }
+
   // Helper to safely provide default values to the form
   const safeUser = {
       fullName: user.fullName || '',
       cedula: user.cedula || '',
       email: user.email || '',
       tempPassword: user.tempPassword || '',
-      role: user.role || 'viewer'
+      role: user.role || 'viewer',
+      areaId: user.areaId || ''
   };
 
   return (
@@ -145,6 +155,21 @@ export function EditUserForm({
             <Label htmlFor="tempPassword">Contraseña Temporal</Label>
             <Input id="tempPassword" name="tempPassword" defaultValue={safeUser.tempPassword} />
             {getError('tempPassword') && <p className="text-xs text-destructive">{getError('tempPassword')}</p>}
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="areaId">Área</Label>
+            <Select name="areaId" defaultValue={safeUser.areaId} onValueChange={handleAreaChange}>
+              <SelectTrigger id="areaId" disabled={isLoadingAreas}>
+                <SelectValue placeholder={isLoadingAreas ? "Cargando áreas..." : "Seleccione un área"} />
+              </SelectTrigger>
+              <SelectContent>
+                {areas?.map(area => (
+                    <SelectItem key={area.id} value={area.id}>{area.nombre}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {getError('areaId') && <p className="text-xs text-destructive">{getError('areaId')}</p>}
+            <input type="hidden" name="areaNombre" value={selectedAreaName} />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="role">Rol</Label>
@@ -215,3 +240,5 @@ export function EditUserForm({
     </Dialog>
   );
 }
+
+    

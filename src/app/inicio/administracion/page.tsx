@@ -24,6 +24,8 @@ export type User = {
     role: 'superadmin' | 'admin' | 'viewer';
     status: 'active' | 'inactive';
     tempPassword?: string;
+    areaId: string;
+    areaNombre: string;
 };
 
 const roleTranslations: Record<User['role'], string> = {
@@ -70,6 +72,7 @@ function UserManagement() {
                                 <TableHead>Nombre</TableHead>
                                 <TableHead>Cédula</TableHead>
                                 <TableHead>Correo Electrónico</TableHead>
+                                <TableHead>Área</TableHead>
                                 <TableHead>Contraseña Temporal</TableHead>
                                 <TableHead>Rol</TableHead>
                                 <TableHead>Estado</TableHead>
@@ -79,7 +82,7 @@ function UserManagement() {
                         <TableBody>
                             {isLoading ? (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="h-24 text-center">
+                                    <TableCell colSpan={8} className="h-24 text-center">
                                         <div className="flex justify-center items-center gap-2 text-muted-foreground">
                                             <Loader2 className="h-5 w-5 animate-spin" />
                                             Cargando usuarios...
@@ -88,7 +91,7 @@ function UserManagement() {
                                 </TableRow>
                             ) : error ? (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="h-24 text-center text-destructive">
+                                    <TableCell colSpan={8} className="h-24 text-center text-destructive">
                                         <div className="flex flex-col items-center gap-2">
                                             <AlertTriangle className="h-6 w-6" />
                                             <span>Error al cargar usuarios: {error.message}</span>
@@ -101,6 +104,7 @@ function UserManagement() {
                                         <TableCell className="font-medium">{user.fullName || 'N/A'}</TableCell>
                                         <TableCell>{user.cedula || 'N/A'}</TableCell>
                                         <TableCell>{user.email}</TableCell>
+                                        <TableCell>{user.areaNombre || 'N/A'}</TableCell>
                                         <TableCell className="font-mono text-xs">{user.tempPassword || 'N/A'}</TableCell>
                                         <TableCell>
                                             <Badge variant={user.role === 'superadmin' ? 'default' : 'secondary'}>{translateRole(user.role)}</Badge>
@@ -120,7 +124,7 @@ function UserManagement() {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="text-center text-muted-foreground">
+                                    <TableCell colSpan={8} className="text-center text-muted-foreground">
                                         No se encontraron usuarios. Comience creando uno.
                                     </TableCell>
                                 </TableRow>
@@ -190,3 +194,5 @@ export default function AdministracionPage() {
 
     return <LoadingPermissions />;
 }
+
+    
