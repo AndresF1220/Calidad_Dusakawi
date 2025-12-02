@@ -102,13 +102,12 @@ body {
 }
 
 .floating-label {
-  /* Default state: inside the input */
-  @apply absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground transition-all duration-200;
+  @apply absolute left-3 top-1/2 -translate-y-1/2 origin-[0] transform-gpu pointer-events-none text-base text-muted-foreground transition-all duration-200;
 }
 
 /* Active state: when input has focus OR has content */
 .floating-label-input:focus ~ .floating-label,
 .floating-label-input:not(:placeholder-shown) ~ .floating-label {
-    @apply -top-2.5 left-2 text-xs text-primary bg-card px-1;
-    transform: translateY(0);
+    @apply -translate-y-full scale-75 -top-0.5 text-primary bg-card px-1;
+    transform: translateY(-1.6rem) scale(0.75);
 }
