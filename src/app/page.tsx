@@ -150,7 +150,6 @@ export default function LoginPage() {
                     type="text"
                     placeholder=" "
                     required
-                    disabled={isPending}
                     autoComplete="off"
                     onFocus={() => setIsCedulaFocused(true)}
                     onBlur={() => setIsCedulaFocused(false)}
@@ -178,7 +177,6 @@ export default function LoginPage() {
                     type={showPassword ? 'text' : 'password'}
                     placeholder=" "
                     required
-                    disabled={isPending}
                     autoComplete="off"
                     onFocus={() => setIsPasswordFocused(true)}
                     onBlur={() => setIsPasswordFocused(false)}
@@ -201,7 +199,6 @@ export default function LoginPage() {
                     size="icon"
                     className="absolute top-1/2 right-2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
                     onClick={() => setShowPassword((prev) => !prev)}
-                    disabled={isPending}
                     aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   >
                     {showPassword ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
