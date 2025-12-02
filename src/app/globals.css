@@ -92,22 +92,3 @@ body {
     @apply bg-background text-foreground;
   }
 }
-
-/* Floating Label Styles */
-.floating-label {
-  @apply absolute left-3 top-1/2 -translate-y-1/2 origin-[0] pointer-events-none text-muted-foreground transition-all duration-200;
-  font-size: theme('fontSize.sm');
-}
-
-.floating-label-input:focus ~ .floating-label,
-.floating-label-input:not(:placeholder-shown) ~ .floating-label {
-  @apply bg-card px-1;
-  top: 0;
-  transform: translateY(-50%) scale(0.9);
-  font-size: theme('fontSize.xs');
-  color: theme('colors.primary.DEFAULT');
-}
-
-.floating-label-input::placeholder {
-  color: transparent;
-}

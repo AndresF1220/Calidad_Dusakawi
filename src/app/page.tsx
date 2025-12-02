@@ -1,3 +1,4 @@
+
 'use client';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -40,14 +41,10 @@ export default function LoginPage() {
         
         if (state.status === "error") {
             if (state.data?.email && password) {
-                 // The server-side check failed, but we have an email.
-                 // This could mean the user has updated their password in Auth but not in Firestore.
-                 // Let's try to sign in with the provided password directly.
                  try {
                     await signInWithEmailAndPassword(auth, state.data.email, password);
                     router.push('/inicio');
                  } catch (directAuthError: any) {
-                     // If this also fails, then the credentials are truly wrong.
                      toast({
                          variant: 'destructive',
                          title: 'Error de acceso',
@@ -55,7 +52,6 @@ export default function LoginPage() {
                      });
                  }
             } else {
-                // If we don't even have an email from the server action, the user likely doesn't exist.
                 toast({
                     variant: 'destructive',
                     title: 'Error de acceso',
@@ -68,21 +64,15 @@ export default function LoginPage() {
         const { email, tempPassword } = state.data;
         
         try {
-          console.log("Attempting Firebase Auth sign-in...");
           await signInWithEmailAndPassword(auth, email, tempPassword);
-          console.log("Firebase Auth sign-in successful.");
           router.push('/inicio');
         } catch (error: any) {
-          console.error("Firebase Auth error:", error.code, error.message);
-          
           if (error.code === 'auth/user-not-found') {
-            console.log("User not found in Auth, attempting to create...");
             try {
               if (!firestore) {
                   throw new Error("Firestore not available for user creation.");
               }
               const userCredential = await createUserWithEmailAndPassword(auth, email, tempPassword);
-              console.log("User created in Auth successfully.");
               
               const userDocRef = doc(firestore, 'users', userCredential.user.uid);
               await setDoc(userDocRef, { 
@@ -93,7 +83,6 @@ export default function LoginPage() {
               
               router.push('/inicio');
             } catch (creationError: any) {
-               console.error("Error creating user in Auth:", creationError);
                toast({
                   variant: 'destructive',
                   title: 'Error de Registro Automático',
@@ -152,10 +141,15 @@ export default function LoginPage() {
                     type="text"
                     required
                     disabled={isPending}
-                    className="floating-label-input pr-10 pt-4"
+                    className="peer h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-transparent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pr-10 pt-4"
                     placeholder=" "
                   />
-                  <Label htmlFor="cedula" className="floating-label">Número de identificación</Label>
+                  <Label
+                    htmlFor="cedula"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground transition-all duration-200 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-sm peer-focus:-top-2.5 peer-focus:bg-card peer-focus:px-1 peer-focus:text-xs peer-focus:text-primary peer-not-placeholder-shown:-top-2.5 peer-not-placeholder-shown:bg-card peer-not-placeholder-shown:px-1 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-primary pointer-events-none"
+                  >
+                    Número de identificación
+                  </Label>
                   <User className="absolute top-1/2 right-3 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
                 </div>
                 <div className="relative">
@@ -165,10 +159,15 @@ export default function LoginPage() {
                     type={showPassword ? 'text' : 'password'}
                     required
                     disabled={isPending}
-                    className="floating-label-input pr-10 pt-4"
+                    className="peer h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-transparent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pr-10 pt-4"
                     placeholder=" "
                   />
-                  <Label htmlFor="password" className="floating-label">Contraseña</Label>
+                  <Label
+                    htmlFor="password"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground transition-all duration-200 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-sm peer-focus:-top-2.5 peer-focus:bg-card peer-focus:px-1 peer-focus:text-xs peer-focus:text-primary peer-not-placeholder-shown:-top-2.5 peer-not-placeholder-shown:bg-card peer-not-placeholder-shown:px-1 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-primary pointer-events-none"
+                  >
+                    Contraseña
+                  </Label>
                   <Button
                     type="button"
                     variant="ghost"
