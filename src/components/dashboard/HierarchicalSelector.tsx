@@ -43,8 +43,8 @@ export function HierarchicalSelector({
     if (isLoading) return 'Cargando...';
     if (!selectedItem || !selectedItem.id) return 'Seleccione una asignación...';
     
-    const item = findItemById(selectedItem.id);
-    return item ? item.name : 'Seleccione una asignación...';
+    // The name is already stored in the selectedItem state from the form
+    return selectedItem.name || 'Seleccione una asignación...';
   };
 
   return (
@@ -70,7 +70,7 @@ export function HierarchicalSelector({
           <CommandList>
             <CommandEmpty>No se encontraron resultados.</CommandEmpty>
             <CommandGroup>
-              {hierarchy.map((item) => (
+              {hierarchy.map((item, index) => (
                 <CommandItem
                   key={`${item.type}-${item.id}`}
                   value={item.name}
@@ -78,7 +78,11 @@ export function HierarchicalSelector({
                     onSelectItem(item);
                     setOpen(false);
                   }}
-                  style={{ paddingLeft: `${1 + item.level * 1.5}rem` }}
+                  style={{ paddingLeft: `${0.5 + item.level * 1.2}rem` }}
+                  className={cn(
+                    'flex items-center',
+                    item.level === 0 && index > 0 && 'border-t mt-1 pt-1'
+                  )}
                 >
                   <Check
                     className={cn(
@@ -86,7 +90,7 @@ export function HierarchicalSelector({
                       selectedItem?.id === item.id && selectedItem?.type === item.type ? 'opacity-100' : 'opacity-0'
                     )}
                   />
-                  {item.name}
+                  <span>{item.name}</span>
                 </CommandItem>
               ))}
             </CommandGroup>
