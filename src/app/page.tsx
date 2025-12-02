@@ -146,9 +146,9 @@ export default function LoginPage() {
                   <Label
                     htmlFor="cedula"
                     className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground transition-all duration-300 pointer-events-none 
-                               peer-focus:-top-3 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:text-primary
-                               peer-not-placeholder-shown:-top-3 peer-not-placeholder-shown:translate-y-0 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-primary
-                               peer-valid:-top-3 peer-valid:translate-y-0 peer-valid:text-xs peer-valid:text-primary"
+                               peer-focus:-top-4 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:text-primary 
+                               peer-not-placeholder-shown:-top-4 peer-not-placeholder-shown:translate-y-0 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-primary 
+                               peer-valid:-top-4 peer-valid:translate-y-0 peer-valid:text-xs peer-valid:text-primary"
                   >
                     Número de identificación
                   </Label>
@@ -167,9 +167,9 @@ export default function LoginPage() {
                   <Label
                     htmlFor="password"
                     className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground transition-all duration-300 pointer-events-none
-                               peer-focus:-top-3 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:text-primary
-                               peer-not-placeholder-shown:-top-3 peer-not-placeholder-shown:translate-y-0 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-primary
-                               peer-valid:-top-3 peer-valid:translate-y-0 peer-valid:text-xs peer-valid:text-primary"
+                               peer-focus:-top-4 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:text-primary 
+                               peer-not-placeholder-shown:-top-4 peer-not-placeholder-shown:translate-y-0 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-primary 
+                               peer-valid:-top-4 peer-valid:translate-y-0 peer-valid:text-xs peer-valid:text-primary"
                   >
                     Contraseña
                   </Label>
