@@ -1,27 +1,27 @@
+
+'use client';
 import type { Metadata } from 'next';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 import { cn } from '@/lib/utils';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
-
-export const metadata: Metadata = {
-  title: 'Atlas SGI',
-  description: 'Sistema de Gestión Integrado',
-  icons: {
-    icon: '/Imagenes/favicon.png',
-    shortcut: '/Imagenes/favicon.png',
-    apple: '/Imagenes/favicon.png',
-  },
-};
+import { useState, useEffect } from 'react';
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   return (
     <html lang="en" suppressHydrationWarning={true} dir="ltr">
       <head>
+        <link rel="icon" href="/Imagenes/favicon.png" sizes="any" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
@@ -37,7 +37,7 @@ export default function RootLayout({
         <FirebaseClientProvider>
             {children}
         </FirebaseClientProvider>
-        <Toaster />
+        {isMounted && <Toaster />}
       </body>
     </html>
   );
