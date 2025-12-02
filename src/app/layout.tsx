@@ -1,4 +1,3 @@
-
 import type { Metadata } from 'next';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
@@ -23,7 +22,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning={true} dir="ltr">
       <head>
-        <link rel="icon" href="/Imagenes/favicon.png" sizes="any" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
