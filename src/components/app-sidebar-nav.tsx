@@ -60,11 +60,13 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
   return (
     <>
       <SidebarHeader className="border-b">
-        <Link href="/inicio" className="flex h-16 items-center gap-2 px-4">
-          <Image src="/Imagenes/favicon.png" alt="Atlas SGI Logo" width={28} height={28} className="h-7 w-7" />
-          <span className="text-lg font-headline font-semibold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
-            {isSettingsLoading ? <Skeleton className="h-5 w-24 bg-muted-foreground/20" /> : settings.appName}
-          </span>
+        <Link href="/inicio" className="flex h-16 items-center px-4">
+          <div className="flex items-center gap-2">
+            <Image src="/Imagenes/favicon.png" alt="Atlas SGI Logo" width={28} height={28} className="h-7 w-7" />
+            <span className="text-lg font-headline font-semibold leading-none text-sidebar-foreground group-data-[collapsible=icon]:hidden">
+              {isSettingsLoading ? <Skeleton className="h-5 w-24 bg-muted-foreground/20" /> : settings.appName}
+            </span>
+          </div>
         </Link>
       </SidebarHeader>
       
