@@ -108,5 +108,6 @@ body {
 /* Active state: when input has focus OR has content */
 .floating-label-input:focus ~ .floating-label,
 .floating-label-input:not(:placeholder-shown) ~ .floating-label {
-    @apply -translate-y-[1.6rem] scale-75 text-xs text-primary bg-card px-1;
+    @apply -top-0 scale-75 text-xs text-primary bg-card px-1;
+    transform: translateY(-50%);
 }
