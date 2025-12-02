@@ -27,12 +27,8 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
-  const cedulaRef = useRef<HTMLInputElement>(null);
-  const passwordRef = useRef<HTMLInputElement>(null);
-
+  
   const [showPassword, setShowPassword] = useState(false);
-  const [isCedulaFocused, setIsCedulaFocused] = useState(false);
-  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   
   const [state, formAction, isPending] = useActionState(loginAction, initialState);
 
@@ -113,9 +109,6 @@ export default function LoginPage() {
 
     handleLoginFlow();
   }, [state, router, toast, firestore]);
-  
-  const hasCedulaValue = cedulaRef.current?.value.length > 0;
-  const hasPasswordValue = passwordRef.current?.value.length > 0;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -144,25 +137,17 @@ export default function LoginPage() {
               <div className="grid gap-8">
                 <div className="relative">
                   <Input
-                    ref={cedulaRef}
                     id="cedula"
                     name="cedula"
                     type="text"
                     placeholder=" "
                     required
                     autoComplete="off"
-                    onFocus={() => setIsCedulaFocused(true)}
-                    onBlur={() => setIsCedulaFocused(false)}
-                    className="peer h-11 w-full rounded-md border border-input bg-white px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pr-10"
+                    className="peer h-11 w-full rounded-md border border-input bg-white px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 pr-10"
                   />
                   <Label
                     htmlFor="cedula"
-                    className={cn(
-                        "pointer-events-none absolute transition-all duration-200",
-                        isCedulaFocused || hasCedulaValue
-                        ? "text-xs left-2 -top-2.5 bg-white px-1 text-primary"
-                        : "text-sm left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                    )}
+                    className="pointer-events-none absolute text-xs text-muted-foreground transition-all duration-200 left-3 top-1/2 -translate-y-1/2 peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:-top-4 peer-focus:translate-y-0 peer-not-placeholder-shown:-top-4 peer-not-placeholder-shown:translate-y-0 peer-valid:-top-4 peer-valid:translate-y-0"
                   >
                     Número de identificación
                   </Label>
@@ -171,25 +156,17 @@ export default function LoginPage() {
 
                 <div className="relative">
                    <Input
-                    ref={passwordRef}
                     id="password"
                     name="password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder=" "
                     required
                     autoComplete="off"
-                    onFocus={() => setIsPasswordFocused(true)}
-                    onBlur={() => setIsPasswordFocused(false)}
-                    className="peer h-11 w-full rounded-md border border-input bg-white px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pr-10"
+                    className="peer h-11 w-full rounded-md border border-input bg-white px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 pr-10"
                   />
                   <Label
                     htmlFor="password"
-                    className={cn(
-                        "pointer-events-none absolute transition-all duration-200",
-                        isPasswordFocused || hasPasswordValue
-                        ? "text-xs left-2 -top-2.5 bg-white px-1 text-primary"
-                        : "text-sm left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                    )}
+                    className="pointer-events-none absolute text-xs text-muted-foreground transition-all duration-200 left-3 top-1/2 -translate-y-1/2 peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:-top-4 peer-focus:translate-y-0 peer-not-placeholder-shown:-top-4 peer-not-placeholder-shown:translate-y-0 peer-valid:-top-4 peer-valid:translate-y-0"
                   >
                     Contraseña
                   </Label>
