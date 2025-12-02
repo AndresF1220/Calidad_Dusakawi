@@ -146,7 +146,7 @@ export default function LoginPage() {
                   />
                   <Label
                     htmlFor="cedula"
-                    className="pointer-events-none absolute text-xs text-muted-foreground transition-all duration-200 left-3 top-1/2 -translate-y-1/2 peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:-top-4 peer-focus:translate-y-0 peer-not-placeholder-shown:-top-4 peer-not-placeholder-shown:translate-y-0 peer-valid:-top-4 peer-valid:translate-y-0"
+                    className="pointer-events-none absolute text-xs text-muted-foreground transition-all duration-200 left-3 top-1/2 -translate-y-1/2 peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:-top-5 peer-focus:translate-y-0 peer-not-placeholder-shown:-top-5 peer-not-placeholder-shown:translate-y-0 peer-valid:-top-5 peer-valid:translate-y-0"
                   >
                     Número de identificación
                   </Label>
@@ -164,7 +164,7 @@ export default function LoginPage() {
                   />
                   <Label
                     htmlFor="password"
-                    className="pointer-events-none absolute text-xs text-muted-foreground transition-all duration-200 left-3 top-1/2 -translate-y-1/2 peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:-top-4 peer-focus:translate-y-0 peer-not-placeholder-shown:-top-4 peer-not-placeholder-shown:translate-y-0 peer-valid:-top-4 peer-valid:translate-y-0"
+                    className="pointer-events-none absolute text-xs text-muted-foreground transition-all duration-200 left-3 top-1/2 -translate-y-1/2 peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:-top-5 peer-focus:translate-y-0 peer-not-placeholder-shown:-top-5 peer-not-placeholder-shown:translate-y-0 peer-valid:-top-5 peer-valid:translate-y-0"
                   >
                     Contraseña
                   </Label>
