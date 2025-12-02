@@ -11,7 +11,7 @@ import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } f
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Eye, EyeOff, User } from 'lucide-react';
 import { useActionState } from 'react';
 import { loginAction } from './actions';
 import { cn } from '@/lib/utils';
@@ -145,7 +145,7 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent className="p-8">
             <form action={formAction} ref={formRef}>
-              <div className="grid gap-6">
+              <div className="grid gap-8">
                 <div className="relative">
                   <Input
                     id="cedula"
@@ -153,10 +153,11 @@ export default function LoginPage() {
                     type="text"
                     required
                     disabled={isPending}
-                    className="floating-label-input peer"
+                    className="floating-label-input peer pr-10"
                     placeholder=" "
                   />
                   <Label htmlFor="cedula" className="floating-label">Número de identificación</Label>
+                  <User className="absolute top-1/2 right-3 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
                 </div>
                 <div className="relative">
                   <Input

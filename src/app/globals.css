@@ -109,7 +109,6 @@ body {
 /* Active state: when input has focus OR has content */
 .floating-label-input:focus ~ .floating-label,
 .floating-label-input:not(:placeholder-shown) ~ .floating-label {
-  @apply -top-2 left-2 text-xs text-primary bg-card px-1;
-  /* Override transform to position correctly above the border */
-  transform: translateY(0);
+    @apply -top-2.5 left-2 text-xs text-primary bg-card px-1;
+    transform: translateY(0);
 }
