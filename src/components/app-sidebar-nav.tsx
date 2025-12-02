@@ -26,6 +26,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useAuth } from '@/lib/auth';
 import { Skeleton } from './ui/skeleton';
 import { useAppSettings } from '@/hooks/use-app-settings';
+import Image from 'next/image';
 
 
 interface AppSidebarNavProps {
@@ -56,12 +57,12 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
   return (
     <>
       <SidebarHeader className="border-b">
-        <div className="flex items-center gap-2.5 p-4 h-16">
-          <DusakawiLogo className="h-8 w-8 text-sidebar-primary" />
+        <Link href="/inicio" className="flex items-center gap-2.5 p-4 h-16">
+          <Image src="/Imagenes/favicon.png" alt="Atlas SGI Logo" width={28} height={28} className="h-7 w-7" />
           <span className="text-lg font-headline font-semibold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
             {isSettingsLoading ? <Skeleton className="h-5 w-24 bg-muted-foreground/20" /> : settings.appName}
           </span>
-        </div>
+        </Link>
       </SidebarHeader>
       
       <div className="flex flex-col items-center gap-2 p-4 group-data-[collapsible=icon]:py-4 group-data-[collapsible=icon]:px-2">
