@@ -145,7 +145,7 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent className="p-8">
             <form action={formAction} ref={formRef}>
-              <div className="grid gap-6">
+              <div className="grid gap-8">
                 <div className="relative">
                   <Input
                     id="cedula"
@@ -153,7 +153,7 @@ export default function LoginPage() {
                     type="text"
                     required
                     disabled={isPending}
-                    className="floating-label-input peer pr-10 pt-2"
+                    className="floating-label-input peer pr-10 pt-4"
                     placeholder=" "
                   />
                   <Label htmlFor="cedula" className="floating-label">Número de identificación</Label>
@@ -166,7 +166,7 @@ export default function LoginPage() {
                     type={showPassword ? 'text' : 'password'}
                     required
                     disabled={isPending}
-                    className="floating-label-input peer pr-10 pt-2"
+                    className="floating-label-input peer pr-10 pt-4"
                     placeholder=" "
                   />
                   <Label htmlFor="password" className="floating-label">Contraseña</Label>
