@@ -92,3 +92,26 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Floating Label Styles */
+.floating-label-container {
+  @apply relative;
+}
+
+.floating-label-input {
+  @apply pt-6;
+}
+
+.floating-label {
+  @apply absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground transition-all duration-200 ease-in-out pointer-events-none;
+}
+
+.floating-label-input:focus ~ .floating-label,
+.floating-label-input:not(:placeholder-shown) ~ .floating-label {
+  @apply top-3 left-3 text-xs -translate-y-1/2 text-primary;
+}
+
+/* Ensure placeholder is invisible but keeps the :placeholder-shown state working */
+.floating-label-input::placeholder {
+  @apply text-transparent;
+}

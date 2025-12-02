@@ -5,15 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useFirebase } from '@/firebase';
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { useActionState } from 'react';
 import { loginAction } from './actions';
+import { cn } from '@/lib/utils';
 
 const initialState = {
   status: "idle" as "idle" | "success" | "error",
@@ -26,6 +27,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [state, formAction, isPending] = useActionState(loginAction, initialState);
 
@@ -144,22 +146,42 @@ export default function LoginPage() {
           <CardContent className="p-8">
             <form action={formAction} ref={formRef}>
               <div className="grid gap-6">
-                <div className="grid gap-2">
-                  <Label htmlFor="cedula">Número de identificación</Label>
+                <div className="floating-label-container">
                   <Input
                     id="cedula"
                     name="cedula"
                     type="text"
-                    placeholder="Escriba su cédula"
+                    placeholder="Número de identificación"
                     required
                     disabled={isPending}
+                    className="floating-label-input"
                   />
+                  <Label htmlFor="cedula" className="floating-label">Número de identificación</Label>
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="password">Contraseña</Label>
-                  <Input id="password" name="password" type="password" required disabled={isPending} />
+                <div className="relative floating-label-container">
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Contraseña"
+                    required
+                    disabled={isPending}
+                    className="floating-label-input pr-10"
+                  />
+                  <Label htmlFor="password" className="floating-label">Contraseña</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-1/2 right-2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    disabled={isPending}
+                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </Button>
                 </div>
-                <Button type="submit" className="w-full" disabled={isPending}>
+                <Button type="submit" className="w-full mt-2" disabled={isPending}>
                    {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Entrar
                 </Button>
