@@ -146,10 +146,10 @@ export default function LoginPage() {
                   />
                   <Label
                     htmlFor="cedula"
-                    className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground transition-all duration-300 pointer-events-none 
-                               peer-focus:-top-3 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-card peer-focus:px-1
-                               peer-not-placeholder-shown:-top-3 peer-not-placeholder-shown:translate-y-0 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-primary peer-not-placeholder-shown:bg-card peer-not-placeholder-shown:px-1
-                               peer-valid:-top-3 peer-valid:translate-y-0 peer-valid:text-xs peer-valid:text-primary peer-valid:bg-card peer-valid:px-1"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground transition-all duration-300 pointer-events-none 
+                               peer-focus:-top-4 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-card peer-focus:px-1
+                               peer-not-placeholder-shown:-top-4 peer-not-placeholder-shown:translate-y-0 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-primary peer-not-placeholder-shown:bg-card peer-not-placeholder-shown:px-1
+                               peer-valid:-top-4 peer-valid:translate-y-0 peer-valid:text-xs peer-valid:text-primary peer-valid:bg-card peer-valid:px-1"
                   >
                     Número de identificación
                   </Label>
@@ -167,10 +167,10 @@ export default function LoginPage() {
                   />
                   <Label
                     htmlFor="password"
-                    className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground transition-all duration-300 pointer-events-none
-                               peer-focus:-top-3 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-card peer-focus:px-1
-                               peer-not-placeholder-shown:-top-3 peer-not-placeholder-shown:translate-y-0 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-primary peer-not-placeholder-shown:bg-card peer-not-placeholder-shown:px-1
-                               peer-valid:-top-3 peer-valid:translate-y-0 peer-valid:text-xs peer-valid:text-primary peer-valid:bg-card peer-valid:px-1"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground transition-all duration-300 pointer-events-none
+                               peer-focus:-top-4 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-card peer-focus:px-1
+                               peer-not-placeholder-shown:-top-4 peer-not-placeholder-shown:translate-y-0 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-primary peer-not-placeholder-shown:bg-card peer-not-placeholder-shown:px-1
+                               peer-valid:-top-4 peer-valid:translate-y-0 peer-valid:text-xs peer-valid:text-primary peer-valid:bg-card peer-valid:px-1"
                   >
                     Contraseña
                   </Label>
@@ -183,7 +183,7 @@ export default function LoginPage() {
                     disabled={isPending}
                     aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    {showPassword ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
                   </Button>
                 </div>
                 <Button type="submit" className="w-full mt-2" disabled={isPending}>
