@@ -93,23 +93,26 @@ body {
   }
 }
 
-/* Correct Floating Label Styles */
+/* Floating Label Styles */
 .floating-label-input {
-  /* Ensure placeholder is transparent so the :placeholder-shown selector works as expected */
   &::placeholder {
     color: transparent;
   }
 }
 
 .floating-label {
-  @apply absolute left-3 top-1/2 -translate-y-1/2 origin-[0] pointer-events-none text-muted-foreground transition-all duration-200 text-sm;
+  @apply absolute left-3 origin-[0] pointer-events-none text-muted-foreground transition-all duration-200;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: theme('fontSize.sm');
 }
 
 /* Active state: when input has focus OR has content */
 .floating-label-input:focus ~ .floating-label,
 .floating-label-input:not(:placeholder-shown) ~ .floating-label {
-    @apply bg-card px-1 text-primary;
-    top: 0;
+    @apply bg-card px-1;
     transform: translateY(-50%) scale(0.9);
+    top: 0;
     font-size: theme('fontSize.xs');
+    color: theme('colors.primary.DEFAULT');
 }
