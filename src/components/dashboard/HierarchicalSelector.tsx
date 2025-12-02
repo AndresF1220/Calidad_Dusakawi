@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -20,7 +20,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { useHierarchy } from '@/hooks/use-hierarchy-data';
-import type { HierarchyItem } from '@/hooks/use-hierarchy-data';
+import type { HierarchyItem, FlatHierarchyItem } from '@/hooks/use-hierarchy-data';
 
 interface HierarchicalSelectorProps {
   selectedItem: HierarchyItem | null;
@@ -33,12 +33,36 @@ export function HierarchicalSelector({
 }: HierarchicalSelectorProps) {
   const [open, setOpen] = useState(false);
   const { hierarchy, isLoading } = useHierarchy();
+  const [searchValue, setSearchValue] = useState('');
 
-  const findItemById = (id: string | null) => {
-    if (!id) return null;
-    return hierarchy.find(item => item.id === id && item.type === (selectedItem?.type || '')) || null;
-  };
-  
+  const filteredHierarchy = useMemo(() => {
+    if (!searchValue) {
+      return hierarchy;
+    }
+
+    const lowercasedQuery = searchValue.toLowerCase();
+    const matchingItems = new Set<string>(); // Stores "type-id"
+    const parentsToShow = new Set<string>(); // Stores parent "type-id"s
+
+    // First pass: find direct matches
+    hierarchy.forEach(item => {
+      if (item.name.toLowerCase().includes(lowercasedQuery)) {
+        matchingItems.add(`${item.type}-${item.id}`);
+
+        // Add its parents to the list of parents to show
+        if (item.areaId) parentsToShow.add(`area-${item.areaId}`);
+        if (item.procesoId) parentsToShow.add(`proceso-${item.procesoId}`);
+      }
+    });
+    
+    // Second pass: build the final list
+    return hierarchy.filter(item => {
+       const key = `${item.type}-${item.id}`;
+       // Show item if it's a direct match OR if it's a parent of a matching item
+       return matchingItems.has(key) || parentsToShow.has(key);
+    });
+  }, [hierarchy, searchValue]);
+
   const getDisplayValue = () => {
     if (isLoading) return 'Cargando...';
     if (!selectedItem || !selectedItem.id) return 'Seleccione una asignación...';
@@ -66,11 +90,15 @@ export function HierarchicalSelector({
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
         <Command>
-          <CommandInput placeholder="Buscar asignación..." />
+          <CommandInput 
+            placeholder="Buscar asignación..."
+            value={searchValue}
+            onValueChange={setSearchValue}
+          />
           <CommandList>
             <CommandEmpty>No se encontraron resultados.</CommandEmpty>
             <CommandGroup>
-              {hierarchy.map((item, index) => (
+              {filteredHierarchy.map((item, index) => (
                 <CommandItem
                   key={`${item.type}-${item.id}`}
                   value={item.name}
