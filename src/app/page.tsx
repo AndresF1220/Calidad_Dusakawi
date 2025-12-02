@@ -138,32 +138,32 @@ export default function LoginPage() {
                     id="cedula"
                     name="cedula"
                     type="text"
-                    className="peer h-10 w-full rounded-md border border-input bg-background px-3 pt-5 pb-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pr-10"
                     placeholder=" "
                     required
                     disabled={isPending}
+                    className="peer h-11 w-full rounded-md border border-input bg-white px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pr-10"
                   />
                   <Label
                     htmlFor="cedula"
-                    className="pointer-events-none absolute left-3 bg-background px-1 text-xs text-muted-foreground transition-all duration-300 top-1/2 -translate-y-1/2 peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:-top-3 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:text-primary peer-not-placeholder-shown:-top-3 peer-not-placeholder-shown:translate-y-0 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-primary peer-valid:-top-3 peer-valid:translate-y-0 peer-valid:text-xs peer-valid:text-primary"
+                    className="pointer-events-none absolute text-xs text-muted-foreground transition-all duration-200 left-0 -top-5 peer-placeholder-shown:left-3 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-sm peer-focus:left-0 peer-focus:-top-5 peer-focus:translate-y-0 peer-not-placeholder-shown:left-0 peer-not-placeholder-shown:-top-5 peer-not-placeholder-shown:translate-y-0"
                   >
                     Número de identificación
                   </Label>
                   <User className="absolute top-1/2 right-3 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
                 </div>
                 <div className="relative">
-                  <Input
+                   <Input
                     id="password"
                     name="password"
                     type={showPassword ? 'text' : 'password'}
-                    className="peer h-10 w-full rounded-md border border-input bg-background px-3 pt-5 pb-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pr-10"
                     placeholder=" "
                     required
                     disabled={isPending}
+                    className="peer h-11 w-full rounded-md border border-input bg-white px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pr-10"
                   />
                   <Label
                     htmlFor="password"
-                    className="pointer-events-none absolute left-3 bg-background px-1 text-xs text-muted-foreground transition-all duration-300 top-1/2 -translate-y-1/2 peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:-top-3 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:text-primary peer-not-placeholder-shown:-top-3 peer-not-placeholder-shown:translate-y-0 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-primary peer-valid:-top-3 peer-valid:translate-y-0 peer-valid:text-xs peer-valid:text-primary"
+                    className="pointer-events-none absolute text-xs text-muted-foreground transition-all duration-200 left-0 -top-5 peer-placeholder-shown:left-3 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-sm peer-focus:left-0 peer-focus:-top-5 peer-focus:translate-y-0 peer-not-placeholder-shown:left-0 peer-not-placeholder-shown:-top-5 peer-not-placeholder-shown:translate-y-0"
                   >
                     Contraseña
                   </Label>
