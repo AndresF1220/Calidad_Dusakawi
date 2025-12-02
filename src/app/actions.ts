@@ -481,8 +481,12 @@ const userFormSchema = z.object({
   role: z.enum(['superadmin', 'admin', 'viewer'], { required_error: 'Debe seleccionar un rol.'}),
   status: z.enum(['active', 'inactive']),
   tempPassword: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres.'),
-  areaId: z.string().min(1, 'Debe seleccionar un área.'),
-  areaNombre: z.string().min(1, 'El nombre del área es requerido.')
+  areaId: z.string().min(1, 'Debe seleccionar una asignación jerárquica.'),
+  areaNombre: z.string().min(1, 'El nombre del área es requerido.'),
+  procesoId: z.string().nullable().optional(),
+  procesoNombre: z.string().nullable().optional(),
+  subprocesoId: z.string().nullable().optional(),
+  subprocesoNombre: z.string().nullable().optional(),
 });
 
 const createUserSchema = userFormSchema;
@@ -503,6 +507,10 @@ export async function createUserAction(
       tempPassword: formData.get('tempPassword'),
       areaId: formData.get('areaId'),
       areaNombre: formData.get('areaNombre'),
+      procesoId: formData.get('procesoId') || null,
+      procesoNombre: formData.get('procesoNombre') || null,
+      subprocesoId: formData.get('subprocesoId') || null,
+      subprocesoNombre: formData.get('subprocesoNombre') || null,
     });
 
     if (!validatedFields.success) {
@@ -514,7 +522,7 @@ export async function createUserAction(
       };
     }
 
-    const { fullName, email, role, status, cedula, tempPassword, areaId, areaNombre } = validatedFields.data;
+    const { fullName, email, role, status, cedula, tempPassword, areaId, areaNombre, procesoId, procesoNombre, subprocesoId, subprocesoNombre } = validatedFields.data;
     
     const auth = getAuth(adminApp);
     
@@ -534,6 +542,10 @@ export async function createUserAction(
       tempPassword,
       areaId,
       areaNombre,
+      procesoId: procesoId || null,
+      procesoNombre: procesoNombre || null,
+      subprocesoId: subprocesoId || null,
+      subprocesoNombre: subprocesoNombre || null,
       createdAt: new Date(),
     });
 
@@ -573,6 +585,10 @@ export async function updateUserAction(
       tempPassword: formData.get('tempPassword'),
       areaId: formData.get('areaId'),
       areaNombre: formData.get('areaNombre'),
+      procesoId: formData.get('procesoId') || null,
+      procesoNombre: formData.get('procesoNombre') || null,
+      subprocesoId: formData.get('subprocesoId') || null,
+      subprocesoNombre: formData.get('subprocesoNombre') || null,
     };
     
     const validatedFields = updateUserSchema.safeParse(payload);

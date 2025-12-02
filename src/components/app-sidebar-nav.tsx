@@ -35,7 +35,7 @@ interface AppSidebarNavProps {
 
 export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
   const pathname = usePathname();
-  const { user, userRole, isRoleLoading } = useAuth();
+  const { user, userProfile, userRole, isRoleLoading } = useAuth();
   const { settings, isLoading: isSettingsLoading } = useAppSettings();
   
   const menuItems = [
@@ -54,10 +54,13 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
   const isInicioActive = pathname === '/inicio';
   const userInitial = user?.displayName?.charAt(0) || user?.email?.charAt(0) || 'U';
 
+  const hierarchyName = userProfile?.subprocesoNombre || userProfile?.procesoNombre || userProfile?.areaNombre || 'Sin Asignación';
+
+
   return (
     <>
       <SidebarHeader className="border-b">
-        <Link href="/inicio" className="flex items-center gap-2 px-4 h-16">
+        <Link href="/inicio" className="flex h-16 items-center gap-2 px-4">
           <Image src="/Imagenes/favicon.png" alt="Atlas SGI Logo" width={28} height={28} className="h-7 w-7" />
           <span className="text-lg font-headline font-semibold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
             {isSettingsLoading ? <Skeleton className="h-5 w-24 bg-muted-foreground/20" /> : settings.appName}
@@ -72,7 +75,7 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
         </Avatar>
         <div className="text-center group-data-[collapsible=icon]:hidden">
             <h3 className="font-semibold text-base text-sidebar-foreground truncate max-w-36">{user?.displayName || user?.email || 'Usuario'}</h3>
-            <p className="text-sm text-sidebar-foreground/70">{isSettingsLoading ? '...' : settings.companyName}</p>
+            <p className="text-sm text-sidebar-foreground/70 truncate max-w-36">{isRoleLoading ? '...' : hierarchyName}</p>
         </div>
       </div>
       <SidebarSeparator className="group-data-[collapsible=icon]:hidden" />

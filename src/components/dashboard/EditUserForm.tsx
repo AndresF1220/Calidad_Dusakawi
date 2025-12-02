@@ -12,7 +12,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,7 +27,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import type { User } from '@/app/inicio/administracion/page';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
-import { useAreas } from '@/hooks/use-areas-data';
+import { HierarchicalSelector, type HierarchyItem } from './HierarchicalSelector';
 
 interface EditUserFormProps {
   user: User;
@@ -76,8 +75,7 @@ export function EditUserForm({
   const [isActive, setIsActive] = useState(user.status === 'active');
   const isCurrentUser = user.id === currentUserId;
 
-  const { areas, isLoading: isLoadingAreas } = useAreas();
-  const [selectedAreaName, setSelectedAreaName] = useState(user.areaNombre || '');
+  const [selectedHierarchy, setSelectedHierarchy] = useState<HierarchyItem | null>(null);
 
   useEffect(() => {
     if (!state) return;
@@ -100,17 +98,22 @@ export function EditUserForm({
   useEffect(() => {
     if (isOpen) {
         setIsActive(user.status === 'active');
-        setSelectedAreaName(user.areaNombre || '');
+        setSelectedHierarchy({
+            id: user.subprocesoId || user.procesoId || user.areaId,
+            type: user.subprocesoId ? 'subproceso' : user.procesoId ? 'proceso' : 'area',
+            areaId: user.areaId,
+            areaNombre: user.areaNombre,
+            procesoId: user.procesoId,
+            procesoNombre: user.procesoNombre,
+            subprocesoId: user.subprocesoId,
+            subprocesoNombre: user.subprocesoNombre,
+            name: user.subprocesoNombre || user.procesoNombre || user.areaNombre
+        })
     }
   }, [isOpen, user]);
 
   const getError = (fieldName: string) => state?.errors?.[fieldName]?.[0];
   
-  const handleAreaChange = (areaId: string) => {
-    const area = areas?.find(a => a.id === areaId);
-    setSelectedAreaName(area?.nombre || '');
-  }
-
   // Helper to safely provide default values to the form
   const safeUser = {
       fullName: user.fullName || '',
@@ -118,7 +121,6 @@ export function EditUserForm({
       email: user.email || '',
       tempPassword: user.tempPassword || '',
       role: user.role || 'viewer',
-      areaId: user.areaId || ''
   };
 
   return (
@@ -156,21 +158,22 @@ export function EditUserForm({
             <Input id="tempPassword" name="tempPassword" defaultValue={safeUser.tempPassword} />
             {getError('tempPassword') && <p className="text-xs text-destructive">{getError('tempPassword')}</p>}
           </div>
+          
           <div className="grid gap-2">
-            <Label htmlFor="areaId">Área</Label>
-            <Select name="areaId" defaultValue={safeUser.areaId} onValueChange={handleAreaChange}>
-              <SelectTrigger id="areaId" disabled={isLoadingAreas}>
-                <SelectValue placeholder={isLoadingAreas ? "Cargando áreas..." : "Seleccione un área"} />
-              </SelectTrigger>
-              <SelectContent>
-                {areas?.map(area => (
-                    <SelectItem key={area.id} value={area.id}>{area.nombre}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>Asignación Jerárquica</Label>
+            <HierarchicalSelector
+              selectedItem={selectedHierarchy}
+              onSelectItem={setSelectedHierarchy}
+            />
             {getError('areaId') && <p className="text-xs text-destructive">{getError('areaId')}</p>}
-            <input type="hidden" name="areaNombre" value={selectedAreaName} />
+            <input type="hidden" name="areaId" value={selectedHierarchy?.areaId || ''} />
+            <input type="hidden" name="areaNombre" value={selectedHierarchy?.areaNombre || ''} />
+            <input type="hidden" name="procesoId" value={selectedHierarchy?.procesoId || ''} />
+            <input type="hidden" name="procesoNombre" value={selectedHierarchy?.procesoNombre || ''} />
+            <input type="hidden" name="subprocesoId" value={selectedHierarchy?.subprocesoId || ''} />
+            <input type="hidden" name="subprocesoNombre" value={selectedHierarchy?.subprocesoNombre || ''} />
           </div>
+
           <div className="grid gap-2">
             <Label htmlFor="role">Rol</Label>
              <TooltipProvider>

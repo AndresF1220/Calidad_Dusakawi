@@ -12,7 +12,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,7 +25,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { useAreas } from '@/hooks/use-areas-data';
+import { HierarchicalSelector, type HierarchyItem } from './HierarchicalSelector';
 
 interface CreateUserFormProps {
   isOpen: boolean;
@@ -67,18 +66,13 @@ export function CreateUserForm({
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction] = useActionState(createUserAction, initialState);
   const [isActive, setIsActive] = useState(true);
-  const [selectedAreaName, setSelectedAreaName] = useState('');
-
-  const { areas, isLoading: isLoadingAreas } = useAreas();
+  const [selectedHierarchy, setSelectedHierarchy] = useState<HierarchyItem | null>(null);
 
   useEffect(() => {
     if (!isOpen) {
-      // Reset form and state when dialog is closed
       formRef.current?.reset();
       setIsActive(true);
-      setSelectedAreaName('');
-      // Directly manipulating state is not ideal, but `useActionState` lacks a reset function.
-      // A better approach would be to remount the component by changing its key.
+      setSelectedHierarchy(null);
       initialState.errors = {};
       initialState.error = undefined;
       initialState.message = '';
@@ -104,11 +98,6 @@ export function CreateUserForm({
   const getError = (fieldName: keyof typeof state.errors) => {
     return state.errors?.[fieldName]?.[0];
   };
-
-  const handleAreaChange = (areaId: string) => {
-    const area = areas?.find(a => a.id === areaId);
-    setSelectedAreaName(area?.nombre || '');
-  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -143,21 +132,22 @@ export function CreateUserForm({
             <Input id="tempPassword" name="tempPassword" placeholder="Mínimo 6 caracteres" />
             {getError('tempPassword') && <p className="text-xs text-destructive">{getError('tempPassword')}</p>}
           </div>
+
           <div className="grid gap-2">
-            <Label htmlFor="areaId">Área</Label>
-            <Select name="areaId" onValueChange={handleAreaChange}>
-              <SelectTrigger id="areaId" disabled={isLoadingAreas}>
-                <SelectValue placeholder={isLoadingAreas ? "Cargando áreas..." : "Seleccione un área"} />
-              </SelectTrigger>
-              <SelectContent>
-                {areas?.map(area => (
-                    <SelectItem key={area.id} value={area.id}>{area.nombre}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>Asignación Jerárquica</Label>
+            <HierarchicalSelector
+              selectedItem={selectedHierarchy}
+              onSelectItem={setSelectedHierarchy}
+            />
             {getError('areaId') && <p className="text-xs text-destructive">{getError('areaId')}</p>}
-            <input type="hidden" name="areaNombre" value={selectedAreaName} />
+            <input type="hidden" name="areaId" value={selectedHierarchy?.areaId || ''} />
+            <input type="hidden" name="areaNombre" value={selectedHierarchy?.areaNombre || ''} />
+            <input type="hidden" name="procesoId" value={selectedHierarchy?.procesoId || ''} />
+            <input type="hidden" name="procesoNombre" value={selectedHierarchy?.procesoNombre || ''} />
+            <input type="hidden" name="subprocesoId" value={selectedHierarchy?.subprocesoId || ''} />
+            <input type="hidden" name="subprocesoNombre" value={selectedHierarchy?.subprocesoNombre || ''} />
           </div>
+
           <div className="grid gap-2">
             <Label htmlFor="role">Rol</Label>
             <Select name="role" defaultValue="viewer">

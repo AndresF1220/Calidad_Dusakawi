@@ -26,6 +26,10 @@ export type User = {
     tempPassword?: string;
     areaId: string;
     areaNombre: string;
+    procesoId?: string | null;
+    procesoNombre?: string | null;
+    subprocesoId?: string | null;
+    subprocesoNombre?: string | null;
 };
 
 const roleTranslations: Record<User['role'], string> = {
@@ -37,6 +41,11 @@ const roleTranslations: Record<User['role'], string> = {
 const translateRole = (role: User['role']) => {
     return roleTranslations[role] || role;
 }
+
+const getHierarchyName = (user: User) => {
+    return user.subprocesoNombre || user.procesoNombre || user.areaNombre || 'N/A';
+};
+
 
 function UserManagement() {
     const firestore = useFirestore();
@@ -72,7 +81,7 @@ function UserManagement() {
                                 <TableHead>Nombre</TableHead>
                                 <TableHead>Cédula</TableHead>
                                 <TableHead>Correo Electrónico</TableHead>
-                                <TableHead>Área</TableHead>
+                                <TableHead>Asignación</TableHead>
                                 <TableHead>Contraseña Temporal</TableHead>
                                 <TableHead>Rol</TableHead>
                                 <TableHead>Estado</TableHead>
@@ -104,7 +113,7 @@ function UserManagement() {
                                         <TableCell className="font-medium">{user.fullName || 'N/A'}</TableCell>
                                         <TableCell>{user.cedula || 'N/A'}</TableCell>
                                         <TableCell>{user.email}</TableCell>
-                                        <TableCell>{user.areaNombre || 'N/A'}</TableCell>
+                                        <TableCell>{getHierarchyName(user)}</TableCell>
                                         <TableCell className="font-mono text-xs">{user.tempPassword || 'N/A'}</TableCell>
                                         <TableCell>
                                             <Badge variant={user.role === 'superadmin' ? 'default' : 'secondary'}>{translateRole(user.role)}</Badge>
