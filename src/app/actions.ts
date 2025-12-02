@@ -575,12 +575,26 @@ export async function updateUserAction(
 
   try {
     const { db: adminDb, adminApp } = await import('@/firebase/server-config');
+    const userId = formData.get('userId') as string;
+    const userRef = adminDb.collection('users').doc(userId);
+    const currentUserSnap = await userRef.get();
+    
+    if (!currentUserSnap.exists) {
+        return { message: 'Error', error: 'El usuario que intenta actualizar no existe.' };
+    }
+    const currentUserData = currentUserSnap.data();
+
+    // If role is not provided (e.g., disabled field), use the existing role
+    const roleFromForm = formData.get('role');
+    const role = roleFromForm || currentUserData?.role;
+
+
     const payload = {
-      userId: formData.get('userId'),
+      userId: userId,
       fullName: formData.get('fullName'),
       cedula: formData.get('cedula'),
       email: formData.get('email'),
-      role: formData.get('role'),
+      role: role,
       status: formData.get('status'),
       tempPassword: formData.get('tempPassword'),
       areaId: formData.get('areaId'),
@@ -602,15 +616,8 @@ export async function updateUserAction(
       };
     }
 
-    const { userId, ...userData } = validatedFields.data;
+    const { userId: validatedUserId, ...userData } = validatedFields.data;
     const auth = getAuth(adminApp);
-    const userRef = adminDb.collection('users').doc(userId);
-    
-    const currentUserSnap = await userRef.get();
-    if (!currentUserSnap.exists) {
-        return { message: 'Error', error: 'El usuario que intenta actualizar no existe.' };
-    }
-    const currentUserData = currentUserSnap.data();
     
     await userRef.update({
         ...userData,
@@ -630,7 +637,7 @@ export async function updateUserAction(
     }
 
     if (Object.keys(authUpdates).length > 0) {
-        await auth.updateUser(userId, authUpdates);
+        await auth.updateUser(validatedUserId, authUpdates);
     }
 
     return { message: 'Usuario actualizado con éxito.' };
