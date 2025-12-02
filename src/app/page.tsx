@@ -143,15 +143,11 @@ export default function LoginPage() {
                     placeholder=" "
                     required
                     autoComplete="off"
-                    className="peer h-11 w-full rounded-md border border-input bg-white px-3 pt-4 pb-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 pr-10"
+                    className="peer h-11 w-full rounded-md border border-input bg-white px-3 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 pr-10"
                   />
                   <Label
                     htmlFor="cedula"
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground transition-all duration-200
-                               peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-sm
-                               peer-focus:-top-5 peer-focus:translate-y-0 peer-focus:text-xs
-                               peer-not-placeholder-shown:-top-5 peer-not-placeholder-shown:translate-y-0 peer-not-placeholder-shown:text-xs
-                               peer-valid:-top-5 peer-valid:translate-y-0 peer-valid:text-xs"
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground transition-all duration-200 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-sm peer-focus:-top-5 peer-focus:translate-y-0 peer-focus:text-xs peer-not-placeholder-shown:-top-5 peer-not-placeholder-shown:translate-y-0 peer-not-placeholder-shown:text-xs peer-valid:-top-5 peer-valid:translate-y-0 peer-valid:text-xs"
                   >
                     Número de identificación
                   </Label>
@@ -166,15 +162,11 @@ export default function LoginPage() {
                     placeholder=" "
                     required
                     autoComplete="off"
-                    className="peer h-11 w-full rounded-md border border-input bg-white px-3 pt-4 pb-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 pr-10"
+                    className="peer h-11 w-full rounded-md border border-input bg-white px-3 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 pr-10"
                   />
                   <Label
                     htmlFor="password"
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground transition-all duration-200
-                               peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-sm
-                               peer-focus:-top-5 peer-focus:translate-y-0 peer-focus:text-xs
-                               peer-not-placeholder-shown:-top-5 peer-not-placeholder-shown:translate-y-0 peer-not-placeholder-shown:text-xs
-                               peer-valid:-top-5 peer-valid:translate-y-0 peer-valid:text-xs"
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground transition-all duration-200 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-sm peer-focus:-top-5 peer-focus:translate-y-0 peer-focus:text-xs peer-not-placeholder-shown:-top-5 peer-not-placeholder-shown:translate-y-0 peer-not-placeholder-shown:text-xs peer-valid:-top-5 peer-valid:translate-y-0 peer-valid:text-xs"
                   >
                     Contraseña
                   </Label>
