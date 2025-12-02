@@ -93,25 +93,23 @@ body {
   }
 }
 
-/* Floating Label Styles */
-.floating-label-container {
-  @apply relative;
-}
-
+/* Correct Floating Label Styles */
 .floating-label-input {
-  @apply pt-6;
+  /* Ensure placeholder is transparent so the :placeholder-shown selector works as expected */
+  &::placeholder {
+    color: transparent;
+  }
 }
 
 .floating-label {
-  @apply absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground transition-all duration-200 ease-in-out pointer-events-none;
+  /* Default state: inside the input */
+  @apply absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground transition-all duration-200;
 }
 
+/* Active state: when input has focus OR has content */
 .floating-label-input:focus ~ .floating-label,
 .floating-label-input:not(:placeholder-shown) ~ .floating-label {
-  @apply top-3 left-3 text-xs -translate-y-1/2 text-primary;
-}
-
-/* Ensure placeholder is invisible but keeps the :placeholder-shown state working */
-.floating-label-input::placeholder {
-  @apply text-transparent;
+  @apply -top-2 left-2 text-xs text-primary bg-card px-1;
+  /* Override transform to position correctly above the border */
+  transform: translateY(0);
 }

@@ -146,27 +146,27 @@ export default function LoginPage() {
           <CardContent className="p-8">
             <form action={formAction} ref={formRef}>
               <div className="grid gap-6">
-                <div className="floating-label-container">
+                <div className="relative">
                   <Input
                     id="cedula"
                     name="cedula"
                     type="text"
-                    placeholder="Número de identificación"
                     required
                     disabled={isPending}
-                    className="floating-label-input"
+                    className="floating-label-input peer"
+                    placeholder=" "
                   />
                   <Label htmlFor="cedula" className="floating-label">Número de identificación</Label>
                 </div>
-                <div className="relative floating-label-container">
+                <div className="relative">
                   <Input
                     id="password"
                     name="password"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Contraseña"
                     required
                     disabled={isPending}
-                    className="floating-label-input pr-10"
+                    className="floating-label-input peer pr-10"
+                    placeholder=" "
                   />
                   <Label htmlFor="password" className="floating-label">Contraseña</Label>
                   <Button
