@@ -12,6 +12,7 @@ import { Loader2, UserX, LogOut } from 'lucide-react';
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppSettingsProvider } from '@/hooks/use-app-settings';
+import { HierarchyProvider } from '@/hooks/use-hierarchy-data';
 
 function InactiveUserScreen() {
     const { setIsLoggingOut } = useAuth();
@@ -82,7 +83,9 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     // Only if the user is present and active, render the main layout.
     return (
         <AppSettingsProvider>
-            <InnerLayout>{children}</InnerLayout>
+            <HierarchyProvider>
+                <InnerLayout>{children}</InnerLayout>
+            </HierarchyProvider>
         </AppSettingsProvider>
     );
 }
