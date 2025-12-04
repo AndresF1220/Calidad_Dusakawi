@@ -36,6 +36,11 @@ service cloud.firestore {
       allow write: if isSuperAdmin();
     }
     
+    match /settings/company {
+      allow read: if request.auth != null;
+      allow write: if isSuperAdmin(); // Only superadmins can change the company name
+    }
+
     // Generic rules for CMS-like collections
     match /areas/{areaId} {
       allow read: if request.auth != null;

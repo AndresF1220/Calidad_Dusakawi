@@ -1,9 +1,9 @@
 export const firebaseConfig = {
-  "projectId": "studio-8211110745-23a45",
-  "appId": "1:155720652009:web:b53cfc8b48737a22370c78",
-  "apiKey": "AIzaSyCpVj0p_OqN1f1CtyZVJSh-lxwNkbvT8nA",
-  "authDomain": "studio-8211110745-23a45.firebaseapp.com",
-  "measurementId": "",
-  "messagingSenderId": "155720652009",
-  "storageBucket": "studio-8211110745-23a45.appspot.com"
+  apiKey: "AIzaSyDtAvdzRHJo3R7jaKPfhDE4__Y6O20ZeC0",
+  authDomain: "atlas-sgi.firebaseapp.com",
+  projectId: "atlas-sgi",
+  storageBucket: "atlas-sgi.firebasestorage.app",
+  messagingSenderId: "197437438424",
+  appId: "1:197437438424:web:0c6edffa8241dcef155aad",
+  measurementId: "G-WJMTFP3HG6",
 };

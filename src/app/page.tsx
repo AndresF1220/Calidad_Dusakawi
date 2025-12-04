@@ -126,15 +126,15 @@ export default function LoginPage() {
            </div>
         </div>
         <Card className="w-full shadow-lg">
-          <CardHeader className="text-center">
+          <CardHeader className="text-center pb-5">
             <CardTitle className="font-headline text-3xl">Bienvenido</CardTitle>
-            <CardDescription>
-              Ingrese a Atlas SGI para continuar.
+            <CardDescription className="text-[13px] leading-snug">
+              Ingrese a Atlas – Sistema de Gestión Integral para continuar.
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-8">
+          <CardContent className="px-8 pt-5 pb-8">
             <form action={formAction} ref={formRef} autoComplete="off">
-              <div className="grid gap-8">
+              <div className="grid gap-7">
                 <div className="relative">
                   <Input
                     id="cedula"

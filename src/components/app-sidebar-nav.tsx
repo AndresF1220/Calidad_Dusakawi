@@ -27,6 +27,7 @@ import { useAuth } from '@/lib/auth';
 import { Skeleton } from './ui/skeleton';
 import { useAppSettings } from '@/hooks/use-app-settings';
 import Image from 'next/image';
+import { useCompanyData } from '@/hooks/use-company-data';
 
 
 interface AppSidebarNavProps {
@@ -37,6 +38,7 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
   const pathname = usePathname();
   const { user, userProfile, userRole, isRoleLoading } = useAuth();
   const { settings, isLoading: isSettingsLoading } = useAppSettings();
+  const { companyName, loading: isCompanyLoading } = useCompanyData();
   
   const menuItems = [
     { href: '/inicio', label: 'Inicio', icon: LayoutDashboard },
@@ -72,12 +74,25 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
       
       <div className="flex flex-col items-center gap-2 p-4 group-data-[collapsible=icon]:py-4 group-data-[collapsible=icon]:px-2">
         <Avatar className="h-16 w-16 group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10 transition-all">
-            <AvatarImage src={user?.photoURL || "https://images.unsplash.com/photo-1511367461989-f85a21fda167?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxwcm9maWxlfGVufDB8fHx8MTc2MTY0MDYwMXww&ixlib=rb-4.1.0&q=80&w=1080"} alt={user?.displayName || 'Usuario'} />
+            <AvatarImage src={user?.photoURL || "https://images.unsplash.com/photo-1511367461989-f85a21fda167?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxwcm9maWxlfGVufDB8fHx8MTc2MTY0MDYwMXww&ixlib=rb-4.1.0&q=80&w=1080"} alt={userProfile?.fullName || user?.displayName || 'Usuario'} />
             <AvatarFallback>{userInitial}</AvatarFallback>
         </Avatar>
         <div className="text-center group-data-[collapsible=icon]:hidden">
-            <h3 className="font-semibold text-base text-sidebar-foreground truncate max-w-36">{user?.displayName || user?.email || 'Usuario'}</h3>
-            <p className="text-sm text-sidebar-foreground/70 truncate max-w-36">{isRoleLoading ? '...' : hierarchyName}</p>
+            <h3 className="font-semibold text-base text-sidebar-foreground break-words leading-tight">{userProfile?.fullName || user?.displayName || 'Usuario'}</h3>
+            <p className="text-xs text-muted-foreground break-words mt-1">
+              {isRoleLoading ? '...' : hierarchyName}
+              {isCompanyLoading
+                ? <>{'\u00A0|\u00A0Cargando...'}</>
+                : companyName ? (
+                  <>
+                    {/* Usamos espacios no-rompibles para evitar que el traductor los colapse */}
+                    {`\u00A0|\u00A0`}
+                    <span translate="no" className="notranslate">
+                      {companyName}
+                    </span>
+                  </>
+              ) : null}
+            </p>
         </div>
       </div>
       <SidebarSeparator className="group-data-[collapsible=icon]:hidden" />

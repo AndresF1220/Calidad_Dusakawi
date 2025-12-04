@@ -19,7 +19,7 @@ export default function RootLayout({
   }, []);
 
   return (
-    <html lang="en" suppressHydrationWarning={true} dir="ltr">
+    <html lang="es" suppressHydrationWarning={true} dir="ltr">
       <head>
         <link rel="icon" href="/Imagenes/favicon.png" sizes="any" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
