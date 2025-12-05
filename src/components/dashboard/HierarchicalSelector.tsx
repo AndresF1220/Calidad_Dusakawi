@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -20,11 +19,13 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { useHierarchy } from '@/hooks/use-hierarchy-data';
-import type { HierarchyItem, FlatHierarchyItem } from '@/hooks/use-hierarchy-data';
+import type { HierarchyItem as LocalHierarchyItem, FlatHierarchyItem } from '@/hooks/use-hierarchy-data';
+
+export type { LocalHierarchyItem as HierarchyItem };
 
 interface HierarchicalSelectorProps {
-  selectedItem: HierarchyItem | null;
-  onSelectItem: (item: HierarchyItem | null) => void;
+  selectedItem: LocalHierarchyItem | null;
+  onSelectItem: (item: LocalHierarchyItem | null) => void;
 }
 
 export function HierarchicalSelector({

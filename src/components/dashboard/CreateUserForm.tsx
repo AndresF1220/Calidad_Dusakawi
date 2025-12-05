@@ -51,7 +51,9 @@ const roleTranslations: Record<string, string> = {
 
 const roleOptions = Object.keys(roleTranslations);
 
-const initialState: { message: string; error?: string; errors?: { [key: string]: string[] } } = {
+type FormKeys = 'fullName' | 'cedula' | 'email' | 'tempPassword' | 'areaId' | 'role' | 'status';
+
+const initialState: { message: string; error?: string; errors?: Partial<Record<FormKeys, string[]>> } = {
   message: '',
   errors: {},
   error: undefined,
@@ -99,7 +101,7 @@ export function CreateUserForm({
     }
   }, [state, toast, onOpenChange]);
   
-  const getError = (fieldName: keyof typeof state.errors) => {
+  const getError = (fieldName: FormKeys) => {
     return state.errors?.[fieldName]?.[0];
   };
 
