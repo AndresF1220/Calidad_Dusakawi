@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useActionState, useEffect, useRef, useState } from 'react';
@@ -68,12 +67,16 @@ export function CreateUserForm({
   const [state, formAction] = useActionState(createUserAction, initialState);
   const [isActive, setIsActive] = useState(true);
   const [selectedHierarchy, setSelectedHierarchy] = useState<HierarchyItem | null>(null);
+  const [selectedRole, setSelectedRole] = useState('viewer');
+  const [mustChangePassword, setMustChangePassword] = useState(true);
 
   useEffect(() => {
     if (!isOpen) {
       formRef.current?.reset();
       setIsActive(true);
       setSelectedHierarchy(null);
+      setSelectedRole('viewer');
+      setMustChangePassword(true);
       initialState.errors = {};
       initialState.error = undefined;
       initialState.message = '';
@@ -98,6 +101,15 @@ export function CreateUserForm({
   
   const getError = (fieldName: keyof typeof state.errors) => {
     return state.errors?.[fieldName]?.[0];
+  };
+
+  const handleRoleChange = (value: string) => {
+    setSelectedRole(value);
+    if (value === 'viewer') {
+      setMustChangePassword(true);
+    } else {
+      setMustChangePassword(false);
+    }
   };
 
   return (
@@ -129,13 +141,13 @@ export function CreateUserForm({
             {getError('email') && <p className="text-xs text-destructive">{getError('email')}</p>}
           </div>
            <div className="grid gap-2">
-            <Label htmlFor="tempPassword">Contraseña Temporal</Label>
-            <Input id="tempPassword" name="tempPassword" placeholder="Mínimo 6 caracteres" />
+            <Label htmlFor="tempPassword">Contraseña</Label>
+            <Input id="tempPassword" name="tempPassword" placeholder={selectedRole === 'viewer' ? 'Contraseña común (ej: 123456)' : 'Mínimo 6 caracteres'} />
             {getError('tempPassword') && <p className="text-xs text-destructive">{getError('tempPassword')}</p>}
           </div>
 
           <div className="grid gap-2">
-            <Label>Asignación Jerárquica</Label>
+            <Label>Área</Label>
             <HierarchicalSelector
               selectedItem={selectedHierarchy}
               onSelectItem={setSelectedHierarchy}
@@ -151,7 +163,7 @@ export function CreateUserForm({
 
           <div className="grid gap-2">
             <Label htmlFor="role">Rol</Label>
-            <Select name="role" defaultValue="viewer">
+            <Select name="role" defaultValue="viewer" onValueChange={handleRoleChange}>
               <SelectTrigger id="role">
                 <SelectValue placeholder="Seleccione un rol" />
               </SelectTrigger>
@@ -163,6 +175,21 @@ export function CreateUserForm({
             </Select>
             {getError('role') && <p className="text-xs text-destructive">{getError('role')}</p>}
           </div>
+            {selectedRole === 'viewer' && (
+                <div className="grid gap-2">
+                    <div className="flex items-center space-x-2">
+                        <Switch
+                            id="must-change-password-switch"
+                            checked={mustChangePassword}
+                            onCheckedChange={setMustChangePassword}
+                        />
+                        <Label htmlFor="must-change-password-switch" className="text-sm font-normal">
+                            Forzar cambio de contraseña al primer inicio de sesión
+                        </Label>
+                    </div>
+                </div>
+            )}
+            <input type="hidden" name="mustChangePassword" value={mustChangePassword.toString()} />
           <div className="grid gap-2">
             <Label>Estado</Label>
              <div className="flex items-center space-x-2">
@@ -190,5 +217,3 @@ export function CreateUserForm({
     </Dialog>
   );
 }
-
-    

@@ -698,6 +698,32 @@ export async function deleteUserAction(
   }
 }
 
+export async function resetPasswordAction(userId: string): Promise<{ success: boolean; error?: string; newPassword?: string }> {
+  const { db: adminDb, adminApp } = await import('@/firebase/server-config');
+  if (!adminDb) {
+    return { success: false, error: 'Firestore Admin no está inicializado.' };
+  }
+
+  try {
+    const auth = getAuth(adminApp);
+    const newPassword = Math.random().toString(36).slice(-8);
+    
+    await auth.updateUser(userId, {
+      password: newPassword,
+    });
+    
+    const userDocRef = adminDb.collection('users').doc(userId);
+    await userDocRef.update({
+      tempPassword: newPassword,
+    });
+    
+    return { success: true, newPassword };
+  } catch (e: any) {
+    console.error('Error al restablecer la contraseña:', e);
+    return { success: false, error: `No se pudo restablecer la contraseña: ${e.message}` };
+  }
+}
+
 const loginSchema = z.object({
   cedula: z.string().min(1, "La cédula es requerida."),
   password: z.string().min(1, "La contraseña es requerida."),
@@ -771,5 +797,3 @@ export async function loginAction(
     };
   }
 }
-
-    

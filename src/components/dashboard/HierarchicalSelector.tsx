@@ -65,10 +65,9 @@ export function HierarchicalSelector({
 
   const getDisplayValue = () => {
     if (isLoading) return 'Cargando...';
-    if (!selectedItem || !selectedItem.id) return 'Seleccione una asignación...';
+    if (!selectedItem || !selectedItem.id) return 'Seleccione un área...';
     
-    // The name is already stored in the selectedItem state from the form
-    return selectedItem.name || 'Seleccione una asignación...';
+    return selectedItem.name || 'Seleccione un área...';
   };
 
   return (
@@ -91,7 +90,7 @@ export function HierarchicalSelector({
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
         <Command>
           <CommandInput 
-            placeholder="Buscar asignación..."
+            placeholder="Buscar área..."
             value={searchValue}
             onValueChange={setSearchValue}
           />

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useTransition } from 'react';
@@ -21,10 +20,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Edit, Trash2, Loader2 } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, Loader2, KeyRound } from 'lucide-react';
 import type { User } from '@/app/inicio/administracion/page';
 import { EditUserForm } from './EditUserForm';
-import { deleteUserAction } from '@/app/actions';
+import { deleteUserAction, resetPasswordAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 
 interface UserActionsDropdownProps {
@@ -35,6 +34,7 @@ interface UserActionsDropdownProps {
 export function UserActionsDropdown({ user, currentUserId }: UserActionsDropdownProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const isCurrentUser = user.id === currentUserId;
@@ -61,6 +61,20 @@ export function UserActionsDropdown({ user, currentUserId }: UserActionsDropdown
         }
     });
   };
+  
+    const handleResetPassword = () => {
+        startTransition(async () => {
+            const result = await resetPasswordAction(user.id);
+             if(result.success) {
+                toast({ title: '¡Éxito!', description: `Contraseña restablecida. La nueva contraseña es: ${result.newPassword}` });
+                setIsResetting(false);
+            } else {
+                toast({ variant: 'destructive', title: 'Error al Restablecer', description: result.error });
+                setIsResetting(false);
+            }
+        });
+    };
+
 
   return (
     <>
@@ -77,6 +91,10 @@ export function UserActionsDropdown({ user, currentUserId }: UserActionsDropdown
             <Edit className="mr-2 h-4 w-4" />
             <span>Editar usuario</span>
           </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => setIsResetting(true)}>
+                <KeyRound className="mr-2 h-4 w-4" />
+                <span>Restablecer Contraseña</span>
+            </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => setIsDeleting(true)} className="text-destructive focus:text-destructive" disabled={isCurrentUser}>
             <Trash2 className="mr-2 h-4 w-4" />
@@ -107,6 +125,24 @@ export function UserActionsDropdown({ user, currentUserId }: UserActionsDropdown
             <AlertDialogAction onClick={handleDelete} disabled={isPending} className="bg-destructive hover:bg-destructive/90">
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+       <AlertDialog open={isResetting} onOpenChange={setIsResetting}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Restablecer contraseña?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se generará una nueva contraseña temporal para el usuario "{user.fullName}" y se le notificará. ¿Desea continuar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleResetPassword} disabled={isPending}>
+              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Restablecer
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

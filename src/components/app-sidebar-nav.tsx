@@ -72,20 +72,21 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
         </Link>
       </SidebarHeader>
       
-      <div className="flex flex-col items-center gap-2 p-4 group-data-[collapsible=icon]:py-4 group-data-[collapsible=icon]:px-2">
-        <Avatar className="h-16 w-16 group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10 transition-all">
+      <div className="flex flex-col items-center text-center w-full px-3 py-4 gap-2 border-b">
+        <Avatar className="h-16 w-16 mb-1">
             <AvatarImage src={user?.photoURL || "https://images.unsplash.com/photo-1511367461989-f85a21fda167?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxwcm9maWxlfGVufDB8fHx8MTc2MTY0MDYwMXww&ixlib=rb-4.1.0&q=80&w=1080"} alt={userProfile?.fullName || user?.displayName || 'Usuario'} />
             <AvatarFallback>{userInitial}</AvatarFallback>
         </Avatar>
-        <div className="text-center group-data-[collapsible=icon]:hidden">
-            <h3 className="font-semibold text-base text-sidebar-foreground break-words leading-tight">{userProfile?.fullName || user?.displayName || 'Usuario'}</h3>
-            <p className="text-xs text-muted-foreground break-words mt-1">
+        <div className="w-full max-w-full">
+            <p className="font-semibold leading-snug text-base w-full break-words">
+              {userProfile?.fullName || user?.displayName || 'Usuario'}
+            </p>
+            <p className="text-xs text-muted-foreground leading-snug w-full">
               {isRoleLoading ? '...' : hierarchyName}
               {isCompanyLoading
                 ? <>{'\u00A0|\u00A0Cargando...'}</>
                 : companyName ? (
                   <>
-                    {/* Usamos espacios no-rompibles para evitar que el traductor los colapse */}
                     {`\u00A0|\u00A0`}
                     <span translate="no" className="notranslate">
                       {companyName}
@@ -95,7 +96,6 @@ export default function AppSidebarNav({ isMobile }: AppSidebarNavProps) {
             </p>
         </div>
       </div>
-      <SidebarSeparator className="group-data-[collapsible=icon]:hidden" />
 
       <SidebarContent className="p-2 flex-1">
         <SidebarMenu>
