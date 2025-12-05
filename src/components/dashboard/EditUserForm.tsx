@@ -155,7 +155,7 @@ export function EditUserForm({
             {getError('email') && <p className="text-xs text-destructive">{getError('email')}</p>}
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="tempPassword">Contraseña Temporal</Label>
+            <Label htmlFor="tempPassword">Contraseña</Label>
             <Input id="tempPassword" name="tempPassword" defaultValue={safeUser.tempPassword} />
             {getError('tempPassword') && <p className="text-xs text-destructive">{getError('tempPassword')}</p>}
           </div>
